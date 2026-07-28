@@ -11,38 +11,27 @@ import { toast } from 'sonner';
 import { Plus, Trash2, Upload, Package, X, Video, Edit, Image as ImageIcon, Database } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { AdminNav } from '../components/AdminNav';
+import {
+  CATEGORIES,
+  AUDIENCES,
+  MATERIALS,
+  SHOE_SIZES,
+  DEFAULT_STOCK_KEY,
+} from '../config/taxonomy';
+
+// These used to be four private arrays here that disagreed with what the
+// storefront pages asked for, which is why five category pages could never
+// show a product. They now come from the shared taxonomy.
+const AVAILABLE_CATEGORIES = [...CATEGORIES];
+const AVAILABLE_MATERIALS = [...MATERIALS];
+const AVAILABLE_AUDIENCE = [...AUDIENCES];
+const AVAILABLE_SIZES = [...SHOE_SIZES];
 import { getPrimaryProductImage } from '../lib/default-image';
 import { seedProducts } from '../utils/seed-products';
 
-const AVAILABLE_MATERIALS = [
-  'Cactus Leather',
-  'Natural Rubber',
-  'Bamboo',
-  'Flax'
-];
 
-const AVAILABLE_CATEGORIES = [
-  'shoes',
-  'accessories',
-  'gifts',
-  'home',
-  'apparel',
-  'jewelry',
-  'beauty'
-];
 
-const AVAILABLE_AUDIENCE = [
-  'women',
-  'men',
-  'unisex',
-  'boys',
-  'girls',
-  'kids',
-  'toddlers',
-  'infants'
-];
 
-const AVAILABLE_SIZES = [35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
 
 export function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -61,6 +50,10 @@ export function AdminProducts() {
   const [selectedAudience, setSelectedAudience] = useState<string[]>(['women']);
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>(['Cactus Leather', 'Natural Rubber']);
   const [selectedSizes, setSelectedSizes] = useState<number[]>([36, 37, 38, 39, 40, 41]);
+  // Stock per size, keyed by size as a string. Sizeless products use "default".
+  const [stock, setStock] = useState<Record<string, number>>({});
+  const [isBestseller, setIsBestseller] = useState(false);
+  const [isPublished, setIsPublished] = useState(true);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -93,14 +86,18 @@ export function AdminProducts() {
           id: p.id!,
           name: p.name,
           price: p.price,
-          image: p.images[0] || '',
+          image: p.images?.[0] || p.image || '',
           images: p.images,
           video: p.video,
           categories: p.categories,
           audience: p.audience,
           description: p.description,
           materials: p.materials,
-          sizes: p.sizes
+          sizes: p.sizes,
+          stock: p.stock ?? {},
+          is_bestseller: p.is_bestseller ?? false,
+          is_published: p.is_published ?? true,
+          created_at: p.created_at
         }));
         console.log('Formatted products:', formattedProducts);
         setProducts(formattedProducts);
@@ -231,7 +228,10 @@ export function AdminProducts() {
           audience: selectedAudience,
           description,
           materials: selectedMaterials,
-          sizes: selectedCategories.includes('accessories') ? null : selectedSizes
+          sizes: selectedCategories.includes('accessories') ? null : selectedSizes,
+          stock: buildStockPayload(),
+          is_bestseller: isBestseller,
+          is_published: isPublished
         })
         .select()
         .single();
@@ -255,6 +255,21 @@ export function AdminProducts() {
     }
   };
 
+  /**
+   * Only keep stock entries for sizes still selected, so removing a size does
+   * not leave an orphan count behind. Sizeless products get a single count.
+   */
+  const buildStockPayload = (): Record<string, number> => {
+    if (selectedCategories.includes('accessories') || selectedSizes.length === 0) {
+      return { [DEFAULT_STOCK_KEY]: Number(stock[DEFAULT_STOCK_KEY] ?? 0) };
+    }
+    const payload: Record<string, number> = {};
+    for (const size of selectedSizes) {
+      payload[String(size)] = Number(stock[String(size)] ?? 0);
+    }
+    return payload;
+  };
+
   const resetForm = () => {
     setName('');
     setPrice('');
@@ -263,6 +278,9 @@ export function AdminProducts() {
     setSelectedAudience(['women']);
     setSelectedMaterials(['Cactus Leather', 'Natural Rubber']);
     setSelectedSizes([36, 37, 38, 39, 40, 41]);
+    setStock({});
+    setIsBestseller(false);
+    setIsPublished(true);
     setImageFiles([]);
     setImagePreviews([]);
     setVideoFile(null);
@@ -282,6 +300,9 @@ export function AdminProducts() {
     setSelectedAudience(product.audience);
     setSelectedMaterials(product.materials);
     setSelectedSizes(product.sizes || []);
+    setStock(product.stock ?? {});
+    setIsBestseller(product.is_bestseller ?? false);
+    setIsPublished(product.is_published ?? true);
     setExistingImages(product.images || [product.image]);
     setExistingVideo(product.video || '');
     setImageFiles([]);
@@ -387,6 +408,9 @@ export function AdminProducts() {
         description,
         materials: selectedMaterials,
         sizes: selectedCategories.includes('accessories') ? null : selectedSizes,
+        stock: buildStockPayload(),
+        is_bestseller: isBestseller,
+        is_published: isPublished,
         updated_at: new Date().toISOString()
       };
 
@@ -880,6 +904,62 @@ export function AdminProducts() {
                 </div>
               )}
 
+              {/* Stock. Nothing could sell out before this existed, so the
+                  same pair could be ordered an unlimited number of times. */}
+              <div>
+                <label className="block text-sm mb-2">Stock</label>
+                {selectedCategories.includes('accessories') || selectedSizes.length === 0 ? (
+                  <input
+                    type="number"
+                    min={0}
+                    value={stock[DEFAULT_STOCK_KEY] ?? 0}
+                    onChange={(e) =>
+                      setStock({ ...stock, [DEFAULT_STOCK_KEY]: Math.max(0, Number(e.target.value)) })
+                    }
+                    className="w-32 px-3 py-2 border border-neutral-200 rounded-lg text-sm"
+                  />
+                ) : (
+                  <div className="flex flex-wrap gap-3">
+                    {selectedSizes.map((size) => (
+                      <div key={size} className="flex flex-col items-center gap-1">
+                        <span className="text-xs text-neutral-500">{size}</span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={stock[String(size)] ?? 0}
+                          onChange={(e) =>
+                            setStock({ ...stock, [String(size)]: Math.max(0, Number(e.target.value)) })
+                          }
+                          className="w-16 px-2 py-2 border border-neutral-200 rounded-lg text-sm text-center"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-neutral-500 mt-2">
+                  Zero means sold out. The database refuses any order that would take a size below zero.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-6">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isBestseller}
+                    onChange={(e) => setIsBestseller(e.target.checked)}
+                  />
+                  Show on Best Sellers
+                </label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isPublished}
+                    onChange={(e) => setIsPublished(e.target.checked)}
+                  />
+                  Published
+                </label>
+              </div>
+
               <div className="flex gap-3">
                 <Button
                   type="button"
@@ -1189,6 +1269,62 @@ export function AdminProducts() {
                   </div>
                 </div>
               )}
+
+              {/* Stock. Nothing could sell out before this existed, so the
+                  same pair could be ordered an unlimited number of times. */}
+              <div>
+                <label className="block text-sm mb-2">Stock</label>
+                {selectedCategories.includes('accessories') || selectedSizes.length === 0 ? (
+                  <input
+                    type="number"
+                    min={0}
+                    value={stock[DEFAULT_STOCK_KEY] ?? 0}
+                    onChange={(e) =>
+                      setStock({ ...stock, [DEFAULT_STOCK_KEY]: Math.max(0, Number(e.target.value)) })
+                    }
+                    className="w-32 px-3 py-2 border border-neutral-200 rounded-lg text-sm"
+                  />
+                ) : (
+                  <div className="flex flex-wrap gap-3">
+                    {selectedSizes.map((size) => (
+                      <div key={size} className="flex flex-col items-center gap-1">
+                        <span className="text-xs text-neutral-500">{size}</span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={stock[String(size)] ?? 0}
+                          onChange={(e) =>
+                            setStock({ ...stock, [String(size)]: Math.max(0, Number(e.target.value)) })
+                          }
+                          className="w-16 px-2 py-2 border border-neutral-200 rounded-lg text-sm text-center"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-neutral-500 mt-2">
+                  Zero means sold out. The database refuses any order that would take a size below zero.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-6">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isBestseller}
+                    onChange={(e) => setIsBestseller(e.target.checked)}
+                  />
+                  Show on Best Sellers
+                </label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isPublished}
+                    onChange={(e) => setIsPublished(e.target.checked)}
+                  />
+                  Published
+                </label>
+              </div>
 
               <div className="flex gap-3">
                 <Button

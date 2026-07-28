@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { SHIPPING, RETURNS, formatPrice } from '../config/store';
+import { stockForSize, isSoldOut } from '../config/taxonomy';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Heart, ShoppingCart, Info } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -63,6 +64,11 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
       toast.error('Please select a size');
       return;
     }
+    if (stockForSize(product, selectedSize) <= 0) {
+      toast.error('That size is sold out');
+      return;
+    }
+
     onAddToCart(product, selectedSize);
     toast.success('Added to cart');
   };
@@ -151,19 +157,27 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                   </Button>
                 </div>
                 <div className="grid grid-cols-6 gap-2">
-                  {product.sizes.map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`py-3 border rounded-lg text-center transition-all ${
-                        selectedSize === size
-                          ? 'border-[#008080] bg-[#008080] text-white'
-                          : 'border-gray-300 hover:border-[#008080]'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
+                  {product.sizes.map((size) => {
+                    const remaining = stockForSize(product, size);
+                    const unavailable = remaining <= 0;
+                    return (
+                      <button
+                        key={size}
+                        onClick={() => !unavailable && setSelectedSize(size)}
+                        disabled={unavailable}
+                        title={unavailable ? 'Sold out' : `${remaining} available`}
+                        className={`py-3 border rounded-lg text-center transition-all ${
+                          unavailable
+                            ? 'border-gray-200 text-gray-300 line-through cursor-not-allowed'
+                            : selectedSize === size
+                              ? 'border-[#008080] bg-[#008080] text-white'
+                              : 'border-gray-300 hover:border-[#008080]'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -172,10 +186,11 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
             <div className="flex gap-4 mb-8">
               <Button
                 onClick={handleAddToCart}
-                className="flex-1 bg-[#008080] hover:bg-[#006666] text-white h-14 text-lg"
+                disabled={isSoldOut(product)}
+                className="flex-1 bg-[#008080] hover:bg-[#006666] text-white h-14 text-lg disabled:opacity-50"
               >
                 <ShoppingCart className="h-5 w-5 mr-2" />
-                Add to Cart
+                {isSoldOut(product) ? 'Sold Out' : 'Add to Cart'}
               </Button>
               <Button
                 variant="outline"

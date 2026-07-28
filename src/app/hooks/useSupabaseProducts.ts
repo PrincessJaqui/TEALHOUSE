@@ -19,6 +19,7 @@ export function useSupabaseProducts() {
       const { data, error: fetchError } = await supabase
         .from('products')
         .select('*')
+        .eq('is_published', true)
         .order('created_at', { ascending: false });
 
       if (fetchError) {
@@ -41,7 +42,11 @@ export function useSupabaseProducts() {
           audience: p.audience,
           description: p.description,
           materials: p.materials,
-          sizes: p.sizes
+          sizes: p.sizes,
+          stock: p.stock ?? {},
+          is_bestseller: p.is_bestseller ?? false,
+          is_published: p.is_published ?? true,
+          created_at: p.created_at
         }));
         setProducts(formattedProducts);
       } else {

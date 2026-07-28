@@ -1,14 +1,34 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '../lib/supabase';
 
 export function Newsletter() {
   const [email, setEmail] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [saving, setSaving] = useState(false);
+
+  // This used to thank the customer and save the address nowhere at all.
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
-      toast.success('Thank you for subscribing!');
+    if (!email.trim()) return;
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('newsletter_subscribers')
+        .insert({ email: email.trim(), source: 'newsletter' });
+
+      // A duplicate is not a failure from the customer's point of view.
+      if (error && error.code !== '23505') {
+        console.error('Newsletter signup error:', error);
+        toast.error('Could not sign you up. Please try again.');
+        return;
+      }
+
+      toast.success('Thank you for subscribing');
       setEmail('');
+    } finally {
+      setSaving(false);
     }
   };
 

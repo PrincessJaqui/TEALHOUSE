@@ -32,6 +32,9 @@ export interface DbProduct {
   description: string;
   materials: string[];
   sizes?: number[];
+  stock?: Record<string, number>;
+  is_bestseller?: boolean;
+  is_published?: boolean;
   created_at?: string;
 }
 

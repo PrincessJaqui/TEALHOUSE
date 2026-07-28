@@ -1,6 +1,52 @@
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { CONTACT, SHOWROOMS } from '../config/contact';
+import { supabase } from '../lib/supabase';
 
 export function ContactUs() {
+  // This form had no submit handler at all. Every message a customer typed
+  // was discarded when they pressed Send.
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!email.trim() || !message.trim()) {
+      toast.error('Please add your email and a message');
+      return;
+    }
+
+    setSending(true);
+    try {
+      const { error } = await supabase.from('contact_messages').insert({
+        name: [firstName, lastName].filter(Boolean).join(' ') || null,
+        email: email.trim(),
+        subject: subject || null,
+        message: message.trim(),
+      });
+
+      if (error) {
+        console.error('Error sending message:', error);
+        toast.error('Could not send your message. Please try again.');
+        return;
+      }
+
+      toast.success('Message sent. We will get back to you shortly.');
+      setFirstName('');
+      setLastName('');
+      setEmail('');
+      setSubject('');
+      setMessage('');
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-[900px] mx-auto px-5 py-16">
@@ -54,13 +100,15 @@ export function ContactUs() {
 
           <section className="pt-8 border-t border-gray-200">
             <h2 className="mb-4">Send Us a Message</h2>
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="firstName" className="block text-sm mb-2">First Name *</label>
                   <input
                     type="text"
                     id="firstName"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
                     required
                     className="w-full px-4 py-2 border border-gray-300 focus:border-black focus:outline-none"
                   />
@@ -70,6 +118,8 @@ export function ContactUs() {
                   <input
                     type="text"
                     id="lastName"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
                     required
                     className="w-full px-4 py-2 border border-gray-300 focus:border-black focus:outline-none"
                   />
@@ -81,6 +131,8 @@ export function ContactUs() {
                 <input
                   type="email"
                   id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   className="w-full px-4 py-2 border border-gray-300 focus:border-black focus:outline-none"
                 />
@@ -90,6 +142,8 @@ export function ContactUs() {
                 <label htmlFor="subject" className="block text-sm mb-2">Subject *</label>
                 <select
                   id="subject"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
                   required
                   className="w-full px-4 py-2 border border-gray-300 focus:border-black focus:outline-none"
                 >
@@ -107,6 +161,8 @@ export function ContactUs() {
                 <label htmlFor="message" className="block text-sm mb-2">Message *</label>
                 <textarea
                   id="message"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
                   required
                   rows={6}
                   className="w-full px-4 py-2 border border-gray-300 focus:border-black focus:outline-none resize-none"
@@ -115,9 +171,10 @@ export function ContactUs() {
 
               <button
                 type="submit"
-                className="w-full bg-black text-white py-3 hover:bg-gray-800 transition-colors uppercase tracking-wider text-sm"
+                disabled={sending}
+                className="w-full bg-black text-white py-3 hover:bg-gray-800 transition-colors uppercase tracking-wider text-sm disabled:opacity-50"
               >
-                Send Message
+                {sending ? 'Sending' : 'Send Message'}
               </button>
             </form>
           </section>

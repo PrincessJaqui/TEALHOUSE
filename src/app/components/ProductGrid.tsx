@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Heart } from 'lucide-react';
 import { Product } from '../App';
+import { productMatchesFilter, isSoldOut, type FilterKey } from '../config/taxonomy';
 import { getPrimaryProductImage } from '../lib/default-image';
 import { useSupabaseProducts } from '../hooks/useSupabaseProducts';
 
@@ -36,21 +37,18 @@ export function ProductGrid({ onProductClick, onAddToWishlist, isInWishlist, fil
     onAddToWishlist(product);
   };
 
-  const matchesTag = (product: Product, tag: string) => {
-    const needle = tag.toLowerCase();
-    const haystack = [...(product.categories ?? []), ...(product.audience ?? [])];
-    return haystack.some((value) => value?.toLowerCase() === needle);
-  };
-
   // The page-level filter narrows the catalog first, then the in-panel
-  // category buttons narrow it further.
+  // category buttons narrow it further. Both go through the shared matcher
+  // in config/taxonomy so the admin's tags and these pages cannot drift.
   const baseProducts =
-    !filter || filter === 'all' ? products : products.filter((p) => matchesTag(p, filter));
+    !filter || filter === 'all'
+      ? products
+      : products.filter((p) => productMatchesFilter(p, filter as FilterKey));
 
   const filteredProducts =
     selectedCategory === 'all'
       ? baseProducts
-      : baseProducts.filter((p) => matchesTag(p, selectedCategory));
+      : baseProducts.filter((p) => productMatchesFilter(p, selectedCategory as FilterKey));
 
   return (
     <section className="max-w-[1200px] mx-auto px-5 py-8" id="shoes">
@@ -147,8 +145,16 @@ export function ProductGrid({ onProductClick, onAddToWishlist, isInWishlist, fil
               <img
                 src={getPrimaryProductImage(product)}
                 alt={product.name}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                className={`absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${
+                  isSoldOut(product) ? 'opacity-60' : ''
+                }`}
               />
+
+              {isSoldOut(product) && (
+                <span className="absolute top-4 left-4 z-10 bg-white/95 px-3 py-1 text-xs uppercase tracking-wider">
+                  Sold Out
+                </span>
+              )}
               
               {/* Wishlist Heart Button */}
               <button

@@ -1,19 +1,13 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Package, Users, BarChart3, Settings, LogOut, ShoppingCart } from 'lucide-react';
+import { Package, Users, BarChart3, Settings, LogOut, ShoppingCart, Mail } from 'lucide-react';
 import { toast } from 'sonner';
-import { createClient } from '@supabase/supabase-js';
-import { projectId, publicAnonKey } from '../utils/supabase/info';
+import { supabase } from '../lib/supabase';
 
 export function AdminNav() {
   const location = useLocation();
   const navigate = useNavigate();
   
   const handleLogout = async () => {
-    const supabase = createClient(
-      `https://${projectId}.supabase.co`,
-      publicAnonKey
-    );
-    
     await supabase.auth.signOut();
     toast.success('Logged out successfully');
     navigate('/company-login');
@@ -34,6 +28,11 @@ export function AdminNav() {
       path: '/admin/products',
       label: 'Products',
       icon: Package
+    },
+    {
+      path: '/admin/messages',
+      label: 'Messages',
+      icon: Mail
     },
     {
       path: '/admin/customers',

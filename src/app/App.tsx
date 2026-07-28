@@ -43,6 +43,7 @@ import { useSupabaseCart } from './hooks/useSupabaseCart';
 import { useSupabaseWishlist } from './hooks/useSupabaseWishlist';
 import { AdminProducts } from './pages/AdminProducts';
 import { AdminCustomers } from './pages/AdminCustomers';
+import { AdminMessages } from './pages/AdminMessages';
 import { ProtectedAdminRoute } from './components/ProtectedAdminRoute';
 
 export interface Product {
@@ -57,6 +58,11 @@ export interface Product {
   description: string;
   materials: string[];
   sizes?: number[];
+  /** Map of size to quantity remaining. Sizeless products use the "default" key. */
+  stock?: Record<string, number>;
+  is_bestseller?: boolean;
+  is_published?: boolean;
+  created_at?: string;
 }
 
 export interface CartItem {
@@ -182,6 +188,7 @@ export default function App() {
           <Route path="/admin/customers" element={<ProtectedAdminRoute><AdminCustomers /></ProtectedAdminRoute>} />
           <Route path="/admin/dashboard" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
           <Route path="/admin/orders" element={<ProtectedAdminRoute><AdminOrders /></ProtectedAdminRoute>} />
+          <Route path="/admin/messages" element={<ProtectedAdminRoute><AdminMessages /></ProtectedAdminRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         
