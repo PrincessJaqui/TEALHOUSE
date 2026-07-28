@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>TEALHOUSE</title>
+    <meta
+      name="description"
+      content="Luxury vegan shoes and accessories at TEALHOUSE, featuring stylish designs made from plants and unique teal soles for eco-conscious consumers."
+    />
+
+    <!--
+      Search engines are blocked until launch. Removing this single line is the
+      moment the site goes live. Do not remove it until Stripe is wired up and
+      the checkout can actually take payment.
+    -->
+    <meta name="robots" content="noindex, nofollow" />
+
+    <!--
+      Tinos, the brand typeface. This used to live as an @import at the bottom of
+      globals.css, where the build stripped it, so every font-['Tinos'] on the
+      site silently fell back to the browser default serif. Loading it here is
+      the only reliable way. Keep the preconnects, they cut load time noticeably.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Tinos:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+    />
+
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      #root {
+        height: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

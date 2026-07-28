@@ -1,0 +1,11 @@
+{
+  "workbench.colorTheme": "Default Light+",
+  "workbench.colorCustomizations": {
+    "titleBar.activeBackground": "#ffffff",
+    "titleBar.activeForeground": "#1a1a1a",
+    "activityBar.background": "#f5f5f5",
+    "statusBar.background": "#e8e8e8",
+    "statusBar.foreground": "#1a1a1a"
+  },
+  "window.title": "TEALHOUSE ${separator} ${activeEditorShort}"
+}

@@ -1,0 +1,253 @@
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { Product, CartItem } from '../App';
+import { products } from '../data/products';
+
+const CART_STORAGE_KEY = 'tealhouse_cart';
+
+export function useSupabaseCart(userId: string | undefined) {
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load cart from Supabase or localStorage
+  useEffect(() => {
+    if (userId) {
+      loadCart();
+    } else {
+      // Load from localStorage when no user
+      loadFromLocalStorage();
+    }
+  }, [userId]);
+
+  // Save to localStorage whenever cart changes (if no userId)
+  useEffect(() => {
+    if (!userId && !loading) {
+      saveToLocalStorage();
+    }
+  }, [cartItems, userId, loading]);
+
+  const loadFromLocalStorage = () => {
+    try {
+      const stored = localStorage.getItem(CART_STORAGE_KEY);
+      if (stored) {
+        const data = JSON.parse(stored);
+        // Validate that products still exist
+        const validCartItems = data
+          .map((item: any) => {
+            const product = products.find(p => p.id === item.productId);
+            if (!product) return null;
+            return {
+              product,
+              quantity: item.quantity,
+              size: item.size
+            };
+          })
+          .filter(Boolean) as CartItem[];
+        setCartItems(validCartItems);
+      }
+    } catch (error) {
+      console.error('Error loading cart from localStorage:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveToLocalStorage = () => {
+    try {
+      const data = cartItems.map(item => ({
+        productId: item.product.id,
+        quantity: item.quantity,
+        size: item.size
+      }));
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(data));
+    } catch (error) {
+      console.error('Error saving cart to localStorage:', error);
+    }
+  };
+
+  const loadCart = async () => {
+    if (!userId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('cart')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      if (data) {
+        const cartProducts: CartItem[] = data.map(item => {
+          const product = products.find(p => p.id === item.product_id);
+          if (!product) return null;
+          
+          return {
+            product,
+            quantity: item.quantity,
+            size: item.size || undefined
+          };
+        }).filter(Boolean) as CartItem[];
+        
+        setCartItems(cartProducts);
+      }
+    } catch (error) {
+      console.error('Error loading cart:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addToCart = async (product: Product, size?: number) => {
+    // Check if item already exists
+    const existingItem = cartItems.find(
+      item => item.product.id === product.id && item.size === size
+    );
+
+    if (existingItem) {
+      return updateQuantity(product.id, existingItem.quantity + 1, size);
+    }
+
+    // Optimistic update
+    const newItem: CartItem = { product, quantity: 1, size };
+    setCartItems(prev => [...prev, newItem]);
+
+    // If no user, localStorage save happens automatically
+    if (!userId) return true;
+
+    // With user, save to Supabase
+    try {
+      const { error } = await supabase
+        .from('cart')
+        .insert({
+          user_id: userId,
+          product_id: product.id,
+          quantity: 1,
+          size: size || null
+        });
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      // Rollback on error
+      setCartItems(prev => prev.filter(
+        item => !(item.product.id === product.id && item.size === size)
+      ));
+      return false;
+    }
+  };
+
+  const removeFromCart = async (productId: number, size?: number) => {
+    // Optimistic update
+    const previousItems = cartItems;
+    setCartItems(prev => prev.filter(
+      item => !(item.product.id === productId && item.size === size)
+    ));
+
+    // If no user, localStorage save happens automatically
+    if (!userId) return true;
+
+    // With user, remove from Supabase
+    try {
+      let query = supabase
+        .from('cart')
+        .delete()
+        .eq('user_id', userId)
+        .eq('product_id', productId);
+
+      if (size !== undefined) {
+        query = query.eq('size', size);
+      } else {
+        query = query.is('size', null);
+      }
+
+      const { error } = await query;
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error removing from cart:', error);
+      // Rollback on error
+      setCartItems(previousItems);
+      return false;
+    }
+  };
+
+  const updateQuantity = async (productId: number, quantity: number, size?: number) => {
+    if (quantity === 0) {
+      return removeFromCart(productId, size);
+    }
+
+    // Optimistic update
+    const previousItems = cartItems;
+    setCartItems(prev =>
+      prev.map(item =>
+        item.product.id === productId && item.size === size
+          ? { ...item, quantity }
+          : item
+      )
+    );
+
+    // If no user, localStorage save happens automatically
+    if (!userId) return true;
+
+    // With user, update in Supabase
+    try {
+      let query = supabase
+        .from('cart')
+        .update({ quantity })
+        .eq('user_id', userId)
+        .eq('product_id', productId);
+
+      if (size !== undefined) {
+        query = query.eq('size', size);
+      } else {
+        query = query.is('size', null);
+      }
+
+      const { error } = await query;
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+      // Rollback on error
+      setCartItems(previousItems);
+      return false;
+    }
+  };
+
+  const clearCart = async () => {
+    // Optimistic update
+    const previousItems = cartItems;
+    setCartItems([]);
+
+    // If no user, localStorage save happens automatically
+    if (!userId) return true;
+
+    // With user, clear from Supabase
+    try {
+      const { error } = await supabase
+        .from('cart')
+        .delete()
+        .eq('user_id', userId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error clearing cart:', error);
+      // Rollback on error
+      setCartItems(previousItems);
+      return false;
+    }
+  };
+
+  return {
+    cartItems,
+    loading,
+    addToCart,
+    removeFromCart,
+    updateQuantity,
+    clearCart
+  };
+}
