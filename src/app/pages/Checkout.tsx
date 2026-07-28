@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
 import { shippingCostFor, formatPrice, SHIPPING, TAX } from '../config/store';
+import { PayPalCheckout } from '../components/PayPalCheckout';
 
 interface CheckoutProps {
   items: CartItem[];
@@ -38,7 +39,6 @@ export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
   const [shippingMethod, setShippingMethod] = useState<'express' | 'standard'>('standard');
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
-  const [placingOrder, setPlacingOrder] = useState(false);
   const { user, isRegistered, signIn, signUp } = useSupabaseAuth();
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     firstName: '',
@@ -130,93 +130,9 @@ export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
     setStep('payment');
   };
 
-  /**
-   * Writes a real order row.
-   *
-   * This used to dump the order into kv_store_d1960f17, a generic key/value
-   * table left over from the Figma scaffold, with no user id attached. That
-   * is why the customer account page had nothing to show and why the admin
-   * orders screen was reading a different table than the one being written.
-   *
-   * The order is created unpaid. Nothing here takes money, and it must not
-   * pretend to. When Stripe goes in, creation moves to a server that runs
-   * after payment confirms, and the orders_own_insert policy gets dropped.
-   */
-  const handlePlaceOrder = async () => {
-    if (items.length === 0) {
-      toast.error('Your bag is empty');
-      return;
-    }
-
-    const orderEmail = (user?.email || email).trim();
-    if (!orderEmail) {
-      toast.error('We need an email address for your order confirmation');
-      return;
-    }
-
-    setPlacingOrder(true);
-    try {
-      // A guest still needs a session, because the insert policy checks
-      // that the row's user_id matches the caller.
-      let userId = user?.id ?? null;
-      if (!userId) {
-        const { data, error } = await supabase.auth.signInAnonymously();
-        if (error || !data.user) {
-          toast.error('Could not start a checkout session. Please try again.');
-          return;
-        }
-        userId = data.user.id;
-      }
-
-      const { data: order, error } = await supabase
-        .from('orders')
-        .insert({
-          user_id: userId,
-          customer_email: orderEmail,
-          customer_name:
-            [shippingInfo.firstName, shippingInfo.lastName].filter(Boolean).join(' ') || null,
-          shipping_address_line1: shippingInfo.address || null,
-          shipping_city: shippingInfo.city || null,
-          shipping_state: shippingInfo.state || null,
-          shipping_postal_code: shippingInfo.zipCode || null,
-          shipping_country: shippingInfo.country || 'United States',
-          status: 'pending',
-          payment_status: 'unpaid',
-          subtotal,
-          shipping_cost: shippingCost,
-          tax,
-          total,
-          items_count: items.reduce((n, item) => n + item.quantity, 0),
-          items: items.map((item) => ({
-            product_id: item.product.id,
-            name: item.product.name,
-            price: item.product.price,
-            quantity: item.quantity,
-            size: item.size ?? null,
-            image: item.product.image ?? null,
-          })),
-        })
-        .select('id')
-        .single();
-
-      if (error) {
-        console.error('Error saving order:', error);
-        toast.error('Could not place your order. Please try again.');
-        return;
-      }
-
-      onOrderPlaced?.();
-      toast.success('Order received. We will email you a confirmation.');
-      navigate(isRegistered ? '/customer-account' : '/', {
-        state: { orderId: order?.id },
-      });
-    } catch (err) {
-      console.error('Unexpected error placing order:', err);
-      toast.error('Could not place your order. Please try again.');
-    } finally {
-      setPlacingOrder(false);
-    }
-  };
+  // Order creation moved server side, into /api/paypal/capture-order, so it
+  // can only happen after PayPal confirms payment. The browser no longer has
+  // permission to insert an order at all: migration 0004 revokes it.
 
   return (
     <div className="min-h-screen bg-white">
@@ -695,50 +611,22 @@ export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
                   </div>
 
                   <div className="mb-12">
-                    <h2 className="font-['Tinos'] text-2xl mb-6">3. Billing & Payment</h2>
-                    
-                    <div className="space-y-4 mb-6">
-                      <div>
-                        <input
-                          type="text"
-                          placeholder="* Card number"
-                          className="w-full border-b border-gray-300 pb-3 text-sm focus:outline-none focus:border-black transition-colors"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <input
-                          type="text"
-                          placeholder="* MM/YY"
-                          className="w-full border-b border-gray-300 pb-3 text-sm focus:outline-none focus:border-black transition-colors"
-                        />
-                        <input
-                          type="text"
-                          placeholder="* CVV"
-                          className="w-full border-b border-gray-300 pb-3 text-sm focus:outline-none focus:border-black transition-colors"
-                        />
-                      </div>
-                      <div>
-                        <input
-                          type="text"
-                          placeholder="* Cardholder name"
-                          className="w-full border-b border-gray-300 pb-3 text-sm focus:outline-none focus:border-black transition-colors"
-                        />
-                      </div>
-                    </div>
+                    <h2 className="font-['Tinos'] text-2xl mb-6">3. Payment</h2>
 
-                    <div className="bg-gray-50 p-4 mb-6">
-                      <p className="text-xs text-gray-600 leading-relaxed">
-                        Your payment details are securely processed. TEALHOUSE does not store your credit card information.
-                      </p>
-                    </div>
-
-                    <button 
-                      onClick={handlePlaceOrder}
-                    disabled={placingOrder}
-                      className="w-full bg-black text-white py-4 text-sm uppercase tracking-wider hover:bg-gray-800 transition-colors"
-                    >
-                      Place order
-                    </button>
+                    <PayPalCheckout
+                      items={items}
+                      shippingMethod={shippingMethod}
+                      shipping={shippingInfo}
+                      email={user?.email || email}
+                      userId={user?.id ?? null}
+                      onSuccess={(newOrderId) => {
+                        onOrderPlaced?.();
+                        toast.success('Payment received. Thank you.');
+                        navigate(isRegistered ? '/customer-account' : '/', {
+                          state: { orderId: newOrderId },
+                        });
+                      }}
+                    />
 
                     <p className="text-xs text-gray-600 mt-6 text-center">
                       By placing your order, you agree to our Terms & Conditions and Privacy Policy
