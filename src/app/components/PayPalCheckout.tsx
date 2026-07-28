@@ -60,6 +60,7 @@ export function PayPalCheckout({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           shippingMethod: method,
+          shipping: latest.current.shipping,
           items: currentItems.map((item) => ({
             product_id: item.product.id,
             quantity: item.quantity,

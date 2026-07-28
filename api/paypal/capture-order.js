@@ -32,7 +32,7 @@ export default async function handler(req, res) {
 
   let priced;
   try {
-    priced = await priceCart({ items, shippingMethod, region });
+    priced = await priceCart({ items, shippingMethod, region, state: shipping?.state });
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }

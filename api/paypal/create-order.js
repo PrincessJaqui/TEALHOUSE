@@ -21,8 +21,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { items, shippingMethod, region } = req.body ?? {};
-    const priced = await priceCart({ items, shippingMethod, region });
+    const { items, shippingMethod, region, shipping } = req.body ?? {};
+    const priced = await priceCart({ items, shippingMethod, region, state: shipping?.state });
 
     const { ok, status, body } = await paypalFetch('/v2/checkout/orders', {
       method: 'POST',

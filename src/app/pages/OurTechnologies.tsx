@@ -11,7 +11,7 @@ export function OurTechnologies() {
           <div className="inline-block border border-white/20 px-6 py-2 mb-8">
             <p className="text-white/70 text-xs uppercase tracking-[0.3em]">Innovation</p>
           </div>
-          <h1 className="font-['Tinos'] text-5xl md:text-7xl mb-8 text-white">Pilot Technology</h1>
+          <h1 className="font-['Tinos'] text-5xl md:text-7xl mb-8 text-white">Concept Lab</h1>
           <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto leading-relaxed mb-8">
             Where Italian craftsmanship meets pioneering plant-based innovation
           </p>
@@ -327,7 +327,7 @@ export function OurTechnologies() {
                     <option value="" className="bg-black">Select industry</option>
                     <option value="fashion" className="bg-black">Fashion & Apparel</option>
                     <option value="footwear" className="bg-black">Footwear</option>
-                    <option value="accessories" className="bg-black">Accessories</option>
+                    <option value="accessories" className="bg-black">Accents</option>
                     <option value="furniture" className="bg-black">Furniture</option>
                     <option value="automotive" className="bg-black">Automotive</option>
                     <option value="other" className="bg-black">Other</option>

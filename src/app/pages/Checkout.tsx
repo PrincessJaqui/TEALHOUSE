@@ -6,7 +6,7 @@ import imgLogo from "figma:asset/3f298acd9128513aa329c386495f656e449305d1.png";
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
-import { shippingCostFor, formatPrice, SHIPPING, TAX } from '../config/store';
+import { shippingCostFor, formatPrice, taxFor, SHIPPING } from '../config/store';
 import { PayPalCheckout } from '../components/PayPalCheckout';
 
 interface CheckoutProps {
@@ -56,7 +56,9 @@ export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
   );
 
   const shippingCost = shippingCostFor(subtotal, shippingMethod);
-  const tax = TAX.enabled ? subtotal * TAX.rate : 0;
+  // Tax depends on where it ships, so it can only be known after the
+  // shipping step. The server recomputes it authoritatively at checkout.
+  const tax = taxFor(subtotal, shippingInfo.state);
   const total = subtotal + shippingCost + tax;
 
   /**

@@ -23,7 +23,17 @@ const SHIPPING = {
   domestic: { standard: 15, express: 25 },
   international: { standard: 35, express: 60 },
 };
-const TAX = { enabled: false, rate: 0 };
+// Must match src/app/config/store.ts. Off until registered to collect.
+const TAX = { enabled: false, ratesByState: {} };
+
+function taxFor(subtotal, state) {
+  if (!TAX.enabled) return 0;
+  const code = String(state ?? '').trim().toUpperCase();
+  if (code.length !== 2) return 0;
+  const rate = TAX.ratesByState[code];
+  if (!rate) return 0;
+  return Math.round(subtotal * rate * 100) / 100;
+}
 
 /**
  * Recomputes the whole basket from the products table.
@@ -33,7 +43,7 @@ const TAX = { enabled: false, rate: 0 };
  * ids, sizes and quantities only. Every price, every total, and the stock
  * check come from the database.
  */
-export async function priceCart({ items, shippingMethod = 'standard', region = 'domestic' }) {
+export async function priceCart({ items, shippingMethod = 'standard', region = 'domestic', state = null }) {
   if (!Array.isArray(items) || items.length === 0) {
     throw new Error('Your bag is empty');
   }
@@ -89,7 +99,7 @@ export async function priceCart({ items, shippingMethod = 'standard', region = '
   const method = shippingMethod === 'express' ? 'express' : 'standard';
   const shippingCost =
     subtotal >= SHIPPING.freeThreshold ? 0 : SHIPPING[region][method];
-  const tax = TAX.enabled ? subtotal * TAX.rate : 0;
+  const tax = taxFor(subtotal, state);
   const total = subtotal + shippingCost + tax;
 
   return { lines, subtotal, shippingCost, tax, total, shippingMethod: method };

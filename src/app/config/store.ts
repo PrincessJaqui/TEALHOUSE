@@ -35,14 +35,67 @@ export const RETURNS = {
 } as const;
 
 /**
- * Sales tax. Zero until you have decided where you have nexus and wired up a
- * tax provider. Do not guess at a rate: collecting the wrong amount is a
- * liability you carry, not the customer.
+ * Sales tax.
+ *
+ * OFF by default, and it should stay off until you are registered to collect
+ * in a state. Collecting sales tax somewhere you are not registered is
+ * illegal in most states, and the money is not yours to hold either way.
+ *
+ * PayPal will not do this for you. Its built-in tax calculator only works
+ * with the old PayPal Payments Standard buttons, not the Orders v2 API this
+ * site uses, so the tax amount has to be calculated here and passed to
+ * PayPal. It also allows only one rate per state, which is wrong in the many
+ * states that tax by destination city and county.
+ *
+ * When you register somewhere, add the state and its rate below and flip
+ * enabled to true. For more than a couple of states, move to TaxJar or
+ * Avalara rather than maintaining rates by hand.
  */
 export const TAX = {
   enabled: false,
-  rate: 0,
+
+  /**
+   * Rates by two-letter state code, as decimals. 0.0975 means 9.75 percent.
+   * A state that is absent is not taxed, which is the correct behaviour for
+   * a state where you have no nexus.
+   *
+   * Example once you register in Kansas:
+   *   KS: 0.0975,
+   */
+  ratesByState: {} as Record<string, number>,
 } as const;
+
+/** Two-letter code for a state, or null if it cannot be determined. */
+export function normalizeState(state: string | null | undefined): string | null {
+  if (!state) return null;
+  const trimmed = state.trim().toUpperCase();
+  return trimmed.length === 2 ? trimmed : STATE_CODES[trimmed] ?? null;
+}
+
+const STATE_CODES: Record<string, string> = {
+  ALABAMA: 'AL', ALASKA: 'AK', ARIZONA: 'AZ', ARKANSAS: 'AR', CALIFORNIA: 'CA',
+  COLORADO: 'CO', CONNECTICUT: 'CT', DELAWARE: 'DE', FLORIDA: 'FL', GEORGIA: 'GA',
+  HAWAII: 'HI', IDAHO: 'ID', ILLINOIS: 'IL', INDIANA: 'IN', IOWA: 'IA',
+  KANSAS: 'KS', KENTUCKY: 'KY', LOUISIANA: 'LA', MAINE: 'ME', MARYLAND: 'MD',
+  MASSACHUSETTS: 'MA', MICHIGAN: 'MI', MINNESOTA: 'MN', MISSISSIPPI: 'MS',
+  MISSOURI: 'MO', MONTANA: 'MT', NEBRASKA: 'NE', NEVADA: 'NV',
+  'NEW HAMPSHIRE': 'NH', 'NEW JERSEY': 'NJ', 'NEW MEXICO': 'NM', 'NEW YORK': 'NY',
+  'NORTH CAROLINA': 'NC', 'NORTH DAKOTA': 'ND', OHIO: 'OH', OKLAHOMA: 'OK',
+  OREGON: 'OR', PENNSYLVANIA: 'PA', 'RHODE ISLAND': 'RI', 'SOUTH CAROLINA': 'SC',
+  'SOUTH DAKOTA': 'SD', TENNESSEE: 'TN', TEXAS: 'TX', UTAH: 'UT', VERMONT: 'VT',
+  VIRGINIA: 'VA', WASHINGTON: 'WA', 'WEST VIRGINIA': 'WV', WISCONSIN: 'WI',
+  WYOMING: 'WY', 'DISTRICT OF COLUMBIA': 'DC',
+};
+
+/** Tax owed on a subtotal for a given shipping state. */
+export function taxFor(subtotal: number, state: string | null | undefined): number {
+  if (!TAX.enabled) return 0;
+  const code = normalizeState(state);
+  if (!code) return 0;
+  const rate = TAX.ratesByState[code];
+  if (!rate) return 0;
+  return Math.round(subtotal * rate * 100) / 100;
+}
 
 export type ShippingMethod = 'standard' | 'express';
 

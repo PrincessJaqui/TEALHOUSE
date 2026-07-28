@@ -39,7 +39,7 @@ export function Header({ cartItemCount, wishlistItemCount, onCartClick, onWishli
               <button className="p-2 hover:text-gray-600 transition-colors" aria-label="Search" onClick={onSearchClick}>
                 <Search className="w-5 h-5" />
               </button>
-              <button className="p-2 hover:text-gray-600 transition-colors hidden sm:block relative" aria-label="Favorites" onClick={onWishlistClick}>
+              <button className="p-2 hover:text-gray-600 transition-colors hidden sm:block relative" aria-label="Private Selections" onClick={onWishlistClick}>
                 <Heart className="w-5 h-5 text-teal-600" />
                 {wishlistItemCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-black text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -91,7 +91,7 @@ export function Header({ cartItemCount, wishlistItemCount, onCartClick, onWishli
                 className="flex items-center justify-between py-3 hover:text-gray-600 transition-colors group text-sm"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <span>Shoes</span>
+                <span>Footwear</span>
                 <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </Link>
               <Link 
@@ -99,7 +99,7 @@ export function Header({ cartItemCount, wishlistItemCount, onCartClick, onWishli
                 className="flex items-center justify-between py-3 hover:text-gray-600 transition-colors group text-sm"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <span>Accessories</span>
+                <span>Accents</span>
                 <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </Link>
               <Link 
@@ -117,7 +117,7 @@ export function Header({ cartItemCount, wishlistItemCount, onCartClick, onWishli
                 }}
                 className="flex items-center justify-between py-3 hover:text-gray-600 transition-colors group text-sm w-full text-left"
               >
-                <span>Wishlist</span>
+                <span>Private Selections</span>
                 <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </button>
             </nav>
@@ -140,11 +140,11 @@ export function Header({ cartItemCount, wishlistItemCount, onCartClick, onWishli
                 className="flex items-center justify-between py-3 hover:text-gray-600 transition-colors group text-sm"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <span>Pilot Technology</span>
+                <span>Concept Lab</span>
                 <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </Link>
               
-              {/* Divider after Pilot Technology */}
+              {/* Divider after Concept Lab */}
               <div className="border-t border-gray-200 my-4" />
               
               <Link 

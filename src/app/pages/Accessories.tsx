@@ -4,7 +4,7 @@ export function Accessories() {
   return (
     <div className="min-h-screen bg-white flex items-center justify-center">
       <div className="max-w-2xl mx-auto px-5 py-24 text-center">
-        <h1 className="uppercase tracking-wider mb-8">Accessories</h1>
+        <h1 className="uppercase tracking-wider mb-8">Accents</h1>
         <div className="space-y-6">
           <p className="text-2xl tracking-wide">Coming Soon</p>
           <p className="text-gray-600 leading-relaxed max-w-lg mx-auto">

@@ -29,7 +29,7 @@ export function Wishlist({ isOpen, onClose, items, onRemoveItem, onMoveToCart, o
     const shareUrl = `${window.location.origin}/?wishlist=${productIds}`;
     
     navigator.clipboard.writeText(shareUrl).then(() => {
-      toast.success('Wishlist link copied to clipboard!');
+      toast.success('Link copied to clipboard');
     }).catch(() => {
       toast.error('Failed to copy link');
     });
@@ -56,7 +56,7 @@ export function Wishlist({ isOpen, onClose, items, onRemoveItem, onMoveToCart, o
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <div className="flex items-center gap-2">
               <Heart className="w-5 h-5" />
-              <h2 className="uppercase tracking-wider">Wishlist ({items.length})</h2>
+              <h2 className="uppercase tracking-wider">Private Selections ({items.length})</h2>
             </div>
             <div className="flex items-center gap-2">
               {items.length > 0 && (
