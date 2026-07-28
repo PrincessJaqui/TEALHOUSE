@@ -1,3 +1,5 @@
+import { CONTACT } from '../config/contact';
+
 export function SizeGuide() {
   return (
     <div className="min-h-screen bg-white">
@@ -150,8 +152,8 @@ export function SizeGuide() {
               We're here to help you find your perfect fit:
             </p>
             <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
-              <li><strong>Personal Shopping:</strong> Schedule a virtual fitting at shopping@tealhouse.com</li>
-              <li><strong>Client Services:</strong> Call +1 (888) 832-5468 for sizing advice</li>
+              <li><strong>Personal Shopping:</strong> Schedule a virtual fitting at {CONTACT.shopping}</li>
+              {CONTACT.phone && <li><strong>Client Services:</strong> Call {CONTACT.phone} for sizing advice</li>}
               <li><strong>Free Exchanges:</strong> We offer complimentary size exchanges within 30 days</li>
               <li><strong>Custom Sizing:</strong> Contact us for made-to-measure options</li>
             </ul>

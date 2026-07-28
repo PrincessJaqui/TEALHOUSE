@@ -1,3 +1,5 @@
+import { CONTACT } from '../config/contact';
+
 export function EthicsCompliance() {
   return (
     <div className="min-h-screen bg-white">
@@ -76,7 +78,7 @@ export function EthicsCompliance() {
             <h2 className="mb-4">Reporting Concerns</h2>
             <p className="text-gray-700 leading-relaxed">
               We encourage anyone who observes or suspects unethical conduct in our operations or supply chain to report it. 
-              All reports are treated confidentially and investigated thoroughly. Contact: ethics@tealhouse.com
+              All reports are treated confidentially and investigated thoroughly. Contact: {CONTACT.ethics}
             </p>
           </section>
         </div>

@@ -1,3 +1,5 @@
+import { CONTACT } from '../config/contact';
+
 export function TermsOfService() {
   return (
     <div className="min-h-screen bg-white">
@@ -179,9 +181,9 @@ export function TermsOfService() {
               For questions about these Terms, please contact us:
             </p>
             <div className="space-y-1">
-              <p>Email: legal@tealhouse.com</p>
-              <p>Phone: +1 (888) 832-5468</p>
-              <p>Mail: TEALHOUSE Legal Department, 1200 Main Street, Kansas City, MO 64105</p>
+              <p>Email: {CONTACT.legal}</p>
+              {CONTACT.phone && <p>Phone: {CONTACT.phone}</p>}
+              {CONTACT.mailingAddress && <p>Mail: TEALHOUSE Legal Department, {CONTACT.mailingAddress}</p>}
             </div>
           </section>
 

@@ -1,4 +1,5 @@
 import { SHIPPING, formatPrice } from '../config/store';
+import { CONTACT } from '../config/contact';
 
 export function FAQ() {
   return (
@@ -61,8 +62,8 @@ export function FAQ() {
               <div>
                 <h3 className="mb-2">Can I get help choosing the right size?</h3>
                 <p className="text-gray-700 leading-relaxed">
-                  Absolutely! Our personal shopping team can help you find your perfect fit. Email shopping@tealhouse.com or 
-                  call +1 (888) 832-5468 for assistance.
+                  Absolutely! Our personal shopping team can help you find your perfect fit. Email {CONTACT.shopping} or 
+                  contact {CONTACT.clientServices} for assistance.
                 </p>
               </div>
             </div>
@@ -152,7 +153,7 @@ export function FAQ() {
                 <h3 className="mb-2">Do you offer repair services?</h3>
                 <p className="text-gray-700 leading-relaxed">
                   Yes, we offer lifetime repair services including sole replacement, heel repair, and restoration. Contact 
-                  care@tealhouse.com for details.
+                  {CONTACT.care} for details.
                 </p>
               </div>
 
@@ -192,8 +193,8 @@ export function FAQ() {
             <h2 className="mb-4">Still Have Questions?</h2>
             <p className="text-gray-700 leading-relaxed">
               Our client services team is happy to help!<br />
-              Email: clientservices@tealhouse.com<br />
-              Phone: +1 (888) 832-5468<br />
+              Email: {CONTACT.clientServices}<br />
+              {CONTACT.phone && <>Phone: {CONTACT.phone}<br /></>}
               Monday - Friday, 9 AM - 6 PM EST
             </p>
           </section>

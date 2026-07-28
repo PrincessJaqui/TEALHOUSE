@@ -1,3 +1,5 @@
+import { CONTACT, SHOWROOMS } from '../config/contact';
+
 export function ContactUs() {
   return (
     <div className="min-h-screen bg-white">
@@ -18,8 +20,8 @@ export function ContactUs() {
               <div>
                 <h3 className="mb-3">Customer Service</h3>
                 <div className="space-y-2 text-gray-700">
-                  <p>Email: clientservices@tealhouse.com</p>
-                  <p>Phone: +1 (888) 832-5468</p>
+                  <p>Email: {CONTACT.clientServices}</p>
+                  {CONTACT.phone && <p>Phone: {CONTACT.phone}</p>}
                   <p>Monday - Friday, 9 AM - 6 PM EST</p>
                 </div>
               </div>
@@ -27,7 +29,7 @@ export function ContactUs() {
               <div>
                 <h3 className="mb-3">Press & Media</h3>
                 <div className="space-y-2 text-gray-700">
-                  <p>Email: press@tealhouse.com</p>
+                  <p>Email: {CONTACT.press}</p>
                   <p>For press kits and media inquiries</p>
                 </div>
               </div>
@@ -35,7 +37,7 @@ export function ContactUs() {
               <div>
                 <h3 className="mb-3">Wholesale & Partnerships</h3>
                 <div className="space-y-2 text-gray-700">
-                  <p>Email: wholesale@tealhouse.com</p>
+                  <p>Email: {CONTACT.wholesale}</p>
                   <p>For retail and collaboration opportunities</p>
                 </div>
               </div>
@@ -43,7 +45,7 @@ export function ContactUs() {
               <div>
                 <h3 className="mb-3">Careers</h3>
                 <div className="space-y-2 text-gray-700">
-                  <p>Email: careers@tealhouse.com</p>
+                  <p>Email: {CONTACT.careers}</p>
                   <p>Join our team</p>
                 </div>
               </div>
@@ -120,46 +122,27 @@ export function ContactUs() {
             </form>
           </section>
 
-          <section className="pt-8 border-t border-gray-200">
-            <h2 className="mb-4">Our Showrooms</h2>
-            <div className="grid md:grid-cols-3 gap-8">
-              <div>
-                <h3 className="mb-3">Milan</h3>
-                <p className="text-gray-700 text-sm leading-relaxed">
-                  Via Monte Napoleone, 12<br />
-                  20121 Milano, Italy<br />
-                  +39 02 7600 1234
-                </p>
+          {SHOWROOMS.length > 0 && (
+            <section className="pt-8 border-t border-gray-200">
+              <h2 className="mb-4">Our Showrooms</h2>
+              <div className="grid md:grid-cols-3 gap-8">
+                {SHOWROOMS.map((showroom) => (
+                  <div key={showroom.city}>
+                    <h3 className="mb-3">{showroom.city}</h3>
+                    <p className="text-gray-700 text-sm leading-relaxed">
+                      {showroom.lines.map((line, i) => (
+                        <span key={i}>
+                          {line}
+                          <br />
+                        </span>
+                      ))}
+                      {showroom.phone}
+                    </p>
+                  </div>
+                ))}
               </div>
-
-              <div>
-                <h3 className="mb-3">New York</h3>
-                <p className="text-gray-700 text-sm leading-relaxed">
-                  100 Greene Street<br />
-                  New York, NY 10012<br />
-                  +1 (212) 555-8324
-                </p>
-              </div>
-
-              <div>
-                <h3 className="mb-3">Los Angeles</h3>
-                <p className="text-gray-700 text-sm leading-relaxed">
-                  8500 Melrose Avenue<br />
-                  Los Angeles, CA 90069<br />
-                  +1 (310) 555-7325
-                </p>
-              </div>
-
-              <div>
-                <h3 className="mb-3">Kansas City</h3>
-                <p className="text-gray-700 text-sm leading-relaxed">
-                  1200 Main Street<br />
-                  Kansas City, MO 64105<br />
-                  +1 (816) 555-8324
-                </p>
-              </div>
-            </div>
-          </section>
+            </section>
+          )}
         </div>
       </div>
     </div>

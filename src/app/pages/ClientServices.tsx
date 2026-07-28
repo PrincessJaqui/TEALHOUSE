@@ -1,3 +1,5 @@
+import { CONTACT } from '../config/contact';
+
 export function ClientServices() {
   return (
     <div className="min-h-screen bg-white">
@@ -16,8 +18,8 @@ export function ClientServices() {
           <section>
             <h2 className="mb-4">Contact Our Team</h2>
             <div className="space-y-3 text-gray-700">
-              <p><strong>Email:</strong> clientservices@tealhouse.com</p>
-              <p><strong>Phone:</strong> +1 (888) 832-5468 (TEALH)</p>
+              <p><strong>Email:</strong> {CONTACT.clientServices}</p>
+              {CONTACT.phone && <p><strong>Phone:</strong> {CONTACT.phone}</p>}
               <p><strong>Hours:</strong> Monday - Friday, 9:00 AM - 6:00 PM EST</p>
               <p><strong>Response Time:</strong> Within 24 hours</p>
             </div>
@@ -30,7 +32,7 @@ export function ClientServices() {
               color, or fit. Schedule a complimentary virtual or in-person consultation.
             </p>
             <p className="text-gray-700 leading-relaxed">
-              <strong>Book a consultation:</strong> shopping@tealhouse.com
+              <strong>Book a consultation:</strong> {CONTACT.shopping}
             </p>
           </section>
 
@@ -62,7 +64,7 @@ export function ClientServices() {
               <li>Professional restoration services</li>
             </ul>
             <p className="text-gray-700 leading-relaxed mt-4">
-              <strong>Repair inquiries:</strong> care@tealhouse.com
+              <strong>Repair inquiries:</strong> {CONTACT.care}
             </p>
           </section>
 
@@ -91,11 +93,11 @@ export function ClientServices() {
           <section>
             <h2 className="mb-4">Showroom Appointments</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              Visit our showrooms in Milan, New York, and Los Angeles for a personalized shopping experience. 
+              Contact us to arrange a personalized shopping experience. 
               Private appointments available by request.
             </p>
             <p className="text-gray-700 leading-relaxed">
-              <strong>Schedule a visit:</strong> appointments@tealhouse.com
+              <strong>Schedule a visit:</strong> {CONTACT.appointments}
             </p>
           </section>
         </div>

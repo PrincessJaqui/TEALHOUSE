@@ -1,3 +1,5 @@
+import { CONTACT } from '../config/contact';
+
 export function BespokeDesign() {
   return (
     <div className="min-h-screen bg-white">
@@ -219,7 +221,7 @@ export function BespokeDesign() {
             designed exclusively for you.
           </p>
           <a 
-            href="mailto:bespoke@tealhouse.com" 
+            href={`mailto:${CONTACT.bespoke}`} 
             className="inline-block bg-black text-white px-12 py-4 hover:bg-gray-800 transition-colors text-sm uppercase tracking-[0.2em]"
           >
             Request Consultation

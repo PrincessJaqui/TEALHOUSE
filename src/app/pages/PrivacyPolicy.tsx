@@ -1,3 +1,5 @@
+import { CONTACT } from '../config/contact';
+
 export function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-white">
@@ -108,7 +110,7 @@ export function PrivacyPolicy() {
               <li>Request data portability</li>
             </ul>
             <p className="leading-relaxed mt-3">
-              To exercise these rights, contact us at privacy@tealhouse.com.
+              To exercise these rights, contact us at {CONTACT.privacy}.
             </p>
           </section>
 
@@ -141,7 +143,7 @@ export function PrivacyPolicy() {
             <h2 className="mb-4">Marketing Communications</h2>
             <p className="leading-relaxed">
               With your consent, we may send you marketing emails about new products, special offers, and events. 
-              You can unsubscribe at any time by clicking the link in any email or contacting us at unsubscribe@tealhouse.com.
+              You can unsubscribe at any time by clicking the link in any email or contacting us at {CONTACT.unsubscribe}.
             </p>
           </section>
 
@@ -159,9 +161,9 @@ export function PrivacyPolicy() {
               If you have questions about this Privacy Policy or our data practices, please contact us:
             </p>
             <div className="mt-3 space-y-1">
-              <p>Email: privacy@tealhouse.com</p>
-              <p>Phone: +1 (888) 832-5468</p>
-              <p>Mail: TEALHOUSE Privacy Team, 1200 Main Street, Kansas City, MO 64105</p>
+              <p>Email: {CONTACT.privacy}</p>
+              {CONTACT.phone && <p>Phone: {CONTACT.phone}</p>}
+              {CONTACT.mailingAddress && <p>Mail: TEALHOUSE Privacy Team, {CONTACT.mailingAddress}</p>}
             </div>
           </section>
 
@@ -170,7 +172,7 @@ export function PrivacyPolicy() {
             <p className="leading-relaxed">
               TEALHOUSE is committed to compliance with GDPR (General Data Protection Regulation) and CCPA (California Consumer 
               Privacy Act). For specific information about your rights under these regulations or to make a data request, 
-              please contact our Data Protection Officer at dpo@tealhouse.com.
+              please contact our Data Protection Officer at {CONTACT.dpo}.
             </p>
           </section>
         </div>

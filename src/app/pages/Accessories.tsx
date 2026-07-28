@@ -1,3 +1,5 @@
+import { CONTACT } from '../config/contact';
+
 export function Accessories() {
   return (
     <div className="min-h-screen bg-white flex items-center justify-center">
@@ -11,7 +13,7 @@ export function Accessories() {
           </p>
           <div className="pt-8">
             <a 
-              href="mailto:clientservices@tealhouse.com" 
+              href={`mailto:${CONTACT.clientServices}`} 
               className="inline-block bg-black text-white px-8 py-3 uppercase text-sm tracking-wider hover:bg-gray-800 transition-colors"
             >
               Get Notified

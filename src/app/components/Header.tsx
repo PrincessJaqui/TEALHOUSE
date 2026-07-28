@@ -160,7 +160,7 @@ export function Header({ cartItemCount, wishlistItemCount, onCartClick, onWishli
                 <p className="text-xs uppercase tracking-wider text-gray-500 mb-3">Follow Us</p>
                 <div className="flex items-center gap-3">
                   <a 
-                    href="https://www.instagram.com/tealhouse_fashion" 
+                    href="https://www.instagram.com/tealhouse.us" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="w-8 h-8 rounded-full bg-[#2c2c2c] flex items-center justify-center hover:bg-black transition-colors"

@@ -14,7 +14,7 @@ export function TheVault() {
           </p>
           <div className="h-px w-24 bg-white/20 mx-auto my-8" />
           <p className="text-sm text-white/60 uppercase tracking-[0.2em]">
-            Italy · Kansas City
+            MADE IN ITALY · DESIGNED IN KANSAS CITY
           </p>
         </div>
       </div>

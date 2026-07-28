@@ -9,7 +9,8 @@ import {
   FileText, 
   LogOut, 
   TrendingUp, 
-  Eye, 
+  Eye,
+  EyeOff,
   Search, 
   Filter, 
   Send, 
@@ -54,6 +55,7 @@ export function CompanyLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'products' | 'customers' | 'abandoned' | 'blog'>('dashboard');
   
   // Real data state
@@ -131,7 +133,18 @@ export function CompanyLogin() {
       }
 
       if (data.user) {
-        toast.success('Successfully logged in!');
+        // Being able to sign in is not the same as being an admin. Ask the
+        // database, which is the single source of truth via admin_users.
+        const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin');
+
+        if (adminError || isAdmin !== true) {
+          await supabase.auth.signOut();
+          toast.error('That account does not have admin access');
+          return;
+        }
+
+        toast.success('Signed in');
+        navigate('/admin/dashboard');
       }
     } catch (error) {
       console.error('Unexpected login error:', error);
@@ -195,15 +208,25 @@ export function CompanyLogin() {
               <label htmlFor="admin-password" className="block text-sm mb-2">
                 Password
               </label>
-              <input
-                type="password"
-                id="admin-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 focus:outline-none focus:border-black transition-colors"
-                required
-                disabled={isLoggingIn}
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  id="admin-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-2 pr-11 border border-gray-300 focus:outline-none focus:border-black transition-colors"
+                  required
+                  disabled={isLoggingIn}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black transition-colors"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             <button

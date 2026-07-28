@@ -1,4 +1,5 @@
 import { SHIPPING, formatPrice } from '../config/store';
+import { CONTACT } from '../config/contact';
 
 export function DeliveryReturns() {
   return (
@@ -71,7 +72,7 @@ export function DeliveryReturns() {
             <div className="mb-6">
               <h3 className="mb-3">How to Return</h3>
               <ol className="list-decimal list-inside space-y-2 text-gray-700 ml-4">
-                <li>Contact us at returns@tealhouse.com or through your account</li>
+                <li>Contact us at {CONTACT.returns} or through your account</li>
                 <li>We'll send you a prepaid return label (US customers)</li>
                 <li>Pack items securely in original packaging</li>
                 <li>Drop off at any authorized shipping location</li>
@@ -105,7 +106,7 @@ export function DeliveryReturns() {
           <section>
             <h2 className="mb-4">Damaged or Defective Items</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              While rare, if you receive a damaged or defective item, please contact us immediately at clientservices@tealhouse.com. 
+              While rare, if you receive a damaged or defective item, please contact us immediately at {CONTACT.clientServices}. 
               We will arrange for a free replacement or full refund, including shipping costs.
             </p>
             <p className="text-gray-700 leading-relaxed">
@@ -117,8 +118,8 @@ export function DeliveryReturns() {
             <h2 className="mb-4">Questions?</h2>
             <p className="text-gray-700 leading-relaxed">
               Our client services team is here to help with any questions about shipping, returns, or exchanges.<br />
-              Email: clientservices@tealhouse.com<br />
-              Phone: +1 (888) 832-5468
+              Email: {CONTACT.clientServices}<br />
+              {CONTACT.phone && <>Phone: {CONTACT.phone}<br /></>}
             </p>
           </section>
         </div>

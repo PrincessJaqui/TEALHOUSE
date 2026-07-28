@@ -23,7 +23,6 @@ import { SizeGuide } from './pages/SizeGuide';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { TermsOfService } from './pages/TermsOfService';
 import { CustomerAccount } from './pages/CustomerAccount';
-import { AdminLogin } from './pages/AdminLogin';
 import { CompanyLogin } from './pages/CompanyLogin';
 import { Checkout } from './pages/Checkout';
 import { Accessories } from './pages/Accessories';

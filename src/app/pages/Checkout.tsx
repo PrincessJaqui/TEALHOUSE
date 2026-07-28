@@ -295,7 +295,7 @@ export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
                                   onClick={() => setShowPassword(!showPassword)}
                                   className="absolute right-0 bottom-3 text-gray-400 hover:text-black"
                                 >
-                                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                  {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                                 </button>
                               </div>
                               <button 
@@ -381,7 +381,7 @@ export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
                                   onClick={() => setShowPassword(!showPassword)}
                                   className="absolute right-0 bottom-3 text-gray-400 hover:text-black"
                                 >
-                                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                  {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                                 </button>
                                 <p className="text-xs text-gray-500 mt-2">
                                   At least 8 characters | 1 lower case letter | 1 upper case letter | 1 digit | 1 special character (!@#$%^&*?+-/)
