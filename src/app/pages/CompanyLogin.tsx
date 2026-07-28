@@ -19,7 +19,6 @@ import {
 import imgLogo from "figma:asset/3f298acd9128513aa329c386495f656e449305d1.png";
 import { AdminProducts } from './AdminProducts';
 import { AdminCustomers } from './AdminCustomers';
-import { AdminCreateProduct } from '../components/AdminCreateProduct';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { useSupabaseAuth } from '../hooks/useSupabaseAuth';

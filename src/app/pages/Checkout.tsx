@@ -6,9 +6,11 @@ import imgLogo from "figma:asset/3f298acd9128513aa329c386495f656e449305d1.png";
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
+import { shippingCostFor, formatPrice, SHIPPING, TAX } from '../config/store';
 
 interface CheckoutProps {
   items: CartItem[];
+  onOrderPlaced?: () => void;
 }
 
 type CheckoutMode = 'login' | 'create' | 'guest';
@@ -24,7 +26,7 @@ interface ShippingInfo {
   country: string;
 }
 
-export function Checkout({ items }: CheckoutProps) {
+export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
   const navigate = useNavigate();
   const [step, setStep] = useState<CheckoutStep>('authentication');
   const [mode, setMode] = useState<CheckoutMode>('login');
@@ -35,6 +37,9 @@ export function Checkout({ items }: CheckoutProps) {
   const [acceptMarketing, setAcceptMarketing] = useState(false);
   const [shippingMethod, setShippingMethod] = useState<'express' | 'standard'>('standard');
   const [isEditingAddress, setIsEditingAddress] = useState(false);
+  const [authBusy, setAuthBusy] = useState(false);
+  const [placingOrder, setPlacingOrder] = useState(false);
+  const { user, isRegistered, signIn, signUp } = useSupabaseAuth();
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     firstName: '',
     lastName: '',
@@ -50,16 +55,67 @@ export function Checkout({ items }: CheckoutProps) {
     0
   );
 
-  const shippingCost = shippingMethod === 'express' ? 25 : 0;
-  const total = subtotal + shippingCost;
+  const shippingCost = shippingCostFor(subtotal, shippingMethod);
+  const tax = TAX.enabled ? subtotal * TAX.rate : 0;
+  const total = subtotal + shippingCost + tax;
 
-  const handleAuthentication = () => {
-    if (mode === 'create') {
-      // In create mode, show shipping immediately
+  /**
+   * Real authentication. Both branches of this function used to run the same
+   * line, so "Sign in" and "Create account" silently behaved as guest and the
+   * email and password a customer typed were never sent anywhere.
+   */
+  const handleAuthentication = async () => {
+    if (mode === 'guest') {
+      if (!email.trim()) {
+        toast.error('Enter an email so we can send your order confirmation');
+        return;
+      }
       setStep('shipping');
-    } else {
-      // For login or guest, proceed to shipping
+      return;
+    }
+
+    if (!email.trim() || !password) {
+      toast.error('Enter your email and password');
+      return;
+    }
+
+    setAuthBusy(true);
+    try {
+      if (mode === 'login') {
+        const result = await signIn(email.trim(), password);
+        if (!result.ok) {
+          toast.error(result.error || 'Could not sign you in');
+          return;
+        }
+        toast.success('Signed in');
+        setStep('shipping');
+        return;
+      }
+
+      // mode === 'create'
+      if (password.length < 8) {
+        toast.error('Password must be at least 8 characters');
+        return;
+      }
+
+      const fullName = [shippingInfo.firstName, shippingInfo.lastName]
+        .filter(Boolean)
+        .join(' ');
+
+      const result = await signUp(email.trim(), password, fullName || undefined);
+      if (!result.ok) {
+        toast.error(result.error || 'Could not create your account');
+        return;
+      }
+
+      if (result.needsEmailConfirmation) {
+        toast.success('Account created. Check your email to confirm it.');
+      } else {
+        toast.success('Account created');
+      }
       setStep('shipping');
+    } finally {
+      setAuthBusy(false);
     }
   };
 
@@ -74,56 +130,91 @@ export function Checkout({ items }: CheckoutProps) {
     setStep('payment');
   };
 
+  /**
+   * Writes a real order row.
+   *
+   * This used to dump the order into kv_store_d1960f17, a generic key/value
+   * table left over from the Figma scaffold, with no user id attached. That
+   * is why the customer account page had nothing to show and why the admin
+   * orders screen was reading a different table than the one being written.
+   *
+   * The order is created unpaid. Nothing here takes money, and it must not
+   * pretend to. When Stripe goes in, creation moves to a server that runs
+   * after payment confirms, and the orders_own_insert policy gets dropped.
+   */
   const handlePlaceOrder = async () => {
-    try {
-      // Create order object
-      const orderId = `ORDER-${Date.now()}`;
-      const orderData = {
-        orderId,
-        email,
-        shippingInfo,
-        items: items.map(item => ({
-          productId: item.product.id,
-          productName: item.product.name,
-          price: item.product.price,
-          quantity: item.quantity,
-          size: item.size
-        })),
-        subtotal,
-        shippingCost,
-        shippingMethod,
-        total,
-        status: 'pending',
-        createdAt: new Date().toISOString()
-      };
+    if (items.length === 0) {
+      toast.error('Your bag is empty');
+      return;
+    }
 
-      // Save order to Supabase using the products table (since we have it)
-      // In production, this would go to an orders table
-      const { error } = await supabase
-        .from('kv_store_d1960f17')
+    const orderEmail = (user?.email || email).trim();
+    if (!orderEmail) {
+      toast.error('We need an email address for your order confirmation');
+      return;
+    }
+
+    setPlacingOrder(true);
+    try {
+      // A guest still needs a session, because the insert policy checks
+      // that the row's user_id matches the caller.
+      let userId = user?.id ?? null;
+      if (!userId) {
+        const { data, error } = await supabase.auth.signInAnonymously();
+        if (error || !data.user) {
+          toast.error('Could not start a checkout session. Please try again.');
+          return;
+        }
+        userId = data.user.id;
+      }
+
+      const { data: order, error } = await supabase
+        .from('orders')
         .insert({
-          key: orderId,
-          value: orderData
-        });
+          user_id: userId,
+          customer_email: orderEmail,
+          customer_name:
+            [shippingInfo.firstName, shippingInfo.lastName].filter(Boolean).join(' ') || null,
+          shipping_address_line1: shippingInfo.address || null,
+          shipping_city: shippingInfo.city || null,
+          shipping_state: shippingInfo.state || null,
+          shipping_postal_code: shippingInfo.zipCode || null,
+          shipping_country: shippingInfo.country || 'United States',
+          status: 'pending',
+          payment_status: 'unpaid',
+          subtotal,
+          shipping_cost: shippingCost,
+          tax,
+          total,
+          items_count: items.reduce((n, item) => n + item.quantity, 0),
+          items: items.map((item) => ({
+            product_id: item.product.id,
+            name: item.product.name,
+            price: item.product.price,
+            quantity: item.quantity,
+            size: item.size ?? null,
+            image: item.product.image ?? null,
+          })),
+        })
+        .select('id')
+        .single();
 
       if (error) {
         console.error('Error saving order:', error);
-        toast.error('Failed to place order. Please try again.');
+        toast.error('Could not place your order. Please try again.');
         return;
       }
 
-      // Success - clear cart and redirect
-      toast.success('Order placed successfully!');
-      
-      // Wait a moment for the toast to show
-      setTimeout(() => {
-        navigate('/');
-        // Optionally trigger cart clear here
-      }, 1500);
-      
-    } catch (error) {
-      console.error('Unexpected error placing order:', error);
-      toast.error('Failed to place order. Please try again.');
+      onOrderPlaced?.();
+      toast.success('Order received. We will email you a confirmation.');
+      navigate(isRegistered ? '/customer-account' : '/', {
+        state: { orderId: order?.id },
+      });
+    } catch (err) {
+      console.error('Unexpected error placing order:', err);
+      toast.error('Could not place your order. Please try again.');
+    } finally {
+      setPlacingOrder(false);
     }
   };
 
@@ -209,6 +300,7 @@ export function Checkout({ items }: CheckoutProps) {
                               </div>
                               <button 
                                 onClick={handleAuthentication}
+                    disabled={authBusy}
                                 className="w-full bg-black text-white py-3 text-sm uppercase tracking-wider hover:bg-gray-800 transition-colors"
                               >
                                 Log in and continue
@@ -310,6 +402,7 @@ export function Checkout({ items }: CheckoutProps) {
                               </div>
                               <button 
                                 onClick={handleAuthentication}
+                    disabled={authBusy}
                                 className="w-full bg-black text-white py-3 text-sm uppercase tracking-wider hover:bg-gray-800 transition-colors"
                               >
                                 Create an account and continue
@@ -351,6 +444,7 @@ export function Checkout({ items }: CheckoutProps) {
                               </div>
                               <button 
                                 onClick={handleAuthentication}
+                    disabled={authBusy}
                                 className="w-full bg-black text-white py-3 text-sm uppercase tracking-wider hover:bg-gray-800 transition-colors"
                               >
                                 Continue as guest
@@ -512,7 +606,7 @@ export function Checkout({ items }: CheckoutProps) {
                               <p className="text-sm text-gray-600">Estimated delivery date: December 12</p>
                             </div>
                           </div>
-                          <span className="">$25.00</span>
+                          <span className="">{formatPrice(SHIPPING.domestic.express)}</span>
                         </div>
                       </div>
 
@@ -592,7 +686,11 @@ export function Checkout({ items }: CheckoutProps) {
                       </button>
                     </div>
                     <p className="text-sm text-gray-600">
-                      {shippingMethod === 'express' ? 'Express delivery - $25.00' : 'Free standard shipping'}
+                      {shippingMethod === 'express'
+                        ? `Express delivery - ${formatPrice(shippingCostFor(subtotal, 'express'))}`
+                        : shippingCost === 0
+                          ? 'Free standard shipping'
+                          : `Standard delivery - ${formatPrice(shippingCost)}`}
                     </p>
                   </div>
 
@@ -636,6 +734,7 @@ export function Checkout({ items }: CheckoutProps) {
 
                     <button 
                       onClick={handlePlaceOrder}
+                    disabled={placingOrder}
                       className="w-full bg-black text-white py-4 text-sm uppercase tracking-wider hover:bg-gray-800 transition-colors"
                     >
                       Place order
@@ -714,7 +813,7 @@ export function Checkout({ items }: CheckoutProps) {
                     </div>
                     <div className="flex items-baseline justify-between">
                       <span className="text-sm text-gray-600">Delivery</span>
-                      <span className="text-sm">{shippingMethod === 'express' ? '$25.00' : 'Free'}</span>
+                      <span className="text-sm">{shippingCost === 0 ? 'Free' : formatPrice(shippingCost)}</span>
                     </div>
                     <div className="flex items-baseline justify-between pt-4 border-t border-gray-200">
                       <span className="">Total</span>

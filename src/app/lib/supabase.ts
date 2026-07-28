@@ -77,3 +77,15 @@ export interface DbOrder {
     country?: string;
   };
 }
+
+export interface DbCustomer {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  phone: string | null;
+  is_anonymous: boolean;
+  banned: boolean;
+  marketing_opt_in: boolean;
+  created_at: string;
+  last_sign_in_at: string | null;
+}

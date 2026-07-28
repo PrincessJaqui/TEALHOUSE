@@ -74,7 +74,8 @@ export default function App() {
     loading: cartLoading,
     addToCart: supabaseAddToCart,
     removeFromCart: supabaseRemoveFromCart,
-    updateQuantity: supabaseUpdateQuantity 
+    updateQuantity: supabaseUpdateQuantity,
+    clearCart
   } = useSupabaseCart(user?.id);
   const { 
     wishlistItems: supabaseWishlistItems,
@@ -166,7 +167,7 @@ export default function App() {
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/customer-account" element={<CustomerAccount />} />
           <Route path="/company-login" element={<CompanyLogin />} />
-          <Route path="/checkout" element={<Checkout items={supabaseCartItems} />} />
+          <Route path="/checkout" element={<Checkout items={supabaseCartItems} onOrderPlaced={clearCart} />} />
           <Route path="/accessories" element={<Accessories />} />
           <Route path="/shoes" element={<Shoes onProductClick={setSelectedProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
           <Route path="/mens-shoes" element={<MensShoes onProductClick={setSelectedProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />

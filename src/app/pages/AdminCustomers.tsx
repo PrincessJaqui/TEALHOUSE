@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
 import { AdminNav } from '../components/AdminNav';
-import { SupabaseConnectionTest } from '../components/SupabaseConnectionTest';
-import { DeploymentChecklist } from '../components/DeploymentChecklist';
-import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { toast } from 'sonner';
+import { supabase } from '../lib/supabase';
 import { 
   Users, 
   Mail, 
@@ -19,19 +17,16 @@ import {
   UserCheck 
 } from 'lucide-react';
 
-const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-d1960f17`;
 
 interface Customer {
   id: string;
-  email: string;
+  email: string | null;
+  full_name: string | null;
+  phone: string | null;
+  is_anonymous: boolean;
+  banned: boolean;
   created_at: string;
   last_sign_in_at: string | null;
-  is_anonymous: boolean;
-  user_metadata: {
-    name?: string;
-    phone?: string;
-  };
-  banned_until: string | null;
 }
 
 interface AdminCustomersProps {
@@ -48,38 +43,27 @@ export function AdminCustomers({ hideNav = false }: AdminCustomersProps) {
     loadCustomers();
   }, []);
 
+  /**
+   * Reads the customers table directly.
+   *
+   * This used to call a Supabase Edge Function that was never deployed, so
+   * the page failed on load. The customers table is now populated by a
+   * trigger on signup, and the admin-only RLS policy is what restricts it,
+   * which means no service role key has to live in a server anywhere.
+   */
   const loadCustomers = async () => {
     try {
       setLoading(true);
       setDbError(null);
-      
-      // Call server endpoint to get all users
-      const response = await fetch(`${API_BASE_URL}/customers`, {
-        headers: {
-          'Authorization': `Bearer ${publicAnonKey}`
-        }
-      });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch customers');
-      }
+      const { data, error } = await supabase
+        .from('customers')
+        .select('id, email, full_name, phone, is_anonymous, banned, created_at, last_sign_in_at')
+        .order('created_at', { ascending: false });
 
-      const { users } = await response.json();
+      if (error) throw error;
 
-      if (users) {
-        const formattedCustomers: Customer[] = users.map((user: any) => ({
-          id: user.id,
-          email: user.email || 'Anonymous User',
-          created_at: user.created_at,
-          last_sign_in_at: user.last_sign_in_at,
-          is_anonymous: user.is_anonymous || false,
-          user_metadata: user.user_metadata || {},
-          banned_until: user.banned_until
-        }));
-        
-        setCustomers(formattedCustomers);
-      }
+      setCustomers((data as Customer[]) ?? []);
     } catch (error: any) {
       console.error('Error loading customers:', error);
       toast.error('Failed to load customers');
@@ -89,88 +73,38 @@ export function AdminCustomers({ hideNav = false }: AdminCustomersProps) {
     }
   };
 
-  const handleBanUser = async (userId: string, email: string) => {
-    if (!confirm(`Are you sure you want to ban ${email}?`)) {
-      return;
-    }
+  const setBanned = async (userId: string, email: string | null, banned: boolean) => {
+    if (banned && !confirm(`Ban ${email || 'this guest'}?`)) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/customers/${userId}/ban`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${publicAnonKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const { error } = await supabase
+        .from('customers')
+        .update({ banned })
+        .eq('id', userId);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to ban user');
-      }
+      if (error) throw error;
 
-      toast.success('User banned successfully');
+      toast.success(banned ? 'Customer banned' : 'Customer unbanned');
       loadCustomers();
     } catch (error: any) {
-      console.error('Error banning user:', error);
-      toast.error('Failed to ban user: ' + error.message);
+      console.error('Error updating customer:', error);
+      toast.error('Could not update customer: ' + error.message);
     }
   };
 
-  const handleUnbanUser = async (userId: string, email: string) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/customers/${userId}/unban`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${publicAnonKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
+  const handleBanUser = (userId: string, email: string | null) => setBanned(userId, email, true);
+  const handleUnbanUser = (userId: string, email: string | null) => setBanned(userId, email, false);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to unban user');
-      }
-
-      toast.success('User unbanned successfully');
-      loadCustomers();
-    } catch (error: any) {
-      console.error('Error unbanning user:', error);
-      toast.error('Failed to unban user: ' + error.message);
-    }
-  };
-
-  const handleDeleteUser = async (userId: string, email: string) => {
-    if (!confirm(`Are you sure you want to permanently delete ${email}? This action cannot be undone.`)) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/customers/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${publicAnonKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete user');
-      }
-
-      toast.success('User deleted successfully');
-      loadCustomers();
-    } catch (error: any) {
-      console.error('Error deleting user:', error);
-      toast.error('Failed to delete user: ' + error.message);
-    }
-  };
+  // Deleting an auth user needs the service role key, which must never reach
+  // the browser. Banning is the safe equivalent and is what the UI now offers.
+  // If you genuinely need to erase someone, for a GDPR request for example,
+  // do it from Authentication > Users in the Supabase dashboard.
 
   const filteredCustomers = customers.filter(customer => {
     const query = searchQuery.toLowerCase();
     return (
-      customer.email.toLowerCase().includes(query) ||
-      customer.user_metadata?.name?.toLowerCase().includes(query) ||
+      (customer.email ?? '').toLowerCase().includes(query) ||
+      (customer.full_name ?? '').toLowerCase().includes(query) ||
       customer.id.toLowerCase().includes(query)
     );
   });
@@ -178,7 +112,7 @@ export function AdminCustomers({ hideNav = false }: AdminCustomersProps) {
   const totalCustomers = customers.length;
   const registeredCustomers = customers.filter(c => !c.is_anonymous).length;
   const anonymousCustomers = customers.filter(c => c.is_anonymous).length;
-  const bannedCustomers = customers.filter(c => c.banned_until).length;
+  const bannedCustomers = customers.filter(c => c.banned).length;
 
   return (
     <>
@@ -187,12 +121,6 @@ export function AdminCustomers({ hideNav = false }: AdminCustomersProps) {
         <div className="mb-8">
           <h1 className="mb-2">Customer Management</h1>
           <p className="text-neutral-600">View and manage TEALHOUSE customers</p>
-        </div>
-
-        {/* Connection Test */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <SupabaseConnectionTest />
-          <DeploymentChecklist />
         </div>
 
         {dbError && (
@@ -303,7 +231,7 @@ export function AdminCustomers({ hideNav = false }: AdminCustomersProps) {
                         <td className="py-4 px-4">
                           <div>
                             <p className="font-medium">
-                              {customer.user_metadata?.name || 'N/A'}
+                              {customer.full_name || (customer.is_anonymous ? 'Guest' : 'No name given')}
                             </p>
                             <p className="text-xs text-neutral-500">{customer.id.substring(0, 8)}...</p>
                           </div>
@@ -336,7 +264,7 @@ export function AdminCustomers({ hideNav = false }: AdminCustomersProps) {
                           }
                         </td>
                         <td className="py-4 px-4">
-                          {customer.banned_until ? (
+                          {customer.banned ? (
                             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-red-50 text-red-700">
                               <Ban className="w-3 h-3" />
                               Banned
@@ -350,7 +278,7 @@ export function AdminCustomers({ hideNav = false }: AdminCustomersProps) {
                         </td>
                         <td className="py-4 px-4">
                           <div className="flex items-center justify-end gap-2">
-                            {customer.banned_until ? (
+                            {customer.banned ? (
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -371,15 +299,6 @@ export function AdminCustomers({ hideNav = false }: AdminCustomersProps) {
                                 Ban
                               </Button>
                             )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteUser(customer.id, customer.email)}
-                              className="text-red-600 hover:text-red-700 hover:border-red-300"
-                            >
-                              <XCircle className="w-4 h-4 mr-1" />
-                              Delete
-                            </Button>
                           </div>
                         </td>
                       </tr>

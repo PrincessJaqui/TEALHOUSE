@@ -1,3 +1,5 @@
+import { SHIPPING, formatPrice } from '../config/store';
+
 export function FAQ() {
   return (
     <div className="min-h-screen bg-white">
@@ -81,8 +83,8 @@ export function FAQ() {
               <div>
                 <h3 className="mb-2">Do you ship internationally?</h3>
                 <p className="text-gray-700 leading-relaxed">
-                  Yes, we ship worldwide. International shipping costs $35 (Standard) or $60 (Express), with free shipping and free returns on 
-                  orders over $500.
+                  Yes, we ship worldwide. International shipping costs {formatPrice(SHIPPING.international.standard)} (Standard) or {formatPrice(SHIPPING.international.express)} (Express), with free shipping and free returns on
+                  orders over {formatPrice(SHIPPING.freeThreshold)}.
                 </p>
               </div>
 
@@ -104,7 +106,7 @@ export function FAQ() {
                 <h3 className="mb-2">What is your return policy?</h3>
                 <p className="text-gray-700 leading-relaxed">
                   We offer complimentary returns within 14 days of delivery. Shoes must be unworn and in original condition 
-                  with all packaging. Free return shipping on orders over $500.
+                  with all packaging. Free return shipping on orders over {formatPrice(SHIPPING.freeThreshold)}.
                 </p>
               </div>
 

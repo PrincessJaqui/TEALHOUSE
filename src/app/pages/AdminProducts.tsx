@@ -11,7 +11,6 @@ import { toast } from 'sonner';
 import { Plus, Trash2, Upload, Package, X, Video, Edit, Image as ImageIcon, Database } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { AdminNav } from '../components/AdminNav';
-import { AdminCreateProduct } from '../components/AdminCreateProduct';
 import { getPrimaryProductImage } from '../lib/default-image';
 import { seedProducts } from '../utils/seed-products';
 

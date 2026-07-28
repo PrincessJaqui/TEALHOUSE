@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Package, MapPin, CreditCard, LogOut, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
 import { toast } from 'sonner';
 
 interface Order {
@@ -18,6 +19,12 @@ export function CustomerAccount() {
   const [user, setUser] = useState<any>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [authMode, setAuthMode] = useState<'login' | 'create'>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [busy, setBusy] = useState(false);
+  const { signIn, signUp, resetPassword } = useSupabaseAuth();
 
   useEffect(() => {
     checkUser();
@@ -26,13 +33,10 @@ export function CustomerAccount() {
 
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    setUser(user);
+    // A guest gets an anonymous session for their cart, which is not the same
+    // as being signed in. Treat anonymous as signed out here.
+    setUser(user && !user.is_anonymous && user.email ? user : null);
     setLoading(false);
-    
-    if (!user) {
-      toast.error('Please sign in to view your account');
-      navigate('/account');
-    }
   };
 
   const loadOrders = async () => {
@@ -60,6 +64,52 @@ export function CustomerAccount() {
     navigate('/');
   };
 
+  const handleSubmit = async () => {
+    if (!email.trim() || !password) {
+      toast.error('Enter your email and password');
+      return;
+    }
+    setBusy(true);
+    try {
+      if (authMode === 'login') {
+        const result = await signIn(email.trim(), password);
+        if (!result.ok) {
+          toast.error(result.error || 'Could not sign you in');
+          return;
+        }
+      } else {
+        if (password.length < 8) {
+          toast.error('Password must be at least 8 characters');
+          return;
+        }
+        const result = await signUp(email.trim(), password, fullName.trim() || undefined);
+        if (!result.ok) {
+          toast.error(result.error || 'Could not create your account');
+          return;
+        }
+        if (result.needsEmailConfirmation) {
+          toast.success('Account created. Check your email to confirm it.');
+          return;
+        }
+      }
+      await checkUser();
+      await loadOrders();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      toast.error('Enter your email first');
+      return;
+    }
+    const result = await resetPassword(email.trim());
+    toast[result.ok ? 'success' : 'error'](
+      result.ok ? 'Password reset link sent' : result.error || 'Could not send reset link'
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -71,8 +121,118 @@ export function CustomerAccount() {
     );
   }
 
+  // Signed out. This used to render null, which showed a blank white page,
+  // and before that it redirected to /account, a route that does not exist.
   if (!user) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-[1400px] mx-auto px-5 py-6">
+            <h1 className="font-['Tinos']">My Account</h1>
+          </div>
+        </div>
+
+        <div className="max-w-[480px] mx-auto px-5 py-16">
+          <div className="bg-white border border-gray-200 p-8">
+            <div className="flex gap-6 mb-8 border-b border-gray-200">
+              <button
+                onClick={() => setAuthMode('login')}
+                className={`pb-3 text-sm uppercase tracking-wider transition-colors ${
+                  authMode === 'login'
+                    ? 'border-b-2 border-black text-black'
+                    : 'text-gray-500 hover:text-black'
+                }`}
+              >
+                Sign in
+              </button>
+              <button
+                onClick={() => setAuthMode('create')}
+                className={`pb-3 text-sm uppercase tracking-wider transition-colors ${
+                  authMode === 'create'
+                    ? 'border-b-2 border-black text-black'
+                    : 'text-gray-500 hover:text-black'
+                }`}
+              >
+                Create account
+              </button>
+            </div>
+
+            {authMode === 'create' && (
+              <div className="mb-5">
+                <label htmlFor="account-name" className="block text-sm mb-2">
+                  Full name
+                </label>
+                <input
+                  id="account-name"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:border-black transition-colors"
+                />
+              </div>
+            )}
+
+            <div className="mb-5">
+              <label htmlFor="account-email" className="block text-sm mb-2">
+                Email
+              </label>
+              <input
+                id="account-email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:border-black transition-colors"
+              />
+            </div>
+
+            <div className="mb-6">
+              <label htmlFor="account-password" className="block text-sm mb-2">
+                Password
+              </label>
+              <input
+                id="account-password"
+                type="password"
+                autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSubmit();
+                }}
+                className="w-full border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:border-black transition-colors"
+              />
+              {authMode === 'create' && (
+                <p className="text-xs text-gray-500 mt-2">At least 8 characters</p>
+              )}
+            </div>
+
+            <button
+              onClick={handleSubmit}
+              disabled={busy}
+              className="w-full bg-black text-white py-4 text-sm uppercase tracking-wider hover:bg-gray-900 transition-colors disabled:opacity-50"
+            >
+              {busy ? 'Please wait' : authMode === 'login' ? 'Sign in' : 'Create account'}
+            </button>
+
+            {authMode === 'login' && (
+              <button
+                onClick={handleForgotPassword}
+                className="w-full text-center text-sm text-gray-600 hover:text-black mt-4 transition-colors"
+              >
+                Forgot your password
+              </button>
+            )}
+          </div>
+
+          <button
+            onClick={() => navigate('/')}
+            className="w-full text-center text-sm text-gray-600 hover:text-black mt-6 transition-colors"
+          >
+            Continue shopping
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

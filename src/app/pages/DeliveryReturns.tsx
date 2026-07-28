@@ -1,3 +1,5 @@
+import { SHIPPING, formatPrice } from '../config/store';
+
 export function DeliveryReturns() {
   return (
     <div className="min-h-screen bg-white">
@@ -21,9 +23,9 @@ export function DeliveryReturns() {
             <div className="mb-6">
               <h3 className="mb-3">Shipping Costs</h3>
               <div className="space-y-3 text-gray-700">
-                <p><strong>United States:</strong> $15 (Standard), $25 (Express)</p>
-                <p><strong>International:</strong> $35 (Standard), $60 (Express)</p>
-                <p><strong>Free shipping and free returns on orders over $500</strong></p>
+                <p><strong>United States:</strong> {formatPrice(SHIPPING.domestic.standard)} (Standard), {formatPrice(SHIPPING.domestic.express)} (Express)</p>
+                <p><strong>International:</strong> {formatPrice(SHIPPING.international.standard)} (Standard), {formatPrice(SHIPPING.international.express)} (Express)</p>
+                <p><strong>Free shipping and free returns on orders over {formatPrice(SHIPPING.freeThreshold)}</strong></p>
               </div>
             </div>
 
@@ -62,7 +64,7 @@ export function DeliveryReturns() {
                 <li>14-day return window from delivery date</li>
                 <li>Shoes must be unworn and in original condition</li>
                 <li>All original packaging must be included</li>
-                <li>Free return shipping on orders over $500</li>
+                <li>Free return shipping on orders over {formatPrice(SHIPPING.freeThreshold)}</li>
               </ul>
             </div>
 
