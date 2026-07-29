@@ -6,7 +6,8 @@ import { Input } from '../components/ui/input';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
-import { Mail, Search, XCircle, CheckCircle, Inbox, Users } from 'lucide-react';
+import { exportCsv } from '../lib/csv';
+import { Mail, Search, XCircle, CheckCircle, Inbox, Users, Download } from 'lucide-react';
 
 interface ContactMessage {
   id: string;
@@ -91,6 +92,28 @@ export function AdminMessages() {
       console.error('Error updating message:', error);
       toast.error('Could not update the message');
     }
+  };
+
+  const exportSubscribers = () => {
+    exportCsv('newsletter-subscribers', subscribers, [
+      { header: 'Email', value: (s) => s.email },
+      { header: 'Source', value: (s) => s.source ?? '' },
+      { header: 'Status', value: (s) => (s.unsubscribed ? 'Unsubscribed' : 'Active') },
+      { header: 'Signed up', value: (s) => new Date(s.created_at).toISOString() },
+    ]);
+    toast.success('Subscribers exported');
+  };
+
+  const exportMessages = () => {
+    exportCsv('contact-messages', messages, [
+      { header: 'Date', value: (m) => new Date(m.created_at).toISOString() },
+      { header: 'Name', value: (m) => m.name ?? '' },
+      { header: 'Email', value: (m) => m.email },
+      { header: 'Subject', value: (m) => m.subject ?? '' },
+      { header: 'Message', value: (m) => m.message },
+      { header: 'Handled', value: (m) => (m.handled ? 'Yes' : 'No') },
+    ]);
+    toast.success('Messages exported');
   };
 
   const query = searchQuery.toLowerCase();
@@ -199,6 +222,16 @@ export function AdminMessages() {
                     : 'Addresses captured from the signup forms'}
                 </CardDescription>
               </div>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={tab === 'messages' ? exportMessages : exportSubscribers}
+                  disabled={tab === 'messages' ? messages.length === 0 : subscribers.length === 0}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export CSV
+                </Button>
               <div className="relative w-80">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
                 <Input
@@ -208,6 +241,7 @@ export function AdminMessages() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
                 />
+              </div>
               </div>
             </div>
           </CardHeader>

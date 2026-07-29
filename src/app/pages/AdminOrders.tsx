@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase, DbOrder } from '../lib/supabase';
 import { AdminNav } from '../components/AdminNav';
-import { Package, Calendar, DollarSign, User, Eye } from 'lucide-react';
+import { exportCsv } from '../lib/csv';
+import { toast } from 'sonner';
+import { Package, Calendar, DollarSign, User, Eye, Download } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
 export function AdminOrders() {
@@ -77,6 +79,73 @@ export function AdminOrders() {
     );
   }
 
+  /**
+   * One row per order. This is the bookkeeping file.
+   */
+  const exportOrders = () => {
+    exportCsv('orders', filteredOrders, [
+      { header: 'Order ID', value: (o) => o.id ?? '' },
+      { header: 'Date', value: (o) => (o.created_at ? new Date(o.created_at).toISOString() : '') },
+      { header: 'Status', value: (o) => o.status },
+      { header: 'Payment', value: (o) => o.payment_status ?? '' },
+      { header: 'Method', value: (o) => o.payment_method ?? '' },
+      { header: 'Customer', value: (o) => o.customer_name ?? '' },
+      { header: 'Email', value: (o) => o.customer_email ?? '' },
+      { header: 'Phone', value: (o) => o.customer_phone ?? '' },
+      { header: 'Address', value: (o) => o.shipping_address_line1 ?? '' },
+      { header: 'City', value: (o) => o.shipping_city ?? '' },
+      { header: 'State', value: (o) => o.shipping_state ?? '' },
+      { header: 'Postcode', value: (o) => o.shipping_postal_code ?? '' },
+      { header: 'Country', value: (o) => o.shipping_country ?? '' },
+      { header: 'Items', value: (o) => o.items_count ?? (o.items ?? []).length },
+      { header: 'Subtotal', value: (o) => Number(o.subtotal ?? 0).toFixed(2) },
+      { header: 'Shipping', value: (o) => Number(o.shipping_cost ?? 0).toFixed(2) },
+      { header: 'Tax', value: (o) => Number(o.tax ?? 0).toFixed(2) },
+      { header: 'Total', value: (o) => Number(o.total ?? 0).toFixed(2) },
+      { header: 'Tracking', value: (o) => o.tracking_number ?? '' },
+    ]);
+    toast.success('Orders exported');
+  };
+
+  /**
+   * One row per item across all orders. This is the file you pick and pack
+   * from, because an order-level export hides which sizes to pull.
+   */
+  const exportOrderItems = () => {
+    const rows: Array<{ order: DbOrder; item: any }> = [];
+    for (const order of filteredOrders) {
+      for (const item of order.items ?? []) {
+        rows.push({ order, item });
+      }
+    }
+
+    if (rows.length === 0) {
+      toast.error('No order items to export');
+      return;
+    }
+
+    exportCsv('order-items', rows, [
+      { header: 'Order ID', value: (r) => r.order.id ?? '' },
+      {
+        header: 'Date',
+        value: (r) => (r.order.created_at ? new Date(r.order.created_at).toISOString() : ''),
+      },
+      { header: 'Status', value: (r) => r.order.status },
+      { header: 'Customer', value: (r) => r.order.customer_name ?? '' },
+      { header: 'Email', value: (r) => r.order.customer_email ?? '' },
+      { header: 'Product ID', value: (r) => r.item?.product_id ?? '' },
+      { header: 'Product', value: (r) => r.item?.name ?? '' },
+      { header: 'Size', value: (r) => r.item?.size ?? 'One size' },
+      { header: 'Quantity', value: (r) => r.item?.quantity ?? 0 },
+      { header: 'Unit price', value: (r) => Number(r.item?.price ?? 0).toFixed(2) },
+      {
+        header: 'Line total',
+        value: (r) => (Number(r.item?.price ?? 0) * Number(r.item?.quantity ?? 0)).toFixed(2),
+      },
+    ]);
+    toast.success('Order items exported');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
       <AdminNav />
@@ -86,6 +155,16 @@ export function AdminOrders() {
           <div>
             <h1 className="text-3xl mb-2">Orders</h1>
             <p className="text-gray-600">{orders.length} total orders</p>
+            <div className="flex gap-3 mt-3">
+              <Button variant="outline" size="sm" onClick={exportOrders} disabled={filteredOrders.length === 0}>
+                <Download className="w-4 h-4 mr-2" />
+                Orders CSV
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportOrderItems} disabled={filteredOrders.length === 0}>
+                <Download className="w-4 h-4 mr-2" />
+                Pick list CSV
+              </Button>
+            </div>
           </div>
           
           {/* Status Filter */}

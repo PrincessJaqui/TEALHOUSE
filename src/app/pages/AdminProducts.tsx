@@ -8,15 +8,17 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, Trash2, Upload, Package, X, Video, Edit, Image as ImageIcon, Database } from 'lucide-react';
+import { Plus, Trash2, Upload, Package, X, Video, Edit, Image as ImageIcon, Database, Download } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { AdminNav } from '../components/AdminNav';
+import { exportCsv } from '../lib/csv';
 import {
   CATEGORIES,
   AUDIENCES,
   MATERIALS,
   SHOE_SIZES,
   DEFAULT_STOCK_KEY,
+  totalStock,
 } from '../config/taxonomy';
 
 // These used to be four private arrays here that disagreed with what the
@@ -268,6 +270,76 @@ export function AdminProducts() {
       payload[String(size)] = Number(stock[String(size)] ?? 0);
     }
     return payload;
+  };
+
+  /**
+   * One row per product. Good for a price list or a catalogue review.
+   */
+  const exportProducts = () => {
+    exportCsv('products', products, [
+      { header: 'ID', value: (p) => p.id },
+      { header: 'Name', value: (p) => p.name },
+      { header: 'Price', value: (p) => Number(p.price).toFixed(2) },
+      { header: 'Total stock', value: (p) => totalStock(p) },
+      { header: 'Published', value: (p) => (p.is_published === false ? 'No' : 'Yes') },
+      { header: 'Bestseller', value: (p) => (p.is_bestseller ? 'Yes' : 'No') },
+      { header: 'Categories', value: (p) => (p.categories ?? []).join(' | ') },
+      { header: 'Audience', value: (p) => (p.audience ?? []).join(' | ') },
+      { header: 'Materials', value: (p) => (p.materials ?? []).join(' | ') },
+      { header: 'Sizes', value: (p) => (p.sizes ?? []).join(' | ') },
+      { header: 'Images', value: (p) => (p.images ?? []).length },
+      { header: 'Description', value: (p) => p.description ?? '' },
+    ]);
+    toast.success('Products exported');
+  };
+
+  /**
+   * One row per product and size. This is the one to print for a stock take,
+   * because a single row per product hides which size actually ran out.
+   */
+  const exportInventory = () => {
+    const rows: Array<{
+      product: Product;
+      size: string;
+      quantity: number;
+    }> = [];
+
+    for (const product of products) {
+      const stockMap = product.stock ?? {};
+      const keys = Object.keys(stockMap).length
+        ? Object.keys(stockMap)
+        : (product.sizes ?? []).map(String);
+
+      if (keys.length === 0) {
+        rows.push({ product, size: 'default', quantity: 0 });
+        continue;
+      }
+
+      for (const key of keys) {
+        rows.push({ product, size: key, quantity: Number(stockMap[key] ?? 0) });
+      }
+    }
+
+    rows.sort(
+      (a, b) =>
+        a.product.name.localeCompare(b.product.name) ||
+        a.size.localeCompare(b.size, undefined, { numeric: true })
+    );
+
+    exportCsv('inventory', rows, [
+      { header: 'Product ID', value: (r) => r.product.id },
+      { header: 'Product', value: (r) => r.product.name },
+      { header: 'Size', value: (r) => (r.size === 'default' ? 'One size' : r.size) },
+      { header: 'Quantity', value: (r) => r.quantity },
+      { header: 'Status', value: (r) => (r.quantity > 0 ? 'In stock' : 'Sold out') },
+      { header: 'Price', value: (r) => Number(r.product.price).toFixed(2) },
+      {
+        header: 'Stock value',
+        value: (r) => (r.quantity * Number(r.product.price)).toFixed(2),
+      },
+      { header: 'Published', value: (r) => (r.product.is_published === false ? 'No' : 'Yes') },
+    ]);
+    toast.success('Inventory exported');
   };
 
   const resetForm = () => {
@@ -568,10 +640,20 @@ export function AdminProducts() {
             <h1 className="mb-2">Product Management</h1>
             <p className="text-neutral-600">Manage the TEALHOUSE product catalog</p>
           </div>
-          <Button onClick={() => setIsCreateModalOpen(true)} size="lg">
-            <Plus className="w-5 h-5 mr-2" />
-            Create New Product
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" onClick={exportInventory} disabled={products.length === 0}>
+              <Download className="w-4 h-4 mr-2" />
+              Inventory CSV
+            </Button>
+            <Button variant="outline" onClick={exportProducts} disabled={products.length === 0}>
+              <Download className="w-4 h-4 mr-2" />
+              Products CSV
+            </Button>
+            <Button onClick={() => setIsCreateModalOpen(true)} size="lg">
+              <Plus className="w-5 h-5 mr-2" />
+              Create New Product
+            </Button>
+          </div>
         </div>
 
         {dbError && (
