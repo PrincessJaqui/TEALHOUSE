@@ -8,7 +8,7 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, Trash2, Upload, Package, X, Video, Edit, Image as ImageIcon, Database, Download } from 'lucide-react';
+import { Plus, Trash2, Upload, Package, X, Video, Edit, Image as ImageIcon, Download } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { AdminLayout } from '../components/AdminLayout';
 import { exportCsv } from '../lib/csv';
@@ -29,7 +29,6 @@ const AVAILABLE_MATERIALS = [...MATERIALS];
 const AVAILABLE_AUDIENCE = [...AUDIENCES];
 const AVAILABLE_SIZES = [...SHOE_SIZES];
 import { getPrimaryProductImage } from '../lib/default-image';
-import { seedProducts } from '../utils/seed-products';
 
 
 
@@ -616,21 +615,6 @@ export function AdminProducts() {
     );
   };
 
-  const handleSeedProducts = async () => {
-    setLoading(true);
-    toast.loading('Updating products...');
-    const result = await seedProducts();
-    if (result.success) {
-      toast.dismiss();
-      toast.success('Products updated successfully!');
-      await loadProducts();
-    } else {
-      toast.dismiss();
-      toast.error('Failed to seed products');
-    }
-    setLoading(false);
-  };
-
   return (
     <AdminLayout
       title="Products"
@@ -674,22 +658,24 @@ export function AdminProducts() {
         {/* Product Catalog */}
         <Card>
           <CardHeader>
-            <CardTitle>Product Catalog ({products.length})</CardTitle>
-            <CardDescription>All products in the TEALHOUSE collection</CardDescription>
+            <CardTitle className="font-['Tinos'] text-xl">
+              Catalogue ({products.length})
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
               <div className="text-center py-12 text-neutral-500">Loading products...</div>
             ) : products.length === 0 ? (
-              <div className="text-center py-12 text-neutral-500">
-                <Package className="w-16 h-16 mx-auto mb-4 text-neutral-300" />
-                <p className="mb-4">No products found. Add sample products to get started!</p>
-                <div className="flex gap-3 justify-center">
-                  <Button onClick={handleSeedProducts}>
-                    <Database className="w-4 h-4 mr-2" />
-                    Add Sample Products (Lexi, Kyla, Christine, Kyle)
-                  </Button>
-                </div>
+              <div className="text-center py-16">
+                <Package className="w-10 h-10 mx-auto mb-4 text-gray-300" />
+                <p className="text-sm text-gray-600 mb-1">No products yet</p>
+                <p className="text-xs text-gray-500 mb-6">
+                  Add your first product with photos, sizes and stock
+                </p>
+                <Button onClick={() => setIsCreateModalOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Product
+                </Button>
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

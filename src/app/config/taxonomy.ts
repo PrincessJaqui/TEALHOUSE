@@ -41,7 +41,7 @@ export const MATERIALS = [
   'Flax',
 ] as const;
 
-/** US womens footwear sizing, which is what the seeded products use. */
+/** US womens footwear sizing. */
 export const SHOE_SIZES = [35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45] as const;
 
 /** How many days a product counts as a new arrival. */
