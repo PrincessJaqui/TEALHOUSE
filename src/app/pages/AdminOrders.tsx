@@ -202,12 +202,12 @@ export function AdminOrders() {
         </div>
 
         {filteredOrders.length === 0 ? (
-          <div className="bg-white rounded-lg p-12 text-center">
+          <div className="bg-white p-12 text-center">
             <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500">No orders found</p>
           </div>
         ) : (
-          <div className="bg-white rounded-lg overflow-hidden shadow">
+          <div className="bg-white overflow-hidden shadow">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -254,7 +254,7 @@ export function AdminOrders() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold ${getStatusColor(order.status)}`}>
                         {order.status}
                       </span>
                     </td>
@@ -279,7 +279,7 @@ export function AdminOrders() {
       {/* Order Detail Modal */}
       {selectedOrder && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-start mb-6">
                 <div>
@@ -296,7 +296,7 @@ export function AdminOrders() {
               {/* Customer Info */}
               <div className="mb-6">
                 <h3 className="font-semibold mb-3">Customer Information</h3>
-                <div className="bg-gray-50 p-4 rounded">
+                <div className="bg-gray-50 p-4 ">
                   <p><strong>Name:</strong> {selectedOrder.customer_name || `${selectedOrder.shipping_info?.firstName || ''} ${selectedOrder.shipping_info?.lastName || ''}`.trim() || 'N/A'}</p>
                   <p><strong>Email:</strong> {selectedOrder.customer_email || selectedOrder.shipping_info?.email || 'N/A'}</p>
                   <p><strong>Phone:</strong> {selectedOrder.customer_phone || selectedOrder.shipping_info?.phone || 'N/A'}</p>
@@ -306,7 +306,7 @@ export function AdminOrders() {
               {/* Shipping Address */}
               <div className="mb-6">
                 <h3 className="font-semibold mb-3">Shipping Address</h3>
-                <div className="bg-gray-50 p-4 rounded">
+                <div className="bg-gray-50 p-4 ">
                   <p>{selectedOrder.shipping_address_line1 || selectedOrder.shipping_info?.address || 'N/A'}</p>
                   {(selectedOrder.shipping_address_line2 || selectedOrder.shipping_info?.address2) && (
                     <p>{selectedOrder.shipping_address_line2 || selectedOrder.shipping_info?.address2}</p>
@@ -323,7 +323,7 @@ export function AdminOrders() {
                 <h3 className="font-semibold mb-3">Order Items</h3>
                 <div className="space-y-2">
                   {selectedOrder.items?.map((item: any, idx: number) => (
-                    <div key={idx} className="flex justify-between bg-gray-50 p-3 rounded">
+                    <div key={idx} className="flex justify-between bg-gray-50 p-3 ">
                       <div>
                         <p className="font-medium">{item.product.name}</p>
                         <p className="text-sm text-gray-600">

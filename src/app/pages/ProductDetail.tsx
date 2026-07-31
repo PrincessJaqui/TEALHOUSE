@@ -97,7 +97,7 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
           {/* Images */}
           <div>
             {/* Main Image */}
-            <div className="aspect-square bg-gray-100 rounded-lg mb-4 overflow-hidden">
+            <div className="aspect-square bg-gray-100 mb-4 overflow-hidden">
               <img
                 src={images[selectedImage]}
                 alt={product.name}
@@ -112,7 +112,7 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                   <button
                     key={idx}
                     onClick={() => setSelectedImage(idx)}
-                    className={`aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 ${
+                    className={`aspect-square bg-gray-100 overflow-hidden border-2 ${
                       selectedImage === idx ? 'border-[#008080]' : 'border-transparent'
                     }`}
                   >
@@ -124,7 +124,7 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
 
             {/* Video */}
             {product.video && (
-              <div className="mt-4 aspect-video bg-gray-100 rounded-lg overflow-hidden">
+              <div className="mt-4 aspect-video bg-gray-100 overflow-hidden">
                 <video
                   src={product.video}
                   controls
@@ -166,7 +166,7 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                         onClick={() => !unavailable && setSelectedSize(size)}
                         disabled={unavailable}
                         title={unavailable ? 'Sold out' : `${remaining} available`}
-                        className={`py-3 border rounded-lg text-center transition-all ${
+                        className={`py-3 border text-center transition-all ${
                           unavailable
                             ? 'border-gray-200 text-gray-300 line-through cursor-not-allowed'
                             : selectedSize === size
@@ -208,7 +208,7 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                 {product.materials.map((material) => (
                   <span
                     key={material}
-                    className="px-3 py-1 bg-gray-100 rounded-full text-sm"
+                    className="px-3 py-1 bg-gray-100 text-sm"
                   >
                     {material}
                   </span>

@@ -688,12 +688,12 @@ export function AdminProducts() {
                         className="w-full h-full object-cover"
                       />
                       {product.images && product.images.length > 1 && (
-                        <div className="absolute top-2 right-2 bg-black text-white px-2 py-1 rounded text-xs">
+                        <div className="absolute top-2 right-2 bg-black text-white px-2 py-1 text-xs">
                           +{product.images.length - 1} more
                         </div>
                       )}
                       {product.video && (
-                        <div className="absolute top-2 left-2 bg-black text-white p-1.5 rounded">
+                        <div className="absolute top-2 left-2 bg-black text-white p-1.5 ">
                           <Video className="w-4 h-4" />
                         </div>
                       )}
@@ -703,14 +703,14 @@ export function AdminProducts() {
                       <p className="text-sm text-neutral-600 mb-2">${product.price.toLocaleString()}</p>
                       <div className="flex gap-1 flex-wrap mb-3">
                         {product.categories.map(cat => (
-                          <span key={cat} className="text-xs px-2 py-0.5 bg-neutral-100 rounded capitalize">
+                          <span key={cat} className="text-xs px-2 py-0.5 bg-neutral-100 capitalize">
                             {cat}
                           </span>
                         ))}
                       </div>
                       <div className="flex gap-1 flex-wrap mb-3">
                         {product.audience.map(aud => (
-                          <span key={aud} className="text-xs px-2 py-0.5 bg-teal-50 text-teal-800 rounded capitalize">
+                          <span key={aud} className="text-xs px-2 py-0.5 bg-teal-50 text-teal-800 capitalize">
                             {aud}
                           </span>
                         ))}
@@ -794,7 +794,7 @@ export function AdminProducts() {
               {/* Images Upload */}
               <div className="space-y-2">
                 <Label htmlFor="images">Product Images * (multiple)</Label>
-                <div className="border-2 border-dashed border-neutral-200 rounded-lg p-6">
+                <div className="border-2 border-dashed border-neutral-200 p-6">
                   {imagePreviews.length > 0 ? (
                     <div className="space-y-4">
                       <div className="grid grid-cols-3 gap-4">
@@ -803,12 +803,12 @@ export function AdminProducts() {
                             <img 
                               src={preview} 
                               alt={`Preview ${index + 1}`} 
-                              className="w-full h-32 object-cover rounded-lg"
+                              className="w-full h-32 object-cover "
                             />
                             <button
                               type="button"
                               onClick={() => removeImage(index)}
-                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                              className="absolute -top-2 -right-2 bg-red-500 text-white p-1 hover:bg-red-600"
                             >
                               <X className="w-4 h-4" />
                             </button>
@@ -850,19 +850,19 @@ export function AdminProducts() {
               {/* Video Upload */}
               <div className="space-y-2">
                 <Label htmlFor="video">Product Video (optional)</Label>
-                <div className="border-2 border-dashed border-neutral-200 rounded-lg p-6">
+                <div className="border-2 border-dashed border-neutral-200 p-6">
                   {videoPreview ? (
                     <div className="space-y-4">
                       <div className="relative">
                         <video 
                           src={videoPreview} 
-                          className="w-full h-48 object-cover rounded-lg"
+                          className="w-full h-48 object-cover "
                           controls
                         />
                         <button
                           type="button"
                           onClick={removeVideo}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                          className="absolute -top-2 -right-2 bg-red-500 text-white p-1 hover:bg-red-600"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -893,7 +893,7 @@ export function AdminProducts() {
                       key={category}
                       type="button"
                       onClick={() => toggleCategory(category)}
-                      className={`px-4 py-2 rounded-lg border text-sm transition-colors capitalize ${
+                      className={`px-4 py-2 border text-sm transition-colors capitalize ${
                         selectedCategories.includes(category)
                           ? 'bg-black text-white border-black'
                           : 'bg-white text-black border-neutral-200 hover:border-neutral-400'
@@ -914,7 +914,7 @@ export function AdminProducts() {
                       key={audience}
                       type="button"
                       onClick={() => toggleAudience(audience)}
-                      className={`px-4 py-2 rounded-lg border text-sm transition-colors capitalize ${
+                      className={`px-4 py-2 border text-sm transition-colors capitalize ${
                         selectedAudience.includes(audience)
                           ? 'bg-black text-white border-black'
                           : 'bg-white text-black border-neutral-200 hover:border-neutral-400'
@@ -935,7 +935,7 @@ export function AdminProducts() {
                       key={material}
                       type="button"
                       onClick={() => toggleMaterial(material)}
-                      className={`px-4 py-2 rounded-lg border text-sm transition-colors ${
+                      className={`px-4 py-2 border text-sm transition-colors ${
                         selectedMaterials.includes(material)
                           ? 'bg-black text-white border-black'
                           : 'bg-white text-black border-neutral-200 hover:border-neutral-400'
@@ -957,7 +957,7 @@ export function AdminProducts() {
                         key={size}
                         type="button"
                         onClick={() => toggleSize(size)}
-                        className={`px-3 py-2 rounded-lg border text-sm transition-colors ${
+                        className={`px-3 py-2 border text-sm transition-colors ${
                           selectedSizes.includes(size)
                             ? 'bg-black text-white border-black'
                             : 'bg-white text-black border-neutral-200 hover:border-neutral-400'
@@ -982,7 +982,7 @@ export function AdminProducts() {
                     onChange={(e) =>
                       setStock({ ...stock, [DEFAULT_STOCK_KEY]: Math.max(0, Number(e.target.value)) })
                     }
-                    className="w-32 px-3 py-2 border border-neutral-200 rounded-lg text-sm"
+                    className="w-32 px-3 py-2 border border-neutral-200 text-sm"
                   />
                 ) : (
                   <div className="flex flex-wrap gap-3">
@@ -996,7 +996,7 @@ export function AdminProducts() {
                           onChange={(e) =>
                             setStock({ ...stock, [String(size)]: Math.max(0, Number(e.target.value)) })
                           }
-                          className="w-16 px-2 py-2 border border-neutral-200 rounded-lg text-sm text-center"
+                          className="w-16 px-2 py-2 border border-neutral-200 text-sm text-center"
                         />
                       </div>
                     ))}
@@ -1095,7 +1095,7 @@ export function AdminProducts() {
               {/* Images Upload */}
               <div className="space-y-2">
                 <Label htmlFor="edit-images">Product Images * (multiple)</Label>
-                <div className="border-2 border-dashed border-neutral-200 rounded-lg p-6">
+                <div className="border-2 border-dashed border-neutral-200 p-6">
                   {/* Existing Images */}
                   {existingImages.length > 0 && (
                     <div className="mb-4">
@@ -1106,17 +1106,17 @@ export function AdminProducts() {
                             <img 
                               src={imageUrl} 
                               alt={`Existing ${index + 1}`} 
-                              className="w-full h-32 object-cover rounded-lg"
+                              className="w-full h-32 object-cover "
                             />
                             <button
                               type="button"
                               onClick={() => removeExistingImage(imageUrl)}
-                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                              className="absolute -top-2 -right-2 bg-red-500 text-white p-1 hover:bg-red-600"
                             >
                               <X className="w-4 h-4" />
                             </button>
                             {index === 0 && (
-                              <div className="absolute bottom-1 left-1 bg-black text-white text-xs px-1.5 py-0.5 rounded">
+                              <div className="absolute bottom-1 left-1 bg-black text-white text-xs px-1.5 py-0.5 ">
                                 Primary
                               </div>
                             )}
@@ -1136,12 +1136,12 @@ export function AdminProducts() {
                             <img 
                               src={preview} 
                               alt={`New ${index + 1}`} 
-                              className="w-full h-32 object-cover rounded-lg"
+                              className="w-full h-32 object-cover "
                             />
                             <button
                               type="button"
                               onClick={() => removeImage(index)}
-                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                              className="absolute -top-2 -right-2 bg-red-500 text-white p-1 hover:bg-red-600"
                             >
                               <X className="w-4 h-4" />
                             </button>
@@ -1174,7 +1174,7 @@ export function AdminProducts() {
               {/* Video Upload */}
               <div className="space-y-2">
                 <Label htmlFor="edit-video">Product Video (optional)</Label>
-                <div className="border-2 border-dashed border-neutral-200 rounded-lg p-6">
+                <div className="border-2 border-dashed border-neutral-200 p-6">
                   {/* Existing Video */}
                   {existingVideo && !videoPreview && (
                     <div className="mb-4">
@@ -1182,13 +1182,13 @@ export function AdminProducts() {
                       <div className="relative">
                         <video 
                           src={existingVideo} 
-                          className="w-full h-48 object-cover rounded-lg"
+                          className="w-full h-48 object-cover "
                           controls
                         />
                         <button
                           type="button"
                           onClick={removeExistingVideo}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                          className="absolute -top-2 -right-2 bg-red-500 text-white p-1 hover:bg-red-600"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -1203,13 +1203,13 @@ export function AdminProducts() {
                       <div className="relative">
                         <video 
                           src={videoPreview} 
-                          className="w-full h-48 object-cover rounded-lg"
+                          className="w-full h-48 object-cover "
                           controls
                         />
                         <button
                           type="button"
                           onClick={removeVideo}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                          className="absolute -top-2 -right-2 bg-red-500 text-white p-1 hover:bg-red-600"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -1259,7 +1259,7 @@ export function AdminProducts() {
                       key={category}
                       type="button"
                       onClick={() => toggleCategory(category)}
-                      className={`px-4 py-2 rounded-lg border text-sm transition-colors capitalize ${
+                      className={`px-4 py-2 border text-sm transition-colors capitalize ${
                         selectedCategories.includes(category)
                           ? 'bg-black text-white border-black'
                           : 'bg-white text-black border-neutral-200 hover:border-neutral-400'
@@ -1280,7 +1280,7 @@ export function AdminProducts() {
                       key={audience}
                       type="button"
                       onClick={() => toggleAudience(audience)}
-                      className={`px-4 py-2 rounded-lg border text-sm transition-colors capitalize ${
+                      className={`px-4 py-2 border text-sm transition-colors capitalize ${
                         selectedAudience.includes(audience)
                           ? 'bg-black text-white border-black'
                           : 'bg-white text-black border-neutral-200 hover:border-neutral-400'
@@ -1301,7 +1301,7 @@ export function AdminProducts() {
                       key={material}
                       type="button"
                       onClick={() => toggleMaterial(material)}
-                      className={`px-4 py-2 rounded-lg border text-sm transition-colors ${
+                      className={`px-4 py-2 border text-sm transition-colors ${
                         selectedMaterials.includes(material)
                           ? 'bg-black text-white border-black'
                           : 'bg-white text-black border-neutral-200 hover:border-neutral-400'
@@ -1323,7 +1323,7 @@ export function AdminProducts() {
                         key={size}
                         type="button"
                         onClick={() => toggleSize(size)}
-                        className={`px-3 py-2 rounded-lg border text-sm transition-colors ${
+                        className={`px-3 py-2 border text-sm transition-colors ${
                           selectedSizes.includes(size)
                             ? 'bg-black text-white border-black'
                             : 'bg-white text-black border-neutral-200 hover:border-neutral-400'
@@ -1348,7 +1348,7 @@ export function AdminProducts() {
                     onChange={(e) =>
                       setStock({ ...stock, [DEFAULT_STOCK_KEY]: Math.max(0, Number(e.target.value)) })
                     }
-                    className="w-32 px-3 py-2 border border-neutral-200 rounded-lg text-sm"
+                    className="w-32 px-3 py-2 border border-neutral-200 text-sm"
                   />
                 ) : (
                   <div className="flex flex-wrap gap-3">
@@ -1362,7 +1362,7 @@ export function AdminProducts() {
                           onChange={(e) =>
                             setStock({ ...stock, [String(size)]: Math.max(0, Number(e.target.value)) })
                           }
-                          className="w-16 px-2 py-2 border border-neutral-200 rounded-lg text-sm text-center"
+                          className="w-16 px-2 py-2 border border-neutral-200 text-sm text-center"
                         />
                       </div>
                     ))}

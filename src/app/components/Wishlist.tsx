@@ -40,7 +40,7 @@ export function Wishlist({ isOpen, onClose, items, onRemoveItem, onMoveToCart, o
       {/* Backdrop */}
       <div
         className={`fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity z-[150] ${
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+ isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={onClose}
       />
@@ -48,7 +48,7 @@ export function Wishlist({ isOpen, onClose, items, onRemoveItem, onMoveToCart, o
       {/* Wishlist Panel */}
       <div
         className={`fixed right-0 top-0 h-full w-full sm:w-[500px] bg-white shadow-2xl transition-transform duration-300 ease-in-out z-[151] ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
+ isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         <div className="flex flex-col h-full">
@@ -62,7 +62,7 @@ export function Wishlist({ isOpen, onClose, items, onRemoveItem, onMoveToCart, o
               {items.length > 0 && (
                 <button
                   onClick={handleShareWishlist}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-2 hover:bg-gray-100 transition-colors"
                   aria-label="Share wishlist"
                 >
                   <Share2 className="w-5 h-5" />
@@ -70,7 +70,7 @@ export function Wishlist({ isOpen, onClose, items, onRemoveItem, onMoveToCart, o
               )}
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-2 hover:bg-gray-100 transition-colors"
                 aria-label="Close wishlist"
               >
                 <X className="w-5 h-5" />

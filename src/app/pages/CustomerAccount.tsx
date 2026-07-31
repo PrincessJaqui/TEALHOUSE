@@ -138,7 +138,7 @@ export function CustomerAccount() {
               <button
                 onClick={() => setAuthMode('login')}
                 className={`pb-3 text-sm uppercase tracking-wider transition-colors ${
-                  authMode === 'login'
+ authMode === 'login'
                     ? 'border-b-2 border-black text-black'
                     : 'text-gray-500 hover:text-black'
                 }`}
@@ -148,7 +148,7 @@ export function CustomerAccount() {
               <button
                 onClick={() => setAuthMode('create')}
                 className={`pb-3 text-sm uppercase tracking-wider transition-colors ${
-                  authMode === 'create'
+ authMode === 'create'
                     ? 'border-b-2 border-black text-black'
                     : 'text-gray-500 hover:text-black'
                 }`}
@@ -260,7 +260,7 @@ export function CustomerAccount() {
                 <button
                   onClick={() => setActiveTab('orders')}
                   className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
-                    activeTab === 'orders'
+ activeTab === 'orders'
                       ? 'bg-black text-white'
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
@@ -272,7 +272,7 @@ export function CustomerAccount() {
                 <button
                   onClick={() => setActiveTab('account')}
                   className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
-                    activeTab === 'account'
+ activeTab === 'account'
                       ? 'bg-black text-white'
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
@@ -323,7 +323,7 @@ export function CustomerAccount() {
                         <div className="mb-4">
                           <div className="flex items-center gap-2 mb-2">
                             <span className={`inline-block px-3 py-1 text-xs font-medium ${
-                              order.status === 'Delivered'
+ order.status === 'Delivered'
                                 ? 'bg-green-100 text-green-800'
                                 : order.status === 'Shipped'
                                 ? 'bg-blue-100 text-blue-800'
@@ -405,7 +405,7 @@ export function CustomerAccount() {
                   </div>
                 </div>
 
-                <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+                <div className="mt-6 bg-blue-50 border border-blue-200 p-4 flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm text-blue-900 font-medium mb-1">Profile Features Coming Soon</p>

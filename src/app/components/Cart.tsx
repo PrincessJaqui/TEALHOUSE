@@ -37,7 +37,7 @@ export function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem }:
           <h2 className="uppercase tracking-wider">Shopping Bag ({items.length})</h2>
           <button 
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-gray-100 transition-colors"
             aria-label="Close cart"
           >
             <X className="w-5 h-5" />
@@ -86,7 +86,7 @@ export function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem }:
                     </div>
                     
                     <div className="mt-auto flex items-center justify-between">
-                      <div className="flex items-center gap-3 border border-gray-300 rounded">
+                      <div className="flex items-center gap-3 border border-gray-300 ">
                         <button
                           onClick={() => onUpdateQuantity(item.product.id, item.quantity - 1, item.size)}
                           className="p-2 hover:bg-gray-100 transition-colors"

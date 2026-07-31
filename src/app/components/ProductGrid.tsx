@@ -80,7 +80,7 @@ export function ProductGrid({ onProductClick, onAddToWishlist, isInWishlist, fil
             <button
               onClick={() => setSelectedCategory('all')}
               className={`px-4 py-2 text-sm border transition-colors ${
-                selectedCategory === 'all' 
+ selectedCategory === 'all' 
                   ? 'border-black bg-black text-white' 
                   : 'border-gray-300 hover:border-black'
               }`}
@@ -90,7 +90,7 @@ export function ProductGrid({ onProductClick, onAddToWishlist, isInWishlist, fil
             <button
               onClick={() => setSelectedCategory('shoes')}
               className={`px-4 py-2 text-sm border transition-colors ${
-                selectedCategory === 'shoes' 
+ selectedCategory === 'shoes' 
                   ? 'border-black bg-black text-white' 
                   : 'border-gray-300 hover:border-black'
               }`}
@@ -100,7 +100,7 @@ export function ProductGrid({ onProductClick, onAddToWishlist, isInWishlist, fil
             <button
               onClick={() => setSelectedCategory('mens')}
               className={`px-4 py-2 text-sm border transition-colors ${
-                selectedCategory === 'mens' 
+ selectedCategory === 'mens' 
                   ? 'border-black bg-black text-white' 
                   : 'border-gray-300 hover:border-black'
               }`}
@@ -110,7 +110,7 @@ export function ProductGrid({ onProductClick, onAddToWishlist, isInWishlist, fil
             <button
               onClick={() => setSelectedCategory('accessories')}
               className={`px-4 py-2 text-sm border transition-colors ${
-                selectedCategory === 'accessories' 
+ selectedCategory === 'accessories' 
                   ? 'border-black bg-black text-white' 
                   : 'border-gray-300 hover:border-black'
               }`}
@@ -146,7 +146,7 @@ export function ProductGrid({ onProductClick, onAddToWishlist, isInWishlist, fil
                 src={getPrimaryProductImage(product)}
                 alt={product.name}
                 className={`absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${
-                  isSoldOut(product) ? 'opacity-60' : ''
+ isSoldOut(product) ? 'opacity-60' : ''
                 }`}
               />
 
@@ -158,13 +158,13 @@ export function ProductGrid({ onProductClick, onAddToWishlist, isInWishlist, fil
               
               {/* Wishlist Heart Button */}
               <button
-                className="absolute top-4 right-4 p-2 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white transition-all z-10"
+                className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm hover:bg-white transition-all z-10"
                 onClick={(e) => handleWishlistClick(e, product)}
                 aria-label={isInWishlist(product.id) ? 'Remove from wishlist' : 'Add to wishlist'}
               >
                 <Heart
                   className={`w-4 h-4 transition-colors ${
-                    isInWishlist(product.id) ? 'fill-teal-600 stroke-teal-600' : 'stroke-gray-700'
+ isInWishlist(product.id) ? 'fill-teal-600 stroke-teal-600' : 'stroke-gray-700'
                   }`}
                 />
               </button>

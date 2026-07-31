@@ -149,7 +149,7 @@ export function AdminCustomers() {
                 key={key}
                 onClick={() => setFilter(key)}
                 className={`px-3 py-1.5 text-xs uppercase tracking-wider transition-colors ${
-                  filter === key
+ filter === key
                     ? 'bg-[#008080] text-white'
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}

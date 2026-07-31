@@ -166,7 +166,7 @@ export function AdminMessages() {
             <button
               onClick={() => setTab('messages')}
               className={`px-3 py-1.5 text-xs uppercase tracking-wider transition-colors ${
-                tab === 'messages'
+ tab === 'messages'
                   ? 'bg-[#008080] text-white'
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
@@ -176,7 +176,7 @@ export function AdminMessages() {
             <button
               onClick={() => setTab('subscribers')}
               className={`px-3 py-1.5 text-xs uppercase tracking-wider transition-colors ${
-                tab === 'subscribers'
+ tab === 'subscribers'
                   ? 'bg-[#008080] text-white'
                   : 'text-gray-600 hover:bg-gray-100'
               }`}

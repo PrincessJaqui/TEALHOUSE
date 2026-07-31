@@ -71,11 +71,11 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart, onAddToWis
       {/* Modal */}
       <div className="fixed inset-0 z-50 overflow-y-auto">
         <div className="min-h-full flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-4xl rounded-lg shadow-2xl relative" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white w-full max-w-4xl shadow-2xl relative" onClick={(e) => e.stopPropagation()}>
             {/* Close Button */}
             <button 
               onClick={onClose}
-              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-10"
+              className="absolute top-4 right-4 p-2 hover:bg-gray-100 transition-colors z-10"
               aria-label="Close"
             >
               <X className="w-6 h-6" />
@@ -95,7 +95,7 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart, onAddToWis
               <div className="flex flex-col">
                 <div className="flex-1">
                   <div className="mb-4">
-                    <div className="inline-block mb-3 px-3 py-1 bg-teal-50 border border-teal-200 rounded-full">
+                    <div className="inline-block mb-3 px-3 py-1 bg-teal-50 border border-teal-200 ">
                       <span className="text-xs tracking-wider text-teal-700">PLANT-BASED</span>
                     </div>
                     <h2 className="font-['Tinos'] text-2xl mb-2">{product.name}</h2>
@@ -118,7 +118,7 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart, onAddToWis
                       {product.materials.map((material, index) => (
                         <span 
                           key={index}
-                          className="px-3 py-1 bg-gray-100 text-sm text-[#666666] rounded-full"
+                          className="px-3 py-1 bg-gray-100 text-sm text-[#666666] "
                         >
                           {material}
                         </span>
@@ -139,7 +139,7 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart, onAddToWis
                             key={size}
                             onClick={() => setSelectedSize(size)}
                             className={`
-                              py-3 px-2 border-2 transition-all text-sm
+ py-3 px-2 border-2 transition-all text-sm
                               ${selectedSize === size 
                                 ? 'border-black bg-black text-white' 
                                 : 'border-gray-300 hover:border-black'
@@ -171,7 +171,7 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart, onAddToWis
                   <button
                     onClick={handleWishlist}
                     className={`flex-1 py-3 px-6 border transition-colors flex items-center justify-center gap-2 ${
-                      isInWishlist(product.id) 
+ isInWishlist(product.id) 
                         ? 'border-teal-600 bg-teal-50 text-teal-700' 
                         : 'border-gray-300 hover:border-gray-500'
                     }`}

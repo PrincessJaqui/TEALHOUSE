@@ -61,7 +61,7 @@ export function AdminLayout({ title, description, actions, children }: AdminLayo
                     key={path}
                     onClick={() => navigate(path)}
                     className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
-                      active
+ active
                         ? 'bg-[#008080] text-white'
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}
@@ -103,7 +103,7 @@ export function AdminLayout({ title, description, actions, children }: AdminLayo
  * Stat tile.
  *
  * No coloured icon chips. The original had a green, a blue, a purple and an
- * orange rounded square, which read as a generic SaaS template rather than
+ * orange  square, which read as a generic SaaS template rather than
  * anything to do with the brand. Label, value, and an optional note.
  */
 interface StatTileProps {

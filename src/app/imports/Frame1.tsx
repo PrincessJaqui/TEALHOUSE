@@ -683,7 +683,7 @@ function Heading14() {
 function EmailInput() {
   return (
     <div className="basis-0 bg-white grow h-[41px] min-h-px min-w-px relative shrink-0" data-name="Email Input">
-      <div className="bg-clip-padding border border-[transparent] border-solid content-stretch flex items-center overflow-clip relative rounded-[inherit] size-full">
+      <div className="bg-clip-padding border border-[transparent] border-solid content-stretch flex items-center overflow-clip relative -[inherit] size-full">
         <p className="font-['Inter:Light',sans-serif] font-light leading-[normal] not-italic relative shrink-0 text-[13px] text-[rgba(0,0,0,0.5)] text-nowrap tracking-[0.0538px] whitespace-pre">* E-mail</p>
       </div>
       <div aria-hidden="true" className="absolute border border-black border-solid inset-0 pointer-events-none" />
