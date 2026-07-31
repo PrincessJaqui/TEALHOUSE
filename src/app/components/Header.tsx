@@ -1,8 +1,9 @@
 import { Menu, Search, Heart, ShoppingBag, X, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import imgLogo from "figma:asset/3f298acd9128513aa329c386495f656e449305d1.png";
 import { Instagram, Youtube, Facebook, Linkedin } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface HeaderProps {
   cartItemCount: number;
@@ -14,6 +15,50 @@ interface HeaderProps {
 
 export function Header({ cartItemCount, wishlistItemCount, onCartClick, onWishlistClick, onSearchClick }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  /**
+   * Signed-in state, so the menu can say Account View and Admin View rather
+   * than inviting someone to log in when they already have.
+   *
+   * An anonymous session exists purely to hold a guest's cart, so it does not
+   * count as being signed in.
+   */
+  const [isCustomer, setIsCustomer] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    const resolveRole = async (session: any) => {
+      const user = session?.user;
+      const signedIn = Boolean(user && !user.is_anonymous && user.email);
+
+      if (!signedIn) {
+        if (active) {
+          setIsCustomer(false);
+          setIsAdmin(false);
+        }
+        return;
+      }
+
+      const { data } = await supabase.rpc('is_admin');
+      if (!active) return;
+
+      setIsAdmin(data === true);
+      setIsCustomer(data !== true);
+    };
+
+    supabase.auth.getSession().then(({ data }) => resolveRole(data.session));
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      resolveRole(session);
+    });
+
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
 
   return (
     <>
@@ -147,12 +192,12 @@ export function Header({ cartItemCount, wishlistItemCount, onCartClick, onWishli
               {/* Divider after Concept Lab */}
               <div className="border-t border-gray-200 my-4" />
               
-              <Link 
-                to="/customer-account" 
+              <Link
+                to="/customer-account"
                 className="block py-2 hover:text-gray-600 transition-colors text-sm"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Customer Account
+                {isCustomer ? 'Account View' : 'Customer Account'}
               </Link>
               
               {/* Social Media Links */}
@@ -198,15 +243,15 @@ export function Header({ cartItemCount, wishlistItemCount, onCartClick, onWishli
                 </div>
               </div>
               
-              {/* Divider before Company Login */}
+              {/* Divider before the admin link */}
               <div className="border-t border-gray-200 my-4" />
               
-              <Link 
-                to="/company-login" 
+              <Link
+                to={isAdmin ? '/admin/dashboard' : '/company-login'}
                 className="block py-2 hover:text-gray-600 transition-colors text-sm text-gray-500"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Company Login
+                {isAdmin ? 'Admin View' : 'Company Login'}
               </Link>
             </div>
           </div>
