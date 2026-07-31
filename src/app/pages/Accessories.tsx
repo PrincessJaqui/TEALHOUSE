@@ -1,8 +1,10 @@
 import { CONTACT } from '../config/contact';
+import { Seo } from '../components/Seo';
 
 export function Accessories() {
   return (
     <div className="min-h-screen bg-white flex items-center justify-center">
+      <Seo title="Accents" description="Vegan luxury accessories and accents from TEALHOUSE." path="/accessories" />
       <div className="max-w-2xl mx-auto px-5 py-24 text-center">
         <h1 className="uppercase tracking-wider mb-8">Accents</h1>
         <div className="space-y-6">

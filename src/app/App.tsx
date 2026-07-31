@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { Cart } from './components/Cart';
 import { ProductModal } from './components/ProductModal';
+import { productPath } from './config/taxonomy';
 import { Search } from './components/Search';
 import { Wishlist } from './components/Wishlist';
 import { Toaster } from './components/ui/sonner';
@@ -63,6 +64,11 @@ export interface Product {
   is_bestseller?: boolean;
   is_published?: boolean;
   created_at?: string;
+  /** URL slug, generated from the name unless overridden. */
+  slug?: string;
+  meta_title?: string;
+  meta_description?: string;
+  image_alt?: string;
 }
 
 export interface CartItem {
@@ -71,7 +77,7 @@ export interface CartItem {
   size?: number;
 }
 
-export default function App() {
+function AppContent() {
   // Supabase integration
   const { user, loading: authLoading, signInAnonymously } = useSupabaseAuth();
   const { 
@@ -94,7 +100,17 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const navigate = useNavigate();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  /**
+   * Products used to open in a modal, which meant they had no URL at all:
+   * nothing to share, nothing to bookmark, nothing for Google to index.
+   * Clicking now goes to the product's own page.
+   */
+  const openProduct = (product: Product) => {
+    navigate(productPath(product));
+  };
 
   // Auto sign-in as guest if no user (but don't block the app)
   useEffect(() => {
@@ -144,7 +160,7 @@ export default function App() {
   }
 
   return (
-    <Router>
+    <>
       <div className="min-h-screen bg-white">
         <Header 
           cartItemCount={cartItemCount}
@@ -155,7 +171,7 @@ export default function App() {
         />
         
         <Routes>
-          <Route path="/" element={<Home onProductClick={setSelectedProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
+          <Route path="/" element={<Home onProductClick={openProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
           <Route path="/italian-handmade" element={<ItalianHandmade />} />
           <Route path="/plant-based-materials" element={<PlantBasedMaterials />} />
           <Route path="/ethics-compliance" element={<EthicsCompliance />} />
@@ -174,14 +190,17 @@ export default function App() {
           <Route path="/company-login" element={<CompanyLogin />} />
           <Route path="/checkout" element={<Checkout items={supabaseCartItems} onOrderPlaced={clearCart} />} />
           <Route path="/accessories" element={<Accessories />} />
-          <Route path="/shoes" element={<Shoes onProductClick={setSelectedProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
-          <Route path="/mens-shoes" element={<MensShoes onProductClick={setSelectedProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
-          <Route path="/womens-shoes" element={<WomensShoes onProductClick={setSelectedProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
-          <Route path="/new-arrivals" element={<NewArrivals onProductClick={setSelectedProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
-          <Route path="/best-sellers" element={<BestSellers onProductClick={setSelectedProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
+          <Route path="/shoes" element={<Shoes onProductClick={openProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
+          <Route path="/mens-shoes" element={<MensShoes onProductClick={openProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
+          <Route path="/womens-shoes" element={<WomensShoes onProductClick={openProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
+          <Route path="/new-arrivals" element={<NewArrivals onProductClick={openProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
+          <Route path="/best-sellers" element={<BestSellers onProductClick={openProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
+          {/* Canonical product URL. The legacy id route is kept so any link
+              already shared still resolves; ProductDetail redirects it here. */}
+          <Route path="/products/:category/:slug" element={<ProductDetail onAddToCart={addToCart} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
           <Route path="/product-detail/:id" element={<ProductDetail onAddToCart={addToCart} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
-          <Route path="/cactus-leather" element={<CactusLeather onProductClick={setSelectedProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
-          <Route path="/teal-sole" element={<TealSole onProductClick={setSelectedProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
+          <Route path="/cactus-leather" element={<CactusLeather onProductClick={openProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
+          <Route path="/teal-sole" element={<TealSole onProductClick={openProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
           <Route path="/about-story" element={<AboutStory />} />
           <Route path="/not-found" element={<NotFound />} />
           <Route path="/admin/products" element={<ProtectedAdminRoute><AdminProducts /></ProtectedAdminRoute>} />
@@ -197,7 +216,7 @@ export default function App() {
         <Search
           isOpen={isSearchOpen}
           onClose={() => setIsSearchOpen(false)}
-          onProductClick={setSelectedProduct}
+          onProductClick={openProduct}
         />
         
         <Wishlist
@@ -206,7 +225,7 @@ export default function App() {
           items={supabaseWishlistItems}
           onRemoveItem={removeFromWishlist}
           onMoveToCart={addToCart}
-          onProductClick={setSelectedProduct}
+          onProductClick={openProduct}
         />
         
         <Cart
@@ -228,6 +247,18 @@ export default function App() {
         
         <Toaster duration={1500} />
       </div>
+    </>
+  );
+}
+
+/**
+ * The Router has to sit outside the component that uses useNavigate, so the
+ * app body lives in AppContent and this is just the shell.
+ */
+export default function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }

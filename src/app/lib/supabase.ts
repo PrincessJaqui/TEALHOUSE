@@ -36,6 +36,11 @@ export interface DbProduct {
   is_bestseller?: boolean;
   is_published?: boolean;
   created_at?: string;
+  /** URL slug, generated from the name unless overridden. */
+  slug?: string;
+  meta_title?: string;
+  meta_description?: string;
+  image_alt?: string;
 }
 
 // Database order type

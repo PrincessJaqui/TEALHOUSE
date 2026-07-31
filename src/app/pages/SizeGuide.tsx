@@ -1,8 +1,10 @@
 import { CONTACT } from '../config/contact';
+import { Seo } from '../components/Seo';
 
 export function SizeGuide() {
   return (
     <div className="min-h-screen bg-white">
+      <Seo title="Size Guide" description="US and European sizing for TEALHOUSE footwear." path="/size-guide" />
       <div className="max-w-[900px] mx-auto px-5 py-16">
         <h1 className="text-center mb-12 uppercase tracking-wider">Size Guide</h1>
         

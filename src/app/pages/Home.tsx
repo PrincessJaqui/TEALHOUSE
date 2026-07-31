@@ -1,4 +1,5 @@
 import { Hero } from '../components/Hero';
+import { Seo } from '../components/Seo';
 import { ProductGrid } from '../components/ProductGrid';
 import { ServiceFeatures } from '../components/ServiceFeatures';
 import { Product } from '../App';
@@ -12,6 +13,11 @@ interface HomeProps {
 export function Home({ onProductClick, onAddToWishlist, isInWishlist }: HomeProps) {
   return (
     <>
+      <Seo
+        title="TEALHOUSE"
+        description="Luxury vegan shoes and accessories made from plants, with our signature teal sole."
+        path="/"
+      />
       <Hero />
       <ProductGrid onProductClick={onProductClick} onAddToWishlist={onAddToWishlist} isInWishlist={isInWishlist} />
       <ServiceFeatures />

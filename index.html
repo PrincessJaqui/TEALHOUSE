@@ -23,6 +23,24 @@
       site silently fell back to the browser default serif. Loading it here is
       the only reliable way. Keep the preconnects, they cut load time noticeably.
     -->
+    <!--
+      Site-wide Open Graph defaults. These are what Facebook, iMessage and
+      Slack actually read, because those scrapers do not run JavaScript. The
+      per-product tags set by the Seo component are seen by Google, which
+      does. Making link previews product-specific needs prerendering.
+    -->
+    <meta property="og:site_name" content="TEALHOUSE" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="TEALHOUSE" />
+    <meta
+      property="og:description"
+      content="Luxury vegan shoes and accessories made from plants, with our signature teal sole."
+    />
+    <meta property="og:url" content="https://www.tealhouse.us" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="canonical" href="https://www.tealhouse.us" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

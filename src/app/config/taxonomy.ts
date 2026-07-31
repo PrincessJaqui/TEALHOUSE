@@ -145,3 +145,55 @@ export function isSoldOut(product: Product): boolean {
 export function availableSizes(product: Product): number[] {
   return (product.sizes ?? []).filter((size) => stockForSize(product, size) > 0);
 }
+
+
+/* ------------------------------------------------------------------ */
+/* URLs                                                                */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The category segment that appears in a product URL.
+ *
+ * These are the customer-facing names, so /products/footwear/lexi rather
+ * than /products/shoes/lexi. The database keeps its own values, which is
+ * why this map exists rather than using the category directly.
+ */
+export const CATEGORY_URL_SEGMENT: Record<string, string> = {
+  shoes: 'footwear',
+  accessories: 'accents',
+  apparel: 'apparel',
+  jewelry: 'jewelry',
+  gifts: 'gifts',
+  home: 'home',
+  beauty: 'beauty',
+};
+
+export function slugify(value: string): string {
+  return (value ?? '')
+    // Strip accents rather than dropping the letter, so "Eclair" survives
+    // instead of becoming "clair".
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+/** The URL segment for a product, based on its first category. */
+export function categorySegment(product: Product): string {
+  const first = (product.categories ?? [])[0];
+  if (!first) return 'products';
+  return CATEGORY_URL_SEGMENT[first.toLowerCase()] ?? slugify(first);
+}
+
+/**
+ * Canonical path for a product, for example /products/footwear/lexi.
+ *
+ * Falls back to the id when a slug is missing, so a product saved before
+ * the slug column existed is still reachable rather than 404ing.
+ */
+export function productPath(product: Product): string {
+  const slug = product.slug || slugify(product.name) || String(product.id);
+  return `/products/${categorySegment(product)}/${slug}`;
+}

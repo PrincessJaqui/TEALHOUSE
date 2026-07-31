@@ -1,4 +1,5 @@
 import { ProductGrid } from '../components/ProductGrid';
+import { Seo } from '../components/Seo';
 import { Product } from '../App';
 
 interface ShoesProps {
@@ -10,6 +11,7 @@ interface ShoesProps {
 export function Shoes({ onProductClick, onAddToWishlist, isInWishlist }: ShoesProps) {
   return (
     <div className="min-h-screen bg-white pt-20">
+      <Seo title="Footwear" description="Vegan luxury footwear in cactus leather, handmade in Italy." path="/shoes" />
       {/* Hero Section */}
       <div className="bg-[#008080] text-white py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">

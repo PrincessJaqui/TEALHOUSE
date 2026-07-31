@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { SHIPPING, RETURNS, formatPrice } from '../config/store';
-import { stockForSize, isSoldOut } from '../config/taxonomy';
+import { stockForSize, isSoldOut, totalStock, productPath, slugify } from '../config/taxonomy';
+import { Seo, productJsonLd } from '../components/Seo';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Heart, ShoppingCart, Info } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -15,7 +16,7 @@ interface ProductDetailProps {
 }
 
 export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: ProductDetailProps) {
-  const { id } = useParams<{ id: string }>();
+  const { slug, id } = useParams<{ slug?: string; id?: string }>();
   const navigate = useNavigate();
   const { products, loading } = useSupabaseProducts();
   const [product, setProduct] = useState<Product | null>(null);
@@ -23,16 +24,33 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
   const [selectedImage, setSelectedImage] = useState(0);
 
   useEffect(() => {
-    if (products.length > 0 && id) {
-      const found = products.find(p => p.id === parseInt(id));
-      if (found) {
-        setProduct(found);
-        if (found.sizes && found.sizes.length > 0) {
-          setSelectedSize(found.sizes[0]);
-        }
-      }
+    if (products.length === 0) return;
+
+    // Look up by slug. The id path is kept only so old links still resolve,
+    // and it redirects to the canonical URL below.
+    const found = slug
+      ? products.find(
+          (p) => p.slug === slug || slugify(p.name) === slug
+        )
+      : id
+        ? products.find((p) => p.id === parseInt(id))
+        : undefined;
+
+    if (!found) return;
+
+    setProduct(found);
+    if (found.sizes && found.sizes.length > 0) {
+      setSelectedSize(found.sizes[0]);
     }
-  }, [products, id]);
+
+    // One product, one URL. Anything reaching this page by id, or by the
+    // wrong category segment, is moved to the canonical path so search
+    // engines do not see duplicates.
+    const canonical = productPath(found);
+    if (window.location.pathname !== canonical) {
+      navigate(canonical, { replace: true });
+    }
+  }, [products, slug, id, navigate]);
 
   if (loading) {
     return (
@@ -80,8 +98,31 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
     }
   };
 
+  const seoImages = (product.images ?? []).filter(Boolean);
+  const primaryImage = seoImages[0] || product.image || '';
+  const canonicalPath = productPath(product);
+
   return (
     <div className="min-h-screen bg-white pt-20">
+      <Seo
+        title={product.meta_title || product.name}
+        description={
+          product.meta_description ||
+          (product.description || '').slice(0, 160)
+        }
+        path={canonicalPath}
+        image={primaryImage}
+        type="product"
+        jsonLd={productJsonLd({
+          name: product.name,
+          description: product.description,
+          images: seoImages.length ? seoImages : [primaryImage].filter(Boolean),
+          price: Number(product.price),
+          inStock: totalStock(product) > 0,
+          url: canonicalPath,
+          material: (product.materials ?? [])[0],
+        })}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Back Button */}
         <Button

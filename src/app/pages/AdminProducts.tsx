@@ -14,6 +14,8 @@ import { AdminLayout } from '../components/AdminLayout';
 import { exportCsv } from '../lib/csv';
 import {
   CATEGORIES,
+  slugify,
+  CATEGORY_URL_SEGMENT,
   AUDIENCES,
   MATERIALS,
   SHOE_SIZES,
@@ -54,6 +56,24 @@ export function AdminProducts() {
   // Stock per size, keyed by size as a string. Sizeless products use "default".
   const [stock, setStock] = useState<Record<string, number>>({});
   const [isBestseller, setIsBestseller] = useState(false);
+  const [slug, setSlug] = useState('');
+  const [metaTitle, setMetaTitle] = useState('');
+  const [metaDescription, setMetaDescription] = useState('');
+  const [imageAlt, setImageAlt] = useState('');
+  // Tracks whether the person has taken manual control of a field. Until
+  // they do, it keeps following the product name.
+  const [seoTouched, setSeoTouched] = useState({ slug: false, title: false });
+
+  /**
+   * Typing a product name fills the slug and meta title automatically. Once
+   * either is edited by hand it stops following, so a deliberate choice is
+   * never overwritten by a later typo fix in the name.
+   */
+  const handleNameChange = (value: string) => {
+    setName(value);
+    if (!seoTouched.slug) setSlug(slugify(value));
+    if (!seoTouched.title) setMetaTitle(value);
+  };
   const [isPublished, setIsPublished] = useState(true);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -232,7 +252,11 @@ export function AdminProducts() {
           sizes: selectedCategories.includes('accessories') ? null : selectedSizes,
           stock: buildStockPayload(),
           is_bestseller: isBestseller,
-          is_published: isPublished
+          is_published: isPublished,
+          slug: slug.trim() || null,
+          meta_title: metaTitle.trim() || null,
+          meta_description: metaDescription.trim() || null,
+          image_alt: imageAlt.trim() || null
         })
         .select()
         .single();
@@ -351,6 +375,11 @@ export function AdminProducts() {
     setSelectedSizes([36, 37, 38, 39, 40, 41]);
     setStock({});
     setIsBestseller(false);
+    setSlug('');
+    setMetaTitle('');
+    setMetaDescription('');
+    setImageAlt('');
+    setSeoTouched({ slug: false, title: false });
     setIsPublished(true);
     setImageFiles([]);
     setImagePreviews([]);
@@ -373,6 +402,11 @@ export function AdminProducts() {
     setSelectedSizes(product.sizes || []);
     setStock(product.stock ?? {});
     setIsBestseller(product.is_bestseller ?? false);
+    setSlug(product.slug ?? '');
+    setMetaTitle(product.meta_title ?? '');
+    setMetaDescription(product.meta_description ?? '');
+    setImageAlt(product.image_alt ?? '');
+    setSeoTouched({ slug: Boolean(product.slug), title: Boolean(product.meta_title) });
     setIsPublished(product.is_published ?? true);
     setExistingImages(product.images || [product.image]);
     setExistingVideo(product.video || '');
@@ -482,6 +516,10 @@ export function AdminProducts() {
         stock: buildStockPayload(),
         is_bestseller: isBestseller,
         is_published: isPublished,
+        slug: slug.trim() || null,
+        meta_title: metaTitle.trim() || null,
+        meta_description: metaDescription.trim() || null,
+        image_alt: imageAlt.trim() || null,
         updated_at: new Date().toISOString()
       };
 
@@ -758,7 +796,7 @@ export function AdminProducts() {
                 <Input
                   id="name"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="e.g., Aria Mule"
                   required
                 />
@@ -1007,6 +1045,86 @@ export function AdminProducts() {
                 </p>
               </div>
 
+
+              {/* Search engine listing. None of this existed before, so every
+                  page on the site served the same title and description. */}
+              <div className="border border-neutral-200 p-4">
+                <p className="text-xs uppercase tracking-wider text-neutral-500 mb-4">
+                  Search &amp; sharing
+                </p>
+
+                <div className="mb-4">
+                  <label className="block text-sm mb-2">URL</label>
+                  <div className="flex items-center gap-1 text-sm">
+                    <span className="text-neutral-500 whitespace-nowrap">
+                      /products/{CATEGORY_URL_SEGMENT[selectedCategories[0]] ?? 'products'}/
+                    </span>
+                    <input
+                      type="text"
+                      value={slug}
+                      onChange={(e) => {
+                        setSeoTouched((t) => ({ ...t, slug: true }));
+                        setSlug(slugify(e.target.value));
+                      }}
+                      placeholder="generated-from-name"
+                      className="flex-1 px-3 py-2 border border-neutral-200 text-sm"
+                    />
+                  </div>
+                  <p className="text-xs text-neutral-500 mt-2">
+                    Changing this after the product is live breaks any link already shared.
+                  </p>
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm mb-2">
+                    Page title{' '}
+                    <span className="text-neutral-400">({metaTitle.length}/60)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={metaTitle}
+                    onChange={(e) => {
+                      setSeoTouched((t) => ({ ...t, title: true }));
+                      setMetaTitle(e.target.value);
+                    }}
+                    className="w-full px-3 py-2 border border-neutral-200 text-sm"
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm mb-2">
+                    Search description{' '}
+                    <span className="text-neutral-400">({metaDescription.length}/160)</span>
+                  </label>
+                  <textarea
+                    value={metaDescription}
+                    onChange={(e) => setMetaDescription(e.target.value)}
+                    rows={2}
+                    placeholder="Falls back to the start of the product description"
+                    className="w-full px-3 py-2 border border-neutral-200 text-sm"
+                  />
+                  {metaDescription.length > 160 && (
+                    <p className="text-xs text-amber-700 mt-1">
+                      Over 160 characters. Google will cut it off.
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm mb-2">Image description</label>
+                  <input
+                    type="text"
+                    value={imageAlt}
+                    onChange={(e) => setImageAlt(e.target.value)}
+                    placeholder="Teal-soled cactus leather pump, side view"
+                    className="w-full px-3 py-2 border border-neutral-200 text-sm"
+                  />
+                  <p className="text-xs text-neutral-500 mt-2">
+                    Read aloud by screen readers, and how Google Images understands the photo.
+                  </p>
+                </div>
+              </div>
+
               <div className="flex items-center gap-6">
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <input
@@ -1059,7 +1177,7 @@ export function AdminProducts() {
                 <Input
                   id="name"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="e.g., Aria Mule"
                   required
                 />
@@ -1371,6 +1489,86 @@ export function AdminProducts() {
                 <p className="text-xs text-neutral-500 mt-2">
                   Zero means sold out. The database refuses any order that would take a size below zero.
                 </p>
+              </div>
+
+
+              {/* Search engine listing. None of this existed before, so every
+                  page on the site served the same title and description. */}
+              <div className="border border-neutral-200 p-4">
+                <p className="text-xs uppercase tracking-wider text-neutral-500 mb-4">
+                  Search &amp; sharing
+                </p>
+
+                <div className="mb-4">
+                  <label className="block text-sm mb-2">URL</label>
+                  <div className="flex items-center gap-1 text-sm">
+                    <span className="text-neutral-500 whitespace-nowrap">
+                      /products/{CATEGORY_URL_SEGMENT[selectedCategories[0]] ?? 'products'}/
+                    </span>
+                    <input
+                      type="text"
+                      value={slug}
+                      onChange={(e) => {
+                        setSeoTouched((t) => ({ ...t, slug: true }));
+                        setSlug(slugify(e.target.value));
+                      }}
+                      placeholder="generated-from-name"
+                      className="flex-1 px-3 py-2 border border-neutral-200 text-sm"
+                    />
+                  </div>
+                  <p className="text-xs text-neutral-500 mt-2">
+                    Changing this after the product is live breaks any link already shared.
+                  </p>
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm mb-2">
+                    Page title{' '}
+                    <span className="text-neutral-400">({metaTitle.length}/60)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={metaTitle}
+                    onChange={(e) => {
+                      setSeoTouched((t) => ({ ...t, title: true }));
+                      setMetaTitle(e.target.value);
+                    }}
+                    className="w-full px-3 py-2 border border-neutral-200 text-sm"
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm mb-2">
+                    Search description{' '}
+                    <span className="text-neutral-400">({metaDescription.length}/160)</span>
+                  </label>
+                  <textarea
+                    value={metaDescription}
+                    onChange={(e) => setMetaDescription(e.target.value)}
+                    rows={2}
+                    placeholder="Falls back to the start of the product description"
+                    className="w-full px-3 py-2 border border-neutral-200 text-sm"
+                  />
+                  {metaDescription.length > 160 && (
+                    <p className="text-xs text-amber-700 mt-1">
+                      Over 160 characters. Google will cut it off.
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm mb-2">Image description</label>
+                  <input
+                    type="text"
+                    value={imageAlt}
+                    onChange={(e) => setImageAlt(e.target.value)}
+                    placeholder="Teal-soled cactus leather pump, side view"
+                    className="w-full px-3 py-2 border border-neutral-200 text-sm"
+                  />
+                  <p className="text-xs text-neutral-500 mt-2">
+                    Read aloud by screen readers, and how Google Images understands the photo.
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center gap-6">

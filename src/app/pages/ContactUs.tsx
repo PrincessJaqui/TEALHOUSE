@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Seo } from '../components/Seo';
 import { toast } from 'sonner';
 import { CONTACT, SHOWROOMS } from '../config/contact';
 import { supabase } from '../lib/supabase';
@@ -49,6 +50,7 @@ export function ContactUs() {
 
   return (
     <div className="min-h-screen bg-white">
+      <Seo title="Contact Us" description="Get in touch with TEALHOUSE client services." path="/contact-us" />
       <div className="max-w-[900px] mx-auto px-5 py-16">
         <h1 className="text-center mb-12 uppercase tracking-wider">Contact Us</h1>
         
