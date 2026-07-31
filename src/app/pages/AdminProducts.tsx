@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { toast } from 'sonner';
 import { Plus, Trash2, Upload, Package, X, Video, Edit, Image as ImageIcon, Database, Download } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
-import { AdminNav } from '../components/AdminNav';
+import { AdminLayout } from '../components/AdminLayout';
 import { exportCsv } from '../lib/csv';
 import {
   CATEGORIES,
@@ -632,29 +632,27 @@ export function AdminProducts() {
   };
 
   return (
-    <>
-      <AdminNav />
-      <div className="container mx-auto px-4 py-12 max-w-7xl">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="mb-2">Product Management</h1>
-            <p className="text-neutral-600">Manage the TEALHOUSE product catalog</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={exportInventory} disabled={products.length === 0}>
-              <Download className="w-4 h-4 mr-2" />
-              Inventory CSV
-            </Button>
-            <Button variant="outline" onClick={exportProducts} disabled={products.length === 0}>
-              <Download className="w-4 h-4 mr-2" />
-              Products CSV
-            </Button>
-            <Button onClick={() => setIsCreateModalOpen(true)} size="lg">
-              <Plus className="w-5 h-5 mr-2" />
-              Create New Product
-            </Button>
-          </div>
-        </div>
+    <AdminLayout
+      title="Products"
+      description="Manage the TEALHOUSE catalogue"
+      actions={
+        <>
+          <Button variant="outline" onClick={exportInventory} disabled={products.length === 0}>
+            <Download className="w-4 h-4 mr-2" />
+            Inventory CSV
+          </Button>
+          <Button variant="outline" onClick={exportProducts} disabled={products.length === 0}>
+            <Download className="w-4 h-4 mr-2" />
+            Products CSV
+          </Button>
+          <Button onClick={() => setIsCreateModalOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            New Product
+          </Button>
+        </>
+      }
+    >
+      <div>
 
         {dbError && (
           <Alert className="mb-8 bg-yellow-50 border-yellow-200">
@@ -1426,6 +1424,6 @@ export function AdminProducts() {
           </DialogContent>
         </Dialog>
       </div>
-    </>
+    </AdminLayout>
   );
 }

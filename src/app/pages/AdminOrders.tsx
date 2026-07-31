@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase, DbOrder } from '../lib/supabase';
-import { AdminNav } from '../components/AdminNav';
+import { AdminLayout } from '../components/AdminLayout';
 import { exportCsv } from '../lib/csv';
 import { toast } from 'sonner';
 import { Package, Calendar, DollarSign, User, Eye, Download } from 'lucide-react';
@@ -70,12 +70,9 @@ export function AdminOrders() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-20">
-        <AdminNav />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center">Loading orders...</div>
-        </div>
-      </div>
+      <AdminLayout title="Orders">
+        <p className="text-sm text-gray-600">Loading</p>
+      </AdminLayout>
     );
   }
 
@@ -147,28 +144,25 @@ export function AdminOrders() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20">
-      <AdminNav />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl mb-2">Orders</h1>
-            <p className="text-gray-600">{orders.length} total orders</p>
-            <div className="flex gap-3 mt-3">
-              <Button variant="outline" size="sm" onClick={exportOrders} disabled={filteredOrders.length === 0}>
-                <Download className="w-4 h-4 mr-2" />
-                Orders CSV
-              </Button>
-              <Button variant="outline" size="sm" onClick={exportOrderItems} disabled={filteredOrders.length === 0}>
-                <Download className="w-4 h-4 mr-2" />
-                Pick list CSV
-              </Button>
-            </div>
-          </div>
-          
-          {/* Status Filter */}
-          <div className="flex gap-2">
+    <AdminLayout
+      title="Orders"
+      description={`${orders.length} total`}
+      actions={
+        <>
+          <Button variant="outline" size="sm" onClick={exportOrders} disabled={filteredOrders.length === 0}>
+            <Download className="w-4 h-4 mr-2" />
+            Orders CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportOrderItems} disabled={filteredOrders.length === 0}>
+            <Download className="w-4 h-4 mr-2" />
+            Pick list CSV
+          </Button>
+        </>
+      }
+    >
+      <div>
+        <div className="mb-6">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant={filterStatus === 'all' ? 'default' : 'outline'}
               onClick={() => setFilterStatus('all')}
@@ -371,6 +365,6 @@ export function AdminOrders() {
           </div>
         </div>
       )}
-    </div>
+    </AdminLayout>
   );
 }

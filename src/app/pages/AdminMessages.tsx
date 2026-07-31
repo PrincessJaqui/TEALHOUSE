@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AdminNav } from '../components/AdminNav';
+import { AdminLayout, StatTile } from '../components/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -134,217 +134,156 @@ export function AdminMessages() {
   const activeSubscribers = subscribers.filter((s) => !s.unsubscribed).length;
 
   return (
-    <>
-      <AdminNav />
-      <div className="container mx-auto px-4 py-12 max-w-7xl">
-        <div className="mb-8">
-          <h1 className="mb-2">Messages</h1>
-          <p className="text-neutral-600">Enquiries from Contact Us and newsletter signups</p>
+    <AdminLayout
+      title="Messages"
+      description="Enquiries from Contact Us and newsletter signups"
+      actions={
+        <Button
+          variant="outline"
+          onClick={tab === 'messages' ? exportMessages : exportSubscribers}
+          disabled={tab === 'messages' ? messages.length === 0 : subscribers.length === 0}
+        >
+          <Download className="w-4 h-4 mr-2" />
+          Export CSV
+        </Button>
+      }
+    >
+      {dbError && (
+        <div className="border border-red-200 bg-red-50 px-4 py-3 mb-8 text-sm text-red-800">
+          {dbError}
         </div>
+      )}
 
-        {dbError && (
-          <Alert className="mb-8 bg-red-50 border-red-200">
-            <XCircle className="h-4 w-4 text-red-800" />
-            <AlertDescription className="text-red-800">
-              <strong>Error:</strong> {dbError}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-600 mb-1">Unread Messages</p>
-                  <p className="text-3xl">{unhandledCount}</p>
-                </div>
-                <Inbox className="w-8 h-8 text-neutral-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-600 mb-1">Total Messages</p>
-                  <p className="text-3xl">{messages.length}</p>
-                </div>
-                <Mail className="w-8 h-8 text-neutral-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-600 mb-1">Subscribers</p>
-                  <p className="text-3xl">{activeSubscribers}</p>
-                </div>
-                <Users className="w-8 h-8 text-neutral-400" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex gap-6 mb-2">
-                  <button
-                    onClick={() => setTab('messages')}
-                    className={`pb-1 text-sm transition-colors ${
-                      tab === 'messages'
-                        ? 'border-b-2 border-black text-black'
-                        : 'text-neutral-500 hover:text-black'
-                    }`}
-                  >
-                    Enquiries
-                  </button>
-                  <button
-                    onClick={() => setTab('subscribers')}
-                    className={`pb-1 text-sm transition-colors ${
-                      tab === 'subscribers'
-                        ? 'border-b-2 border-black text-black'
-                        : 'text-neutral-500 hover:text-black'
-                    }`}
-                  >
-                    Newsletter
-                  </button>
-                </div>
-                <CardTitle>{tab === 'messages' ? 'Customer Enquiries' : 'Newsletter Subscribers'}</CardTitle>
-                <CardDescription>
-                  {tab === 'messages'
-                    ? 'Messages sent through the Contact Us form'
-                    : 'Addresses captured from the signup forms'}
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={tab === 'messages' ? exportMessages : exportSubscribers}
-                  disabled={tab === 'messages' ? messages.length === 0 : subscribers.length === 0}
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Export CSV
-                </Button>
-              <div className="relative w-80">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
-                <Input
-                  type="text"
-                  placeholder="Search..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              </div>
-            </div>
-          </CardHeader>
-
-          <CardContent>
-            {loading ? (
-              <div className="text-center py-12 text-neutral-500">Loading...</div>
-            ) : tab === 'messages' ? (
-              filteredMessages.length === 0 ? (
-                <div className="text-center py-12 text-neutral-500">
-                  <Inbox className="w-16 h-16 mx-auto mb-4 text-neutral-300" />
-                  <p>No messages yet</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {filteredMessages.map((m) => (
-                    <div
-                      key={m.id}
-                      className={`border rounded-lg p-4 ${
-                        m.handled ? 'bg-neutral-50 border-neutral-200' : 'bg-white border-neutral-300'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-4 mb-2">
-                        <div>
-                          <p className="font-medium">{m.name || 'No name given'}</p>
-                          <a
-                            href={`mailto:${m.email}`}
-                            className="text-sm text-neutral-600 hover:text-black"
-                          >
-                            {m.email}
-                          </a>
-                          {m.subject && (
-                            <p className="text-xs text-neutral-500 mt-1 capitalize">{m.subject}</p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3 shrink-0">
-                          <span className="text-xs text-neutral-500">
-                            {new Date(m.created_at).toLocaleDateString()}
-                          </span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setHandled(m.id, !m.handled)}
-                          >
-                            {m.handled ? 'Mark unread' : (
-                              <>
-                                <CheckCircle className="w-4 h-4 mr-1" />
-                                Mark handled
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                      <p className="text-sm text-neutral-700 whitespace-pre-wrap">{m.message}</p>
-                    </div>
-                  ))}
-                </div>
-              )
-            ) : filteredSubscribers.length === 0 ? (
-              <div className="text-center py-12 text-neutral-500">
-                <Users className="w-16 h-16 mx-auto mb-4 text-neutral-300" />
-                <p>No subscribers yet</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3 px-4 text-sm">Email</th>
-                      <th className="text-left py-3 px-4 text-sm">Source</th>
-                      <th className="text-left py-3 px-4 text-sm">Signed up</th>
-                      <th className="text-left py-3 px-4 text-sm">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredSubscribers.map((s) => (
-                      <tr key={s.id} className="border-b hover:bg-neutral-50">
-                        <td className="py-4 px-4 text-sm">{s.email}</td>
-                        <td className="py-4 px-4 text-sm text-neutral-600">{s.source || 'unknown'}</td>
-                        <td className="py-4 px-4 text-sm text-neutral-600">
-                          {new Date(s.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="py-4 px-4">
-                          {s.unsubscribed ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-neutral-100 text-neutral-600">
-                              Unsubscribed
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-green-50 text-green-700">
-                              <CheckCircle className="w-3 h-3" />
-                              Active
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <StatTile label="Unread" value={unhandledCount} />
+        <StatTile label="Total messages" value={messages.length} />
+        <StatTile label="Subscribers" value={activeSubscribers} />
       </div>
-    </>
+
+      <div className="bg-white border border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex gap-1">
+            <button
+              onClick={() => setTab('messages')}
+              className={`px-3 py-1.5 text-xs uppercase tracking-wider transition-colors ${
+                tab === 'messages'
+                  ? 'bg-[#008080] text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              Enquiries
+            </button>
+            <button
+              onClick={() => setTab('subscribers')}
+              className={`px-3 py-1.5 text-xs uppercase tracking-wider transition-colors ${
+                tab === 'subscribers'
+                  ? 'bg-[#008080] text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              Newsletter
+            </button>
+          </div>
+
+          <div className="relative w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="px-6 py-16 text-center text-sm text-gray-600">Loading</div>
+        ) : tab === 'messages' ? (
+          filteredMessages.length === 0 ? (
+            <div className="px-6 py-16 text-center">
+              <Inbox className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+              <p className="text-sm text-gray-600">No messages yet</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {filteredMessages.map((m) => (
+                <div key={m.id} className={`px-6 py-5 ${m.handled ? 'bg-gray-50' : ''}`}>
+                  <div className="flex items-start justify-between gap-4 mb-2">
+                    <div>
+                      <p className="text-sm">{m.name || 'No name given'}</p>
+                      <a
+                        href={`mailto:${m.email}`}
+                        className="text-xs text-gray-500 hover:text-[#008080]"
+                      >
+                        {m.email}
+                      </a>
+                      {m.subject && (
+                        <p className="text-xs uppercase tracking-wider text-gray-500 mt-1">
+                          {m.subject}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-xs text-gray-500">
+                        {new Date(m.created_at).toLocaleDateString()}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setHandled(m.id, !m.handled)}
+                      >
+                        {m.handled ? 'Mark unread' : 'Mark handled'}
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{m.message}</p>
+                </div>
+              ))}
+            </div>
+          )
+        ) : filteredSubscribers.length === 0 ? (
+          <div className="px-6 py-16 text-center">
+            <Users className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+            <p className="text-sm text-gray-600">No subscribers yet</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left px-6 py-3 text-xs uppercase tracking-wider text-gray-500">
+                    Email
+                  </th>
+                  <th className="text-left px-6 py-3 text-xs uppercase tracking-wider text-gray-500">
+                    Source
+                  </th>
+                  <th className="text-left px-6 py-3 text-xs uppercase tracking-wider text-gray-500">
+                    Signed up
+                  </th>
+                  <th className="text-left px-6 py-3 text-xs uppercase tracking-wider text-gray-500">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredSubscribers.map((s) => (
+                  <tr key={s.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm">{s.email}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{s.source || 'unknown'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {new Date(s.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-xs uppercase tracking-wider text-gray-600">
+                      {s.unsubscribed ? 'Unsubscribed' : 'Active'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </AdminLayout>
   );
 }
