@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Heart } from 'lucide-react';
 import { Product } from '../App';
 import { productMatchesFilter, isSoldOut, type FilterKey } from '../config/taxonomy';
+import { useCatalogLists } from '../hooks/useCatalogLists';
 import { getPrimaryProductImage } from '../lib/default-image';
 import { useSupabaseProducts } from '../hooks/useSupabaseProducts';
 
@@ -26,11 +27,12 @@ export function ProductGrid({ onProductClick, onAddToWishlist, isInWishlist, fil
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   
-  const colors = [
-    { name: 'Gray', hex: '#B8B5AD' },
-    { name: 'Black', hex: '#000000' },
-    { name: 'Brown', hex: '#9B6F47' }
-  ];
+  // Swatch colours come from the colours table, so a hex set once is used
+  // everywhere. Which swatches a card shows comes from that product.
+  const { colors: colorRows } = useCatalogLists();
+
+  const hexFor = (name: string) =>
+    colorRows.find((row) => row.name.toLowerCase() === name.toLowerCase())?.hex ?? null;
 
   const handleWishlistClick = (e: React.MouseEvent, product: Product) => {
     e.stopPropagation();
@@ -175,17 +177,28 @@ export function ProductGrid({ onProductClick, onAddToWishlist, isInWishlist, fil
             </div>
             <h4 className="font-['Tinos'] mb-1">{product.name}</h4>
             <p className="text-[#666666] mb-2">${product.price.toLocaleString()}</p>
-            <div className="flex items-center gap-2">
-              {colors.map((color, index) => (
-                <button
-                  key={index}
-                  className="w-4 h-4 rounded-full border border-gray-300 hover:scale-110 transition-transform"
-                  style={{ backgroundColor: color.hex }}
-                  title={color.name}
-                  aria-label={`Select ${color.name} color`}
-                />
-              ))}
-            </div>
+            {/* This product's own colours. Not buttons: the colour is chosen
+                on the product page, so a fake control here would mislead. */}
+            {(product.colors ?? []).length > 0 && (
+              <div className="flex items-center gap-2 flex-wrap">
+                {(product.colors ?? []).map((color) => {
+                  const hex = hexFor(color);
+                  return hex ? (
+                    <span
+                      key={color}
+                      title={color}
+                      aria-label={color}
+                      className="w-4 h-4 rounded-full border border-gray-300 inline-block"
+                      style={{ backgroundColor: hex }}
+                    />
+                  ) : (
+                    <span key={color} className="text-xs text-[#666666]">
+                      {color}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
           </div>
         ))}
       </div>

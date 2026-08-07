@@ -562,6 +562,20 @@ export function AdminProducts() {
     setImagesToDelete([]);
   };
 
+  /**
+   * A blank form, every time.
+   *
+   * This used to just open the modal, so whatever was last edited stayed in
+   * state: its colours, its stock numbers, its parts. A new product silently
+   * inherited them, which looked like one product's colours changing every
+   * other product.
+   */
+  const openCreateModal = () => {
+    setEditingProduct(null);
+    resetForm();
+    setIsCreateModalOpen(true);
+  };
+
   const openEditModal = (product: Product) => {
     setEditingProduct(product);
     populateForm(product);
@@ -876,7 +890,7 @@ export function AdminProducts() {
             <Download className="w-4 h-4 mr-2" />
             Products CSV
           </Button>
-          <Button onClick={() => setIsCreateModalOpen(true)}>
+          <Button onClick={openCreateModal}>
             <Plus className="w-4 h-4 mr-2" />
             New Product
           </Button>
@@ -925,7 +939,7 @@ export function AdminProducts() {
                 <p className="text-xs text-gray-500 mb-6">
                   Add your first product with photos, sizes and stock
                 </p>
-                <Button onClick={() => setIsCreateModalOpen(true)}>
+                <Button onClick={openCreateModal}>
                   <Plus className="w-4 h-4 mr-2" />
                   New Product
                 </Button>
