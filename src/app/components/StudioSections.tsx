@@ -33,10 +33,28 @@ export function StudioHero({ content }: { content: Record<string, any> }) {
   const video = isMobile ? content.video_mobile : content.video_desktop;
   const image = isMobile ? content.image_mobile : content.image_desktop;
 
-  // Which part of the frame stays visible once the film is cropped to the
-  // hero. Chosen in the Studio, separately for each breakpoint.
-  const focal =
+  // How the media is cropped to the hero: position chooses what stays
+  // centred, zoom chooses how tight. Set per breakpoint in the Studio, and
+  // separately for the film and the still, since a still is often a
+  // different photograph. The still falls back to the film's framing.
+  const videoFocal =
     (isMobile ? content.focal_mobile : content.focal_desktop) || '50% 50%';
+  const videoZoom = Number(
+    (isMobile ? content.zoom_mobile : content.zoom_desktop) ?? 1
+  );
+
+  const imageFocal =
+    (isMobile ? content.image_focal_mobile : content.image_focal_desktop) ||
+    videoFocal;
+  const imageZoom = Number(
+    (isMobile ? content.image_zoom_mobile : content.image_zoom_desktop) ?? 1
+  );
+
+  const frame = (focal: string, zoom: number) => ({
+    objectPosition: focal,
+    transform: zoom > 1 ? `scale(${zoom})` : undefined,
+    transformOrigin: focal,
+  });
 
   if (!video && !image) return null;
 
@@ -47,7 +65,7 @@ export function StudioHero({ content }: { content: Record<string, any> }) {
           <video
             key={video}
             className="absolute inset-0 w-full h-full object-cover"
-            style={{ objectPosition: focal }}
+            style={frame(videoFocal, videoZoom)}
             src={video}
             poster={image || undefined}
             preload="metadata"
@@ -61,7 +79,7 @@ export function StudioHero({ content }: { content: Record<string, any> }) {
             src={image}
             alt={content.headline || ''}
             className="absolute inset-0 w-full h-full object-cover"
-            style={{ objectPosition: focal }}
+            style={frame(imageFocal, imageZoom)}
           />
         )}
 
@@ -134,7 +152,15 @@ export function StudioSplit({ content }: { content: Record<string, any> }) {
             <img
               src={panel.image_desktop || panel.image_mobile}
               alt={panel.label || ''}
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700"
+              style={{
+                objectPosition: panel.focal_desktop || '50% 50%',
+                transform:
+                  Number(panel.zoom_desktop ?? 1) > 1
+                    ? `scale(${panel.zoom_desktop})`
+                    : undefined,
+                transformOrigin: panel.focal_desktop || '50% 50%',
+              }}
             />
           </picture>
 

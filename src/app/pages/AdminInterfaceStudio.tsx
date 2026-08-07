@@ -44,6 +44,8 @@ function MediaField({
   onChange,
   focal,
   onFocalChange,
+  zoom,
+  onZoomChange,
   previewRatio,
 }: {
   label: string;
@@ -54,6 +56,8 @@ function MediaField({
   /** "50% 50%" style focal point, when the caller wants crop control. */
   focal?: string;
   onFocalChange?: (focal: string) => void;
+  zoom?: number;
+  onZoomChange?: (zoom: number) => void;
   previewRatio?: string;
 }) {
   const [busy, setBusy] = useState(false);
@@ -66,8 +70,18 @@ function MediaField({
     .split(' ')
     .map((part) => parseInt(part, 10) || 50);
 
-  const setFocal = (x: number, y: number) =>
-    onFocalChange?.(`${x}% ${y}%`);
+  const setFocal = (x: number, y: number) => onFocalChange?.(`${x}% ${y}%`);
+
+  const scale = zoom && zoom > 1 ? zoom : 1;
+
+  // Position decides what stays centred, zoom decides how tight the crop is.
+  // The origin follows the focal point so zooming does not drift away from
+  // whatever was framed.
+  const mediaStyle = {
+    objectPosition: focal ?? '50% 50%',
+    transform: scale > 1 ? `scale(${scale})` : undefined,
+    transformOrigin: focal ?? '50% 50%',
+  } as const;
 
   const handleFile = async (file: File) => {
     setBusy(true);
@@ -115,7 +129,7 @@ function MediaField({
               <video
                 src={value}
                 className="absolute inset-0 w-full h-full object-cover"
-                style={{ objectPosition: focal ?? '50% 50%' }}
+                style={mediaStyle}
                 muted
                 loop
                 autoPlay
@@ -126,7 +140,7 @@ function MediaField({
                 src={value}
                 alt=""
                 className="absolute inset-0 w-full h-full object-cover"
-                style={{ objectPosition: focal ?? '50% 50%' }}
+                style={mediaStyle}
               />
             )}
           </div>
@@ -164,12 +178,32 @@ function MediaField({
                 />
                 <span className="w-10 text-right text-neutral-500">{fy}%</span>
               </label>
+              {onZoomChange && (
+                <label className="flex items-center gap-3 text-xs">
+                  <span className="w-16 text-neutral-600">Zoom</span>
+                  <input
+                    type="range"
+                    min={100}
+                    max={250}
+                    value={Math.round(scale * 100)}
+                    onChange={(e) => onZoomChange(Number(e.target.value) / 100)}
+                    className="flex-1"
+                  />
+                  <span className="w-10 text-right text-neutral-500">
+                    {Math.round(scale * 100)}%
+                  </span>
+                </label>
+              )}
+
               <button
                 type="button"
-                onClick={() => setFocal(50, 50)}
+                onClick={() => {
+                  setFocal(50, 50);
+                  onZoomChange?.(1);
+                }}
                 className="text-xs text-neutral-500 hover:text-black underline"
               >
-                Centre
+                Reset framing
               </button>
             </div>
           )}
@@ -429,6 +463,8 @@ export function AdminInterfaceStudio() {
             value={draft.video_desktop}
             focal={draft.focal_desktop}
             onFocalChange={(v) => setField(key, 'focal_desktop', v)}
+            zoom={draft.zoom_desktop}
+            onZoomChange={(v) => setField(key, 'zoom_desktop', v)}
             onChange={(v) => setField(key, 'video_desktop', v)}
           />
           <MediaField
@@ -439,15 +475,20 @@ export function AdminInterfaceStudio() {
             value={draft.video_mobile}
             focal={draft.focal_mobile}
             onFocalChange={(v) => setField(key, 'focal_mobile', v)}
+            zoom={draft.zoom_mobile}
+            onZoomChange={(v) => setField(key, 'zoom_mobile', v)}
             onChange={(v) => setField(key, 'video_mobile', v)}
           />
           <MediaField
             label="Desktop still"
-            help="Shown while the film loads, and instead of it where video will not play. Shares the desktop framing."
+            help="Shown while the film loads, and instead of it where video will not play."
             accept="image/*"
             previewRatio="16 / 9"
             value={draft.image_desktop}
-            focal={draft.focal_desktop}
+            focal={draft.image_focal_desktop ?? draft.focal_desktop}
+            onFocalChange={(v) => setField(key, 'image_focal_desktop', v)}
+            zoom={draft.image_zoom_desktop}
+            onZoomChange={(v) => setField(key, 'image_zoom_desktop', v)}
             onChange={(v) => setField(key, 'image_desktop', v)}
           />
           <MediaField
@@ -455,7 +496,10 @@ export function AdminInterfaceStudio() {
             accept="image/*"
             previewRatio="9 / 14"
             value={draft.image_mobile}
-            focal={draft.focal_mobile}
+            focal={draft.image_focal_mobile ?? draft.focal_mobile}
+            onFocalChange={(v) => setField(key, 'image_focal_mobile', v)}
+            zoom={draft.image_zoom_mobile}
+            onZoomChange={(v) => setField(key, 'image_zoom_mobile', v)}
             onChange={(v) => setField(key, 'image_mobile', v)}
           />
           <TextField
@@ -525,14 +569,24 @@ export function AdminInterfaceStudio() {
               <MediaField
                 label="Desktop image"
                 accept="image/*"
+                previewRatio="4 / 5"
                 value={panels[index]?.image_desktop}
+                focal={panels[index]?.focal_desktop}
+                onFocalChange={(v) => setPanel(key, index, 'focal_desktop', v)}
+                zoom={panels[index]?.zoom_desktop}
+                onZoomChange={(v) => setPanel(key, index, 'zoom_desktop', v)}
                 onChange={(v) => setPanel(key, index, 'image_desktop', v)}
               />
               <MediaField
                 label="Mobile image"
                 help="Optional. Falls back to the desktop image."
                 accept="image/*"
+                previewRatio="4 / 5"
                 value={panels[index]?.image_mobile}
+                focal={panels[index]?.focal_mobile}
+                onFocalChange={(v) => setPanel(key, index, 'focal_mobile', v)}
+                zoom={panels[index]?.zoom_mobile}
+                onZoomChange={(v) => setPanel(key, index, 'zoom_mobile', v)}
                 onChange={(v) => setPanel(key, index, 'image_mobile', v)}
               />
               <TextField
