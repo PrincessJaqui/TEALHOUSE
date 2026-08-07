@@ -8,7 +8,7 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, Trash2, Upload, Package, X, Video, Edit, Image as ImageIcon, Download, ExternalLink } from 'lucide-react';
+import { Plus, Trash2, Upload, Package, X, Video, Edit, Image as ImageIcon, Download, ExternalLink, Copy } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { AdminLayout } from '../components/AdminLayout';
 import { exportCsv } from '../lib/csv';
@@ -17,6 +17,7 @@ import { useCatalogLists } from '../hooks/useCatalogLists';
 import {
   FULFILLMENT_LABELS,
   defaultShipEstimate,
+  DEFAULT_LEAD_TIME_WEEKS,
   MEASUREMENT_TYPES,
   type FulfillmentType,
 } from '../config/fulfillment';
@@ -166,22 +167,25 @@ export function AdminProducts() {
 
       if (data) {
         console.log('Raw data from DB:', data);
+        // Spread the whole row rather than listing columns. The old
+        // version named each field by hand, so every column added since
+        // (slug, meta, colours, parts, fulfilment, retainer, lead time)
+        // was silently dropped. In the admin that emptied the edit form
+        // and a save then wrote the blanks back over real data.
         const formattedProducts: Product[] = data.map((p: DbProduct) => ({
+          ...p,
           id: p.id!,
-          name: p.name,
-          price: p.price,
           image: p.images?.[0] || p.image || '',
-          images: p.images,
-          video: p.video,
-          categories: p.categories,
-          audience: p.audience,
-          description: p.description,
-          materials: p.materials,
-          sizes: p.sizes,
+          images: p.images ?? [],
+          categories: p.categories ?? [],
+          audience: p.audience ?? [],
+          materials: p.materials ?? [],
+          sizes: p.sizes ?? [],
+          colors: p.colors ?? [],
+          size_groups: p.size_groups ?? [],
           stock: p.stock ?? {},
           is_bestseller: p.is_bestseller ?? false,
           is_published: p.is_published ?? true,
-          created_at: p.created_at
         }));
         console.log('Formatted products:', formattedProducts);
         setProducts(formattedProducts);
@@ -371,6 +375,9 @@ export function AdminProducts() {
    * not leave an orphan count behind. Sizeless products get a single count.
    */
   const buildStockPayload = (): Record<string, number> => {
+    // Cut to the customer, so there is nothing on a shelf to count.
+    if (fulfillmentType === 'made_to_measure') return {};
+
     // Multi-part product: one count per piece, so a bikini carries separate
     // numbers under Top:S and Bottom:M rather than one per pairing.
     // A colour carries its own stock, so every colour multiplies the keys.
@@ -513,8 +520,11 @@ export function AdminProducts() {
     setEditingProduct(null);
   };
 
-  const openEditModal = (product: Product) => {
-    setEditingProduct(product);
+  /**
+   * Fills the form from a product. Shared by editing and cloning so the two
+   * can never carry different sets of fields.
+   */
+  const populateForm = (product: Product) => {
     setName(product.name);
     setPrice(product.price.toString());
     setDescription(product.description);
@@ -545,7 +555,35 @@ export function AdminProducts() {
     setVideoFile(null);
     setVideoPreview('');
     setImagesToDelete([]);
+  };
+
+  const openEditModal = (product: Product) => {
+    setEditingProduct(product);
+    populateForm(product);
     setIsEditModalOpen(true);
+  };
+
+  /**
+   * Copies a product into the create form.
+   *
+   * Everything carries over except the identity: the name gets a suffix and
+   * the slug is cleared so the database generates a fresh one rather than
+   * colliding. Useful for a second colourway or a near-identical piece.
+   *
+   * The photos carry over as the same stored files, so deleting either
+   * product leaves the other's images intact. handleDelete checks for that.
+   */
+  const openCloneModal = (product: Product) => {
+    setEditingProduct(null);
+    populateForm(product);
+    setName(`${product.name} copy`);
+    setSlug('');
+    setSeoTouched({ slug: false, title: false });
+    setMetaTitle(`${product.name} copy`);
+    // A copy starts unpublished so it cannot appear half-finished.
+    setIsPublished(false);
+    setIsCreateModalOpen(true);
+    toast.success('Copied. Change what you need, then save.');
   };
 
   const removeExistingImage = (imageUrl: string) => {
@@ -738,8 +776,21 @@ export function AdminProducts() {
 
       if (error) throw error;
 
+      // A cloned product points at the same stored files. Anything another
+      // product still uses is left alone rather than deleted underneath it.
+      const { data: remaining } = await supabase
+        .from('products')
+        .select('images, video');
+
+      const stillInUse = new Set<string>();
+      for (const row of remaining ?? []) {
+        for (const url of row.images ?? []) stillInUse.add(url);
+        if (row.video) stillInUse.add(row.video);
+      }
+
       // Try to delete images from storage
       for (const imageUrl of images) {
+        if (stillInUse.has(imageUrl)) continue;
         if (imageUrl.includes('supabase.co/storage')) {
           const fileName = imageUrl.split('/').pop();
           if (fileName) {
@@ -931,6 +982,15 @@ export function AdminProducts() {
                         >
                           <Edit className="w-4 h-4 mr-2" />
                           Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openCloneModal(product)}
+                          className="flex-1"
+                        >
+                          <Copy className="w-4 h-4 mr-2" />
+                          Clone
                         </Button>
                         <Button
                           variant="ghost"
@@ -1350,6 +1410,9 @@ export function AdminProducts() {
                         if (type === 'pre_order' && !preorderShipsOn) {
                           setPreorderShipsOn(defaultShipEstimate());
                         }
+                        if (type === 'made_to_measure' && !leadTimeWeeks) {
+                          setLeadTimeWeeks(String(DEFAULT_LEAD_TIME_WEEKS));
+                        }
                       }}
                       className={`px-4 py-2 text-xs uppercase tracking-wider transition-colors ${
                         fulfillmentType === type
@@ -1387,9 +1450,12 @@ export function AdminProducts() {
                       min={1}
                       value={leadTimeWeeks}
                       onChange={(e) => setLeadTimeWeeks(e.target.value)}
-                      placeholder="6"
+                      placeholder="16"
                       className="w-28 px-3 py-2 border border-neutral-200 text-sm"
                     />
+                    <p className="text-xs text-neutral-500 mt-1">
+                      16 weeks is about four months.
+                    </p>
 
                     <p className="text-xs text-neutral-500 mt-3">
                       Add a part below for each thing the customer states, then
@@ -2248,6 +2314,9 @@ export function AdminProducts() {
                         if (type === 'pre_order' && !preorderShipsOn) {
                           setPreorderShipsOn(defaultShipEstimate());
                         }
+                        if (type === 'made_to_measure' && !leadTimeWeeks) {
+                          setLeadTimeWeeks(String(DEFAULT_LEAD_TIME_WEEKS));
+                        }
                       }}
                       className={`px-4 py-2 text-xs uppercase tracking-wider transition-colors ${
                         fulfillmentType === type
@@ -2285,9 +2354,12 @@ export function AdminProducts() {
                       min={1}
                       value={leadTimeWeeks}
                       onChange={(e) => setLeadTimeWeeks(e.target.value)}
-                      placeholder="6"
+                      placeholder="16"
                       className="w-28 px-3 py-2 border border-neutral-200 text-sm"
                     />
+                    <p className="text-xs text-neutral-500 mt-1">
+                      16 weeks is about four months.
+                    </p>
 
                     <p className="text-xs text-neutral-500 mt-3">
                       Add a part below for each thing the customer states, then

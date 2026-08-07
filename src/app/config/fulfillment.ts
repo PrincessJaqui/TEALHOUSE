@@ -22,6 +22,21 @@ export const FULFILLMENT_LABELS: Record<FulfillmentType, string> = {
 /** Default estimate when a pre-order product is created. Editable per product. */
 export const DEFAULT_PREORDER_MONTHS = 6;
 
+/** Made to measure takes about four months unless told otherwise. */
+export const DEFAULT_LEAD_TIME_WEEKS = 16;
+
+/**
+ * "about 4 months" reads better than "about 16 weeks" for a long lead, so
+ * anything that divides evenly into months is shown that way.
+ */
+export function formatLeadTime(weeks: number): string {
+  if (weeks >= 8 && weeks % 4 === 0) {
+    const months = weeks / 4;
+    return `${months} ${months === 1 ? 'month' : 'months'}`;
+  }
+  return `${weeks} ${weeks === 1 ? 'week' : 'weeks'}`;
+}
+
 export const BESPOKE_COPY = {
   /**
    * Shown on the product page and again at checkout, before payment.
@@ -152,8 +167,8 @@ export const MADE_TO_MEASURE_COPY = {
     'Sizing for this piece is being finalised. Please contact us to order.',
   leadTime: (weeks?: number | null) =>
     weeks && weeks > 0
-      ? `Made to measure, so please allow about ${weeks} ` +
-        `${weeks === 1 ? 'week' : 'weeks'} before dispatch.`
+      ? `Made to measure, so please allow about ${formatLeadTime(weeks)} ` +
+        'before dispatch.'
       : 'Made to measure, so this takes longer than a stocked piece.',
   /** Cut to a person, so it cannot go back on the shelf. */
   returns:
