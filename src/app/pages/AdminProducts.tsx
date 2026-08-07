@@ -47,6 +47,28 @@ import { getPrimaryProductImage } from '../lib/default-image';
 
 
 
+
+/**
+ * The real reason, not a generic one.
+ *
+ * A Supabase error carries message, code, details and hint, and every one of
+ * them names the actual column or constraint that refused. This used to be
+ * replaced with "Failed to add product", which meant the useful part only
+ * existed inside a collapsed console object.
+ */
+function describeDbError(error: any): string {
+  if (!error) return 'Unknown error';
+
+  const parts = [
+    error.message,
+    error.details,
+    error.hint,
+    error.code ? `(code ${error.code})` : null,
+  ].filter(Boolean);
+
+  return parts.length > 0 ? parts.join(' ') : String(error);
+}
+
 export function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -166,7 +188,7 @@ export function AdminProducts() {
     } catch (error) {
       console.error('Error loading products:', error);
       toast.error('Failed to load products');
-      setDbError('Failed to load products');
+      setDbError(describeDbError(error));
     } finally {
       setLoading(false);
     }
@@ -281,6 +303,9 @@ export function AdminProducts() {
           // The legacy singular column. Everything reads `images` first, but
           // the original schema has this as NOT NULL, so it must be set.
           image: imageUrls[0] ?? '',
+          // Legacy singular column, NOT NULL on the original schema.
+          // Everything reads `categories`, but this still has to be set.
+          category: selectedCategories[0] ?? '',
           images: imageUrls,
           video: videoUrl,
           categories: selectedCategories,
@@ -332,8 +357,9 @@ export function AdminProducts() {
       loadProducts();
     } catch (error) {
       console.error('Error adding product:', error);
-      toast.error('Failed to add product');
-      setDbError('Failed to add product');
+      const reason = describeDbError(error);
+      toast.error(reason);
+      setDbError(reason);
     } finally {
       setUploading(false);
     }
@@ -604,6 +630,7 @@ export function AdminProducts() {
         name,
         price: parseFloat(price),
         image: allImageUrls[0] ?? '',
+        category: selectedCategories[0] ?? '',
         images: allImageUrls,
         video: videoUrl,
         categories: selectedCategories,
@@ -686,9 +713,10 @@ export function AdminProducts() {
       await loadProducts();
       console.log('✅ Products reloaded');
     } catch (error) {
-      console.error('❌ Error updating product:', error);
-      toast.error('Failed to update product');
-      setDbError('Failed to update product');
+      console.error('Error updating product:', error);
+      const reason = describeDbError(error);
+      toast.error(reason);
+      setDbError(reason);
     } finally {
       setUploading(false);
       console.log('=== UPDATE PRODUCT FINISHED ===');
@@ -735,8 +763,9 @@ export function AdminProducts() {
       loadProducts();
     } catch (error) {
       console.error('Error deleting product:', error);
-      toast.error('Failed to delete product');
-      setDbError('Failed to delete product');
+      const reason = describeDbError(error);
+      toast.error(reason);
+      setDbError(reason);
     }
   };
 
@@ -806,12 +835,18 @@ export function AdminProducts() {
               <strong>Database Error:</strong> {dbError}
               <br />
               <br />
-              <strong>To fix this:</strong>
-              <ol className="list-decimal ml-4 mt-2 space-y-1">
-                <li>Go to your <a href="https://supabase.com/dashboard/project/ymnqgfpnfzrlinbdbkel/editor" target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">Supabase SQL Editor</a></li>
-                <li>Run the updated schema SQL to add support for multiple images and video</li>
-                <li>Refresh this page</li>
-              </ol>
+              <br />
+              <br />
+              The message above names the column or constraint that refused.
+              A missing column usually means a migration has not been run yet.{' '}
+              <a
+                href="https://supabase.com/dashboard/project/ymnqgfpnfzrlinbdbkel/editor"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:no-underline"
+              >
+                Open the SQL editor
+              </a>
             </AlertDescription>
           </Alert>
         )}
