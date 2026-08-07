@@ -27,12 +27,27 @@ import { cropStyle } from './CropEditor';
  */
 export const HERO_RATIOS_DESKTOP: Array<{ label: string; value: string }> = [
   { label: 'Letterbox 32:9, shortest', value: '32 / 9' },
+  { label: 'Panorama 3.2:1', value: '16 / 5' },
+  { label: 'Panoramic 13:4', value: '13 / 4' },
   { label: 'Ultrawide 24:9', value: '24 / 9' },
   { label: 'Cinematic 21:9', value: '21 / 9' },
   { label: 'Widescreen 16:9', value: '16 / 9' },
   { label: 'Classic 3:2', value: '3 / 2' },
   { label: 'Square-ish 4:3, tallest', value: '4 / 3' },
   { label: 'Full height', value: 'full' },
+];
+
+/**
+ * Where the hero copy sits.
+ *
+ * The subject of a photograph moves, so the text has to move with it. On a
+ * phone the block always spans the width, because a third of a phone is a
+ * column of single words.
+ */
+export const HERO_TEXT_POSITIONS: Array<{ label: string; value: string }> = [
+  { label: 'Left', value: 'left' },
+  { label: 'Centre', value: 'center' },
+  { label: 'Right', value: 'right' },
 ];
 
 export const HERO_RATIOS_MOBILE: Array<{ label: string; value: string }> = [
@@ -90,6 +105,10 @@ export function StudioHero({ content }: { content: Record<string, any> }) {
 
   const fullHeight = ratio === 'full';
 
+  // A third of the width, so the copy sits beside the subject rather than
+  // running across it. Full width on a phone, where a third is unreadable.
+  const textPosition = content.text_position || 'left';
+
   return (
     <section className="relative w-full overflow-hidden bg-gray-100">
       <div
@@ -121,14 +140,22 @@ export function StudioHero({ content }: { content: Record<string, any> }) {
         )}
 
         {(content.headline || content.subheadline || content.link_label) && (
-          <div className="absolute bottom-0 left-0 p-8 md:p-14 text-white">
+          <div
+            className={`absolute bottom-0 p-8 md:p-14 text-white w-full md:w-1/3 ${
+              textPosition === 'right'
+                ? 'right-0 md:text-right'
+                : textPosition === 'center'
+                  ? 'left-1/2 md:-translate-x-1/2 md:text-center'
+                  : 'left-0'
+            }`}
+          >
             {content.headline && (
               <p className="text-lg md:text-2xl mb-2 drop-shadow">
                 {content.headline}
               </p>
             )}
             {content.subheadline && (
-              <p className="text-sm md:text-base mb-4 max-w-xl opacity-90 drop-shadow">
+              <p className="text-sm md:text-base mb-4 opacity-90 drop-shadow">
                 {content.subheadline}
               </p>
             )}

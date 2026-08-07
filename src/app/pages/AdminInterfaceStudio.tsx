@@ -6,7 +6,11 @@ import { toast } from 'sonner';
 import { Product } from '../App';
 import { productPath } from '../config/taxonomy';
 import { useSupabaseProducts } from '../hooks/useSupabaseProducts';
-import { HERO_RATIOS_DESKTOP, HERO_RATIOS_MOBILE } from '../components/StudioSections';
+import {
+  HERO_RATIOS_DESKTOP,
+  HERO_RATIOS_MOBILE,
+  HERO_TEXT_POSITIONS,
+} from '../components/StudioSections';
 import { CropEditor } from '../components/CropEditor';
 import {
   useInterfaceStudio,
@@ -412,6 +416,18 @@ export function AdminInterfaceStudio() {
             onChange={(v) => setField(key, 'ratio_desktop', v)}
           />
           <RatioField
+            label="Text position"
+            help="Where the wording sits over the media. It takes a third of the width on a laptop, full width on a phone."
+            value={draft.text_position}
+            options={[
+              { label: 'Right', value: 'right' },
+              { label: 'Centre', value: 'centre' },
+              { label: 'Left', value: 'left' },
+            ]}
+            onChange={(v) => setField(key, 'text_position', v)}
+          />
+
+          <RatioField
             label="Mobile shape"
             help="A widescreen frame on a phone becomes a letterbox, so this is set separately."
             value={draft.ratio_mobile}
@@ -472,12 +488,26 @@ export function AdminInterfaceStudio() {
             placeholder="The Collection in Motion."
             onChange={(v) => setField(key, 'headline', v)}
           />
+          <RatioField
+            label="Wording sits"
+            help="The block is a third of the width, so it never runs across the whole frame."
+            value={draft.text_position}
+            options={HERO_TEXT_POSITIONS}
+            onChange={(v) => setField(key, 'text_position', v)}
+          />
           <TextField
             label="Second line"
             multiline
             value={draft.subheadline}
             placeholder="Sits under the headline, above the link."
             onChange={(v) => setField(key, 'subheadline', v)}
+          />
+          <RatioField
+            label="Text position"
+            help="The copy sits in a third of the width, so it reads beside the subject rather than across it. Full width on a phone."
+            value={draft.text_position}
+            options={HERO_TEXT_POSITIONS}
+            onChange={(v) => setField(key, 'text_position', v)}
           />
           <div className="grid grid-cols-2 gap-3">
             <TextField
