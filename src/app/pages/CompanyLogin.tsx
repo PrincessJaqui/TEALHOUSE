@@ -100,7 +100,7 @@ export function CompanyLogin() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoggingIn}
-              className="w-full border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:border-[#008080] transition-colors"
+              className="w-full border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:border-black transition-colors"
               required
             />
           </div>
@@ -117,7 +117,7 @@ export function CompanyLogin() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoggingIn}
-                className="w-full border border-gray-300 px-4 py-3 pr-11 text-sm focus:outline-none focus:border-[#008080] transition-colors"
+                className="w-full border border-gray-300 px-4 py-3 pr-11 text-sm focus:outline-none focus:border-black transition-colors"
                 required
               />
               <button

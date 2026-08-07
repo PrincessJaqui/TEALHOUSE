@@ -443,7 +443,7 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                                         : '',
                                     }));
                                   }}
-                                  className="flex-1 border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:border-[#008080] transition-colors"
+                                  className="flex-1 border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:border-black transition-colors"
                                 >
                                   <option value="">{component.label}</option>
                                   {component.values.map((value) => (
@@ -475,7 +475,7 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                                 [group.label]: e.target.value,
                               }))
                             }
-                            className="w-full border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:border-[#008080] transition-colors"
+                            className="w-full border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:border-black transition-colors"
                           >
                             <option value="">
                               Select your {group.label.toLowerCase()}
@@ -514,7 +514,7 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={5}
-                  className="w-full border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:border-[#008080] transition-colors"
+                  className="w-full border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:border-black transition-colors"
                 />
 
                 <div className="border border-gray-200 bg-gray-50 p-4 mt-4">

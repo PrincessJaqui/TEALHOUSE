@@ -123,7 +123,31 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
+  }
+
+  /*
+   * No focus glow. Clicking a field used to light it with a 3px ring, which
+   * reads as an error state rather than a cursor position.
+   *
+   * The border still darkens so you can see where you are typing, and
+   * :focus-visible keeps a real outline for anyone navigating by keyboard,
+   * who has nothing else to go on. That outline never appears on a click.
+   */
+  input:focus,
+  textarea:focus,
+  select:focus,
+  button:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: none;
+    box-shadow: none;
+    border-color: #000;
   }
 
   body {
