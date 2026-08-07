@@ -1,25 +1,29 @@
 import { useRef, useState } from 'react';
 import { ZoomIn, ZoomOut, RotateCcw, Move } from 'lucide-react';
+import {
+  CroppedMedia,
+  parseFocal,
+  parseRatio,
+  panRange,
+  type CropValue,
+} from './CroppedMedia';
 
 /**
  * Crop editor.
  *
- * Two abstract percentage sliders were a poor way to frame a photograph, so
- * this is direct manipulation instead: drag the image inside the frame to
- * choose what shows, and zoom to choose how tight.
- *
- * The frame is the real shape the media will appear in, so what is inside
- * these edges is exactly what a visitor sees. Nothing is re-encoded; the
- * result is a position and a zoom stored against the section, which means
- * the crop can be changed later without re-uploading.
+ * The frame is the real shape this media appears in, so what sits inside
+ * these edges is exactly what a visitor sees. Drag to move it, zoom to crop
+ * tighter. Nothing is re-encoded: the result is a position and a zoom stored
+ * against the section, so a crop can be changed later without re-uploading.
  */
 
-export interface CropValue {
-  /** CSS object-position, for example "42% 65%". */
-  focal: string;
-  /** 1 means no zoom. */
-  zoom: number;
-}
+export type { CropValue };
+export { parseFocal };
+
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 3;
+
+const clamp = (value: number) => Math.min(100, Math.max(0, value));
 
 interface CropEditorProps {
   src: string;
@@ -30,76 +34,27 @@ interface CropEditorProps {
   onChange: (value: CropValue) => void;
 }
 
-const MIN_ZOOM = 1;
-const MAX_ZOOM = 3;
-
-export function parseFocal(focal: string | undefined): [number, number] {
-  const [x, y] = (focal ?? '50% 50%')
-    .split(' ')
-    .map((part) => {
-      const value = parseFloat(part);
-      return Number.isFinite(value) ? value : 50;
-    });
-  return [x ?? 50, y ?? 50];
-}
-
-/** The same styles the storefront uses, so the frame here cannot lie. */
-export function cropStyle(focal: string | undefined, zoom: number | undefined) {
-  const scale = zoom && zoom > 1 ? zoom : 1;
-  return {
-    objectPosition: focal || '50% 50%',
-    transform: scale > 1 ? `scale(${scale})` : undefined,
-  } as const;
-}
-
-const clamp = (value: number) => Math.min(100, Math.max(0, value));
-
 export function CropEditor({ src, isVideo, ratio, value, onChange }: CropEditorProps) {
   const frame = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
+  const [natural, setNatural] = useState<number | null>(null);
   const start = useRef<{ x: number; y: number; fx: number; fy: number } | null>(null);
 
-  const [fx, fy] = parseFocal(value.focal);
   const zoom = value.zoom && value.zoom > 1 ? value.zoom : 1;
+  const [fx, fy] = parseFocal(value.focal);
 
-  // The media's own shape, read once it loads.
-  const [natural, setNatural] = useState<number | null>(null);
+  const frameRatio = parseRatio(ratio);
+  const range = panRange(natural ?? frameRatio, frameRatio, zoom);
+  const canMoveX = range.x > 0;
+  const canMoveY = range.y > 0;
 
-  /**
-   * How much room there is to move, per axis.
-   *
-   * object-position can only shift media that overflows its frame. A photo
-   * cropped to cover a wide hero overflows vertically and not at all
-   * horizontally, so at 100% dragging sideways does nothing. Rather than
-   * feeling broken, the editor says so and the zoom creates the room.
-   */
-  const frameRatio = (() => {
-    const [w, h] = ratio.split('/').map((part) => parseFloat(part));
-    return w && h ? w / h : 16 / 9;
-  })();
-
-  const room = (() => {
-    if (!natural) return { x: true, y: true };
-    const widthDriven = frameRatio > natural;
-    const overflowX = (widthDriven ? 1 : natural / frameRatio) * zoom - 1;
-    const overflowY = (widthDriven ? frameRatio / natural : 1) * zoom - 1;
-    return { x: overflowX > 0.01, y: overflowY > 0.01 };
-  })();
+  // Latest values in a ref, so the drag handler never reads a stale one and
+  // nothing is subscribed or unsubscribed mid-drag.
+  const latest = useRef({ value, zoom, onChange, canMoveX, canMoveY });
+  latest.current = { value, zoom, onChange, canMoveX, canMoveY };
 
   const setZoom = (next: number) =>
     onChange({ ...value, zoom: Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, next)) });
-
-  /**
-   * Drag handling.
-   *
-   * The element captures the pointer, so every move and release comes back
-   * here even if the cursor leaves the frame. Latest props are held in a ref
-   * so the handler never reads a stale value, and nothing is subscribed or
-   * unsubscribed mid-drag. Mouse, trackpad, pen and touch all arrive through
-   * the same events.
-   */
-  const latest = useRef({ value, zoom, onChange, room });
-  latest.current = { value, zoom, onChange, room };
 
   const beginDrag = (event: React.PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -113,17 +68,17 @@ export function CropEditor({ src, isVideo, ratio, value, onChange }: CropEditorP
     const box = frame.current?.getBoundingClientRect();
     if (!from || !box) return;
 
-    const { value: v, zoom: z, onChange: change, room: r } = latest.current;
+    const now = latest.current;
 
-    // Dragging the full width of the frame moves the crop across its whole
-    // range, divided by zoom so a tighter crop does not fly around.
+    // Dragging the width of the frame sweeps the whole range, divided by
+    // zoom so a tighter crop does not fly around.
     const dx = ((event.clientX - from.x) / box.width) * 100;
     const dy = ((event.clientY - from.y) / box.height) * 100;
 
-    change({
-      ...v,
-      focal: `${clamp(r.x ? from.fx - dx / z : from.fx)}% ${clamp(
-        r.y ? from.fy - dy / z : from.fy
+    now.onChange({
+      ...now.value,
+      focal: `${clamp(now.canMoveX ? from.fx - dx / now.zoom : from.fx)}% ${clamp(
+        now.canMoveY ? from.fy - dy / now.zoom : from.fy
       )}%`,
     });
   };
@@ -136,37 +91,13 @@ export function CropEditor({ src, isVideo, ratio, value, onChange }: CropEditorP
     setDragging(false);
   };
 
-  const media = isVideo ? (
-    <video
-      src={src}
-      className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
-      style={cropStyle(value.focal, zoom)}
-      onLoadedMetadata={(e) => {
-        const el = e.currentTarget;
-        if (el.videoWidth && el.videoHeight) {
-          setNatural(el.videoWidth / el.videoHeight);
-        }
-      }}
-      muted
-      loop
-      autoPlay
-      playsInline
-    />
-  ) : (
-    <img
-      src={src}
-      alt=""
-      draggable={false}
-      className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
-      style={cropStyle(value.focal, zoom)}
-      onLoad={(e) => {
-        const el = e.currentTarget;
-        if (el.naturalWidth && el.naturalHeight) {
-          setNatural(el.naturalWidth / el.naturalHeight);
-        }
-      }}
-    />
-  );
+  const hint = canMoveX && canMoveY
+    ? 'Drag to frame'
+    : canMoveY
+      ? 'Zoom in to move sideways'
+      : canMoveX
+        ? 'Zoom in to move up and down'
+        : 'Zoom in to reframe';
 
   return (
     <div>
@@ -179,11 +110,18 @@ export function CropEditor({ src, isVideo, ratio, value, onChange }: CropEditorP
         className={`relative w-full overflow-hidden bg-neutral-100 border border-neutral-200 touch-none ${
           dragging ? 'cursor-grabbing' : 'cursor-grab'
         }`}
-        style={{ aspectRatio: ratio }}
+        style={{ aspectRatio: ratio === 'full' ? '16 / 9' : ratio }}
       >
-        {media}
+        <CroppedMedia
+          src={src}
+          isVideo={isVideo}
+          ratio={ratio === 'full' ? '16 / 9' : ratio}
+          value={{ focal: value.focal, zoom }}
+          className="pointer-events-none select-none"
+          onNatural={setNatural}
+        />
 
-        {/* Thirds, shown only while dragging so the frame stays clean. */}
+        {/* Thirds, only while dragging, so the frame stays clean. */}
         {dragging && (
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute top-1/3 left-0 right-0 h-px bg-white/50" />
@@ -196,29 +134,7 @@ export function CropEditor({ src, isVideo, ratio, value, onChange }: CropEditorP
         {!dragging && (
           <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-white/90 px-2 py-1 pointer-events-none">
             <Move className="w-3 h-3" />
-            <span className="text-[11px] uppercase tracking-wider">
-              {room.x && room.y
-                ? 'Drag to frame'
-                : room.y
-                  ? 'Drag up and down'
-                  : room.x
-                    ? 'Drag left and right'
-                    : 'Zoom in to reframe'}
-            </span>
-          </div>
-        )}
-
-        {/* Says plainly why an axis will not move, rather than leaving the
-            drag feeling broken. */}
-        {!dragging && !(room.x && room.y) && (
-          <div className="absolute top-2 left-2 right-2 bg-black/70 text-white px-2 py-1 pointer-events-none">
-            <span className="text-[11px]">
-              {room.y && !room.x
-                ? 'This fills the width exactly, so it only moves up and down. Zoom in to move sideways.'
-                : room.x && !room.y
-                  ? 'This fills the height exactly, so it only moves side to side. Zoom in to move up and down.'
-                  : 'This fits the frame exactly. Zoom in to reframe it.'}
-            </span>
+            <span className="text-[11px] uppercase tracking-wider">{hint}</span>
           </div>
         )}
       </div>
@@ -240,8 +156,8 @@ export function CropEditor({ src, isVideo, ratio, value, onChange }: CropEditorP
           max={MAX_ZOOM * 100}
           value={Math.round(zoom * 100)}
           onChange={(e) => setZoom(Number(e.target.value) / 100)}
-          aria-label="Zoom"
           className="flex-1"
+          aria-label="Zoom"
         />
 
         <button

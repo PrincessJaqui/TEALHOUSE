@@ -5,7 +5,7 @@ import { Product } from '../App';
 import { productPath } from '../config/taxonomy';
 import { formatPrice } from '../config/store';
 import { getPrimaryProductImage } from '../lib/default-image';
-import { cropStyle } from './CropEditor';
+import { CroppedMedia } from './CroppedMedia';
 
 /**
  * The landing page, built from Studio content.
@@ -93,9 +93,6 @@ export function StudioHero({ content }: { content: Record<string, any> }) {
     (isMobile ? content.image_zoom_mobile : content.image_zoom_desktop) ?? 1
   );
 
-  // Same helper the crop editor uses, so the frame you set in the Studio
-  // cannot disagree with what a visitor sees.
-  const frame = (focal: string, zoom: number) => cropStyle(focal, zoom);
 
   if (!video && !image) return null;
 
@@ -118,24 +115,21 @@ export function StudioHero({ content }: { content: Record<string, any> }) {
         style={fullHeight ? undefined : { aspectRatio: ratio }}
       >
         {video ? (
-          <video
+          <CroppedMedia
             key={video}
-            className="absolute inset-0 w-full h-full object-cover"
-            style={frame(videoFocal, videoZoom)}
             src={video}
-            poster={image || undefined}
-            preload="metadata"
-            autoPlay
-            muted
-            loop
-            playsInline
+            isVideo
+            ratio={fullHeight ? '16 / 9' : ratio}
+            value={{ focal: videoFocal, zoom: videoZoom }}
           />
         ) : (
-          <img
+          <CroppedMedia
+            key={image}
             src={image}
+            isVideo={false}
+            ratio={fullHeight ? '16 / 9' : ratio}
+            value={{ focal: imageFocal, zoom: imageZoom }}
             alt={content.headline || ''}
-            className="absolute inset-0 w-full h-full object-cover"
-            style={frame(imageFocal, imageZoom)}
           />
         )}
 
@@ -214,17 +208,16 @@ export function StudioSplit({ content }: { content: Record<string, any> }) {
     <section className="grid grid-cols-1 md:grid-cols-2">
       {panels.map((panel, index) => (
         <div key={index} className="relative aspect-[4/5] overflow-hidden group">
-          <picture>
-            {panel.image_mobile && (
-              <source media="(max-width: 767px)" srcSet={panel.image_mobile} />
-            )}
-            <img
-              src={panel.image_desktop || panel.image_mobile}
-              alt={panel.label || ''}
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700"
-              style={cropStyle(panel.focal_desktop, panel.zoom_desktop)}
-            />
-          </picture>
+          <CroppedMedia
+            src={panel.image_desktop || panel.image_mobile}
+            isVideo={false}
+            ratio="4 / 5"
+            value={{
+              focal: panel.focal_desktop || '50% 50%',
+              zoom: Number(panel.zoom_desktop ?? 1),
+            }}
+            alt={panel.label || ''}
+          />
 
           {panel.label && panel.href && (
             <Link

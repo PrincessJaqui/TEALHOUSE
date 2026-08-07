@@ -513,80 +513,108 @@ export function AdminInterfaceStudio() {
 
     if (key === 'hero') {
       return (
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="space-y-6">
+          {/* Two columns, one device each. Everything about the desktop hero
+              is on the left, everything about the phone on the right, so the
+              two are never mistaken for each other. */}
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="space-y-5">
+              <p className="text-xs uppercase tracking-wider text-neutral-500 border-b border-neutral-200 pb-2">
+                Desktop
+              </p>
+              <RatioField
+                label="Shape"
+                help="How tall the hero is on a laptop."
+                value={draft.ratio_desktop}
+                options={HERO_RATIOS_DESKTOP}
+                onChange={(v) => setField(key, 'ratio_desktop', v)}
+              />
+              <MediaField
+                label="Film"
+                help="Plays muted and looping. Under 10MB keeps the page quick."
+                accept="video/*"
+                previewRatio={
+                  draft.ratio_desktop === 'full'
+                    ? '16 / 9'
+                    : draft.ratio_desktop || '16 / 9'
+                }
+                value={draft.video_desktop}
+                focal={draft.focal_desktop}
+                onFocalChange={(v) => setField(key, 'focal_desktop', v)}
+                zoom={draft.zoom_desktop}
+                onZoomChange={(v) => setField(key, 'zoom_desktop', v)}
+                onChange={(v) => setField(key, 'video_desktop', v)}
+              />
+              <MediaField
+                label="Still"
+                help="Shown while the film loads, and instead of it where video will not play."
+                accept="image/*"
+                previewRatio={
+                  draft.ratio_desktop === 'full'
+                    ? '16 / 9'
+                    : draft.ratio_desktop || '16 / 9'
+                }
+                value={draft.image_desktop}
+                focal={draft.image_focal_desktop ?? draft.focal_desktop}
+                onFocalChange={(v) => setField(key, 'image_focal_desktop', v)}
+                zoom={draft.image_zoom_desktop}
+                onZoomChange={(v) => setField(key, 'image_zoom_desktop', v)}
+                onChange={(v) => setField(key, 'image_desktop', v)}
+              />
+            </div>
+
+            <div className="space-y-5">
+              <p className="text-xs uppercase tracking-wider text-neutral-500 border-b border-neutral-200 pb-2">
+                Mobile
+              </p>
+              <RatioField
+                label="Shape"
+                help="A widescreen frame on a phone becomes a letterbox, so this is set separately."
+                value={draft.ratio_mobile}
+                options={HERO_RATIOS_MOBILE}
+                onChange={(v) => setField(key, 'ratio_mobile', v)}
+              />
+              <MediaField
+                label="Film"
+                help="A phone should not download the desktop file."
+                accept="video/*"
+                previewRatio={
+                  draft.ratio_mobile === 'full'
+                    ? '9 / 14'
+                    : draft.ratio_mobile || '4 / 5'
+                }
+                value={draft.video_mobile}
+                focal={draft.focal_mobile}
+                onFocalChange={(v) => setField(key, 'focal_mobile', v)}
+                zoom={draft.zoom_mobile}
+                onZoomChange={(v) => setField(key, 'zoom_mobile', v)}
+                onChange={(v) => setField(key, 'video_mobile', v)}
+              />
+              <MediaField
+                label="Still"
+                accept="image/*"
+                previewRatio={
+                  draft.ratio_mobile === 'full'
+                    ? '9 / 14'
+                    : draft.ratio_mobile || '4 / 5'
+                }
+                value={draft.image_mobile}
+                focal={draft.image_focal_mobile ?? draft.focal_mobile}
+                onFocalChange={(v) => setField(key, 'image_focal_mobile', v)}
+                zoom={draft.image_zoom_mobile}
+                onZoomChange={(v) => setField(key, 'image_zoom_mobile', v)}
+                onChange={(v) => setField(key, 'image_mobile', v)}
+              />
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 border-t border-neutral-200 pt-6">
           <RatioField
-            label="Desktop shape"
-            help="How tall the hero is on a laptop. Full height fills the screen."
-            value={draft.ratio_desktop}
-            options={HERO_RATIOS_DESKTOP}
-            onChange={(v) => setField(key, 'ratio_desktop', v)}
-          />
-          <RatioField
-            label="Text position"
-            help="Where the wording sits over the media. It takes a third of the width on a laptop, full width on a phone."
+            label="Wording sits"
+            help="The block is a third of the width on a laptop, half on a phone."
             value={draft.text_position}
-            options={[
-              { label: 'Right', value: 'right' },
-              { label: 'Centre', value: 'centre' },
-              { label: 'Left', value: 'left' },
-            ]}
+            options={HERO_TEXT_POSITIONS}
             onChange={(v) => setField(key, 'text_position', v)}
-          />
-
-          <RatioField
-            label="Mobile shape"
-            help="A widescreen frame on a phone becomes a letterbox, so this is set separately."
-            value={draft.ratio_mobile}
-            options={HERO_RATIOS_MOBILE}
-            onChange={(v) => setField(key, 'ratio_mobile', v)}
-          />
-
-          <MediaField
-            label="Desktop film"
-            help="Plays muted and looping. Under 10MB keeps the page quick."
-            accept="video/*"
-            previewRatio={draft.ratio_desktop === 'full' ? '16 / 9' : draft.ratio_desktop || '16 / 9'}
-            value={draft.video_desktop}
-            focal={draft.focal_desktop}
-            onFocalChange={(v) => setField(key, 'focal_desktop', v)}
-            zoom={draft.zoom_desktop}
-            onZoomChange={(v) => setField(key, 'zoom_desktop', v)}
-            onChange={(v) => setField(key, 'video_desktop', v)}
-          />
-          <MediaField
-            label="Mobile film"
-            help="A phone should not download the desktop file."
-            accept="video/*"
-            previewRatio={draft.ratio_mobile === 'full' ? '9 / 14' : draft.ratio_mobile || '4 / 5'}
-            value={draft.video_mobile}
-            focal={draft.focal_mobile}
-            onFocalChange={(v) => setField(key, 'focal_mobile', v)}
-            zoom={draft.zoom_mobile}
-            onZoomChange={(v) => setField(key, 'zoom_mobile', v)}
-            onChange={(v) => setField(key, 'video_mobile', v)}
-          />
-          <MediaField
-            label="Desktop still"
-            help="Shown while the film loads, and instead of it where video will not play."
-            accept="image/*"
-            previewRatio={draft.ratio_desktop === 'full' ? '16 / 9' : draft.ratio_desktop || '16 / 9'}
-            value={draft.image_desktop}
-            focal={draft.image_focal_desktop ?? draft.focal_desktop}
-            onFocalChange={(v) => setField(key, 'image_focal_desktop', v)}
-            zoom={draft.image_zoom_desktop}
-            onZoomChange={(v) => setField(key, 'image_zoom_desktop', v)}
-            onChange={(v) => setField(key, 'image_desktop', v)}
-          />
-          <MediaField
-            label="Mobile still"
-            accept="image/*"
-            previewRatio={draft.ratio_mobile === 'full' ? '9 / 14' : draft.ratio_mobile || '4 / 5'}
-            value={draft.image_mobile}
-            focal={draft.image_focal_mobile ?? draft.focal_mobile}
-            onFocalChange={(v) => setField(key, 'image_focal_mobile', v)}
-            zoom={draft.image_zoom_mobile}
-            onZoomChange={(v) => setField(key, 'image_zoom_mobile', v)}
-            onChange={(v) => setField(key, 'image_mobile', v)}
           />
           <TextField
             label="Headline"
@@ -594,26 +622,12 @@ export function AdminInterfaceStudio() {
             placeholder="The Collection in Motion."
             onChange={(v) => setField(key, 'headline', v)}
           />
-          <RatioField
-            label="Wording sits"
-            help="The block is a third of the width, so it never runs across the whole frame."
-            value={draft.text_position}
-            options={HERO_TEXT_POSITIONS}
-            onChange={(v) => setField(key, 'text_position', v)}
-          />
           <TextField
             label="Second line"
             multiline
             value={draft.subheadline}
             placeholder="Sits under the headline, above the link."
             onChange={(v) => setField(key, 'subheadline', v)}
-          />
-          <RatioField
-            label="Text position"
-            help="The copy sits in a third of the width, so it reads beside the subject rather than across it. Full width on a phone."
-            value={draft.text_position}
-            options={HERO_TEXT_POSITIONS}
-            onChange={(v) => setField(key, 'text_position', v)}
           />
           <div className="grid grid-cols-2 gap-3">
             <TextField
@@ -628,6 +642,7 @@ export function AdminInterfaceStudio() {
               products={products}
               onChange={(v) => setField(key, 'link_href', v)}
             />
+          </div>
           </div>
         </div>
       );
