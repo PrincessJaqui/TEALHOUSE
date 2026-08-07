@@ -243,6 +243,9 @@ export function AdminProducts() {
         .insert({
           name,
           price: parseFloat(price),
+          // The legacy singular column. Everything reads `images` first, but
+          // the original schema has this as NOT NULL, so it must be set.
+          image: imageUrls[0] ?? '',
           images: imageUrls,
           video: videoUrl,
           categories: selectedCategories,
@@ -506,6 +509,7 @@ export function AdminProducts() {
       const updateData = {
         name,
         price: parseFloat(price),
+        image: allImageUrls[0] ?? '',
         images: allImageUrls,
         video: videoUrl,
         categories: selectedCategories,
