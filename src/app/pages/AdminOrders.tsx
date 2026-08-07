@@ -132,7 +132,16 @@ export function AdminOrders() {
       { header: 'Email', value: (r) => r.order.customer_email ?? '' },
       { header: 'Product ID', value: (r) => r.item?.product_id ?? '' },
       { header: 'Product', value: (r) => r.item?.name ?? '' },
-      { header: 'Size', value: (r) => r.item?.size ?? 'One size' },
+      { header: 'Colour', value: (r) => r.item?.color ?? '' },
+      {
+        header: 'Size',
+        value: (r) =>
+          r.item?.sizes
+            ? Object.entries(r.item.sizes)
+                .map(([k, v]) => `${k} ${v}`)
+                .join(' / ')
+            : (r.item?.size ?? 'One size'),
+      },
       { header: 'Quantity', value: (r) => r.item?.quantity ?? 0 },
       { header: 'Unit price', value: (r) => Number(r.item?.price ?? 0).toFixed(2) },
       {

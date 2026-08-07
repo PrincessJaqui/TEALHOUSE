@@ -86,7 +86,8 @@ export function useSupabaseCart(userId: string | undefined) {
             product,
             quantity: item.quantity,
             size: item.size || undefined,
-            notes: item.notes || undefined
+            notes: item.notes || undefined,
+            color: item.color || undefined
           };
         }).filter(Boolean) as CartItem[];
         
@@ -108,7 +109,8 @@ export function useSupabaseCart(userId: string | undefined) {
     productId: number,
     size?: string,
     sizes?: SizeSelection,
-    notes?: string
+    notes?: string,
+    color?: string
   ) => {
     const selection = sizes
       ? Object.keys(sizes)
@@ -116,7 +118,7 @@ export function useSupabaseCart(userId: string | undefined) {
           .map((k) => `${k}=${sizes[k]}`)
           .join('|')
       : '';
-    return `${productId}::${size ?? ''}::${selection}::${notes ?? ''}`;
+    return `${productId}::${size ?? ''}::${selection}::${notes ?? ''}::${color ?? ''}`;
   };
 
   const matches = (
@@ -124,26 +126,28 @@ export function useSupabaseCart(userId: string | undefined) {
     productId: number,
     size?: string,
     sizes?: SizeSelection,
-    notes?: string
+    notes?: string,
+    color?: string
   ) =>
-    lineKey(item.product.id, item.size, item.sizes, item.notes) ===
-    lineKey(productId, size, sizes, notes);
+    lineKey(item.product.id, item.size, item.sizes, item.notes, item.color) ===
+    lineKey(productId, size, sizes, notes, color);
 
   const addToCart = async (
     product: Product,
     size?: string,
     sizes?: SizeSelection,
-    notes?: string
+    notes?: string,
+    color?: string
   ) => {
     const existingItem = cartItems.find((item) =>
-      matches(item, product.id, size, sizes, notes)
+      matches(item, product.id, size, sizes, notes, color)
     );
 
     if (existingItem) {
-      return updateQuantity(product.id, existingItem.quantity + 1, size, sizes, notes);
+      return updateQuantity(product.id, existingItem.quantity + 1, size, sizes, notes, color);
     }
 
-    const newItem: CartItem = { product, quantity: 1, size, sizes, notes };
+    const newItem: CartItem = { product, quantity: 1, size, sizes, notes, color };
     setCartItems((prev) => [...prev, newItem]);
 
     if (!userId) return true;
@@ -156,6 +160,7 @@ export function useSupabaseCart(userId: string | undefined) {
         size: size || null,
         sizes: sizes ?? null,
         notes: notes || null,
+        color: color || null,
       });
 
       if (error) throw error;
@@ -163,7 +168,7 @@ export function useSupabaseCart(userId: string | undefined) {
     } catch (error) {
       console.error('Error adding to cart:', error);
       setCartItems((prev) =>
-        prev.filter((item) => !matches(item, product.id, size, sizes, notes))
+        prev.filter((item) => !matches(item, product.id, size, sizes, notes, color))
       );
       return false;
     }
@@ -173,11 +178,12 @@ export function useSupabaseCart(userId: string | undefined) {
     productId: number,
     size?: string,
     sizes?: SizeSelection,
-    notes?: string
+    notes?: string,
+    color?: string
   ) => {
     const previousItems = cartItems;
     setCartItems((prev) =>
-      prev.filter((item) => !matches(item, productId, size, sizes, notes))
+      prev.filter((item) => !matches(item, productId, size, sizes, notes, color))
     );
 
     if (!userId) return true;
@@ -208,16 +214,17 @@ export function useSupabaseCart(userId: string | undefined) {
     quantity: number,
     size?: string,
     sizes?: SizeSelection,
-    notes?: string
+    notes?: string,
+    color?: string
   ) => {
     if (quantity === 0) {
-      return removeFromCart(productId, size, sizes, notes);
+      return removeFromCart(productId, size, sizes, notes, color);
     }
 
     const previousItems = cartItems;
     setCartItems((prev) =>
       prev.map((item) =>
-        matches(item, productId, size, sizes, notes) ? { ...item, quantity } : item
+        matches(item, productId, size, sizes, notes, color) ? { ...item, quantity } : item
       )
     );
 

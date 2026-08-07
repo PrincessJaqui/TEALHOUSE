@@ -282,6 +282,16 @@ export interface SizeGroup {
   label: string;
   scale?: string;
   sizes: string[];
+  /**
+   * False lets the customer buy this part on its own, so a bikini top from
+   * one set can be bought without its bottom. Defaults to true.
+   */
+  required?: boolean;
+  /**
+   * What this part costs alone. Selecting every part charges the product
+   * price instead, which is how a set can be priced below the sum.
+   */
+  price?: number | null;
 }
 
 /** What the customer picked, for example { Top: "S", Bottom: "M" }. */
@@ -325,4 +335,83 @@ export function describeSelection(selection: SizeSelection | undefined): string 
   return Object.entries(selection)
     .map(([label, value]) => `${label} ${value}`)
     .join(' / ');
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Colour                                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Stock key.
+ *
+ * Colour carries its own stock, so a teal top in S and a black top in S are
+ * separate counts. The colour is a prefix, which keeps every key written
+ * before colours existed valid and readable.
+ *
+ *   "38"          single size, no colour
+ *   "Top:S"       one part, no colour
+ *   "Teal|38"     single size in a colour
+ *   "Teal|Top:S"  one part in a colour
+ *   "default"     no size at all
+ */
+export function stockKey(
+  options: { color?: string | null; group?: string | null; size?: string | null }
+): string {
+  const base = options.group
+    ? `${options.group}:${options.size ?? ''}`
+    : options.size || DEFAULT_STOCK_KEY;
+  return options.color ? `${options.color}|${base}` : base;
+}
+
+export function stockFor(
+  product: Product,
+  options: { color?: string | null; group?: string | null; size?: string | null }
+): number {
+  return Number((product.stock ?? {})[stockKey(options)] ?? 0);
+}
+
+export function productColors(product: Product): string[] {
+  return product.colors ?? [];
+}
+
+/** Sizes still available in one part, for the colour being viewed. */
+export function availableSizesFor(
+  product: Product,
+  group: SizeGroup,
+  color?: string | null
+): string[] {
+  return group.sizes.filter(
+    (size) => stockFor(product, { color, group: group.label, size }) > 0
+  );
+}
+
+export function isPartRequired(group: SizeGroup): boolean {
+  return group.required !== false;
+}
+
+/**
+ * What a line costs.
+ *
+ * Selecting every part charges the product price, which is the set price.
+ * Selecting some of them charges the sum of just those parts, so a set can
+ * be priced below the sum of its pieces and a single piece still has a
+ * price of its own.
+ */
+export function priceForSelection(
+  product: Product,
+  chosenParts: string[]
+): number {
+  const groups = product.size_groups ?? [];
+  if (groups.length === 0) return Number(product.price);
+
+  const everyPart =
+    chosenParts.length >= groups.length &&
+    groups.every((group) => chosenParts.includes(group.label));
+
+  if (everyPart) return Number(product.price);
+
+  return groups
+    .filter((group) => chosenParts.includes(group.label))
+    .reduce((sum, group) => sum + Number(group.price ?? 0), 0);
 }

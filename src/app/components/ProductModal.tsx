@@ -12,7 +12,8 @@ interface ProductModalProps {
     product: Product,
     size?: string,
     sizes?: Record<string, string>,
-    notes?: string
+    notes?: string,
+    color?: string
   ) => void;
   onAddToWishlist: (product: Product) => void;
   isInWishlist: (productId: number) => boolean;

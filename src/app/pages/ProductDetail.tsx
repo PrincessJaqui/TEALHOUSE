@@ -10,6 +10,10 @@ import {
   groupStock,
   availableGroupSizes,
   isGroupedSoldOut,
+  stockFor,
+  availableSizesFor,
+  isPartRequired,
+  priceForSelection,
 } from '../config/taxonomy';
 import {
   isBespoke,
@@ -33,7 +37,8 @@ interface ProductDetailProps {
     product: Product,
     size?: string,
     sizes?: Record<string, string>,
-    notes?: string
+    notes?: string,
+    color?: string
   ) => void;
   onAddToWishlist: (product: Product) => void;
   isInWishlist: (productId: number) => boolean;
@@ -49,6 +54,10 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
   // A bespoke piece is specified in words, not picked off a shelf.
   const [notes, setNotes] = useState('');
+  const [selectedColor, setSelectedColor] = useState<string | undefined>();
+  // Optional parts the customer has chosen to include. A bikini top can be
+  // bought without its bottom when the part is not required.
+  const [includedParts, setIncludedParts] = useState<string[]>([]);
   const [selectedImage, setSelectedImage] = useState(0);
 
   useEffect(() => {
@@ -68,12 +77,18 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
 
     setProduct(found);
 
+    const firstColor = (found.colors ?? [])[0];
+    setSelectedColor(firstColor);
+
     if (hasSizeGroups(found)) {
+      // Required parts are always included. Optional ones start included
+      // too, so the default is the full set.
+      setIncludedParts((found.size_groups ?? []).map((g) => g.label));
       // Preselect the first size in each part that still has stock, so the
       // customer is not staring at an empty picker.
       const initial: Record<string, string> = {};
       for (const group of found.size_groups ?? []) {
-        const first = availableGroupSizes(found, group)[0];
+        const first = availableSizesFor(found, group, firstColor)[0];
         if (first) initial[group.label] = first;
       }
       setSelectedSizes(initial);
@@ -125,7 +140,7 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
         toast.error('Please tell us what you have in mind');
         return;
       }
-      onAddToCart(product, undefined, undefined, notes.trim());
+      onAddToCart(product, undefined, undefined, notes.trim(), selectedColor);
       toast.success('Added to bag');
       return;
     }
@@ -133,19 +148,37 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
     if (hasSizeGroups(product)) {
       // Every part needs a choice, and each is checked against its own
       // stock, because stock is held per piece.
-      for (const group of product.size_groups ?? []) {
+      const parts = (product.size_groups ?? []).filter((group) =>
+        includedParts.includes(group.label)
+      );
+
+      if (parts.length === 0) {
+        toast.error('Please choose at least one piece');
+        return;
+      }
+
+      const chosenSizes: Record<string, string> = {};
+
+      for (const group of parts) {
         const chosen = selectedSizes[group.label];
         if (!chosen) {
           toast.error(`Please choose a ${group.label.toLowerCase()} size`);
           return;
         }
-        if (groupStock(product, group.label, chosen) <= 0) {
+        if (
+          stockFor(product, {
+            color: selectedColor,
+            group: group.label,
+            size: chosen,
+          }) <= 0
+        ) {
           toast.error(`${group.label} ${chosen} is sold out`);
           return;
         }
+        chosenSizes[group.label] = chosen;
       }
 
-      onAddToCart(product, undefined, selectedSizes);
+      onAddToCart(product, undefined, chosenSizes, undefined, selectedColor);
       toast.success('Added to bag');
       return;
     }
@@ -154,12 +187,15 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
       toast.error('Please select a size');
       return;
     }
-    if (tracksStock(product) && stockForSize(product, selectedSize) <= 0) {
+    if (
+      tracksStock(product) &&
+      stockFor(product, { color: selectedColor, size: selectedSize }) <= 0
+    ) {
       toast.error('That size is sold out');
       return;
     }
 
-    onAddToCart(product, selectedSize);
+    onAddToCart(product, selectedSize, undefined, undefined, selectedColor);
     toast.success('Added to bag');
   };
 
@@ -282,6 +318,31 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
             <p className="text-gray-700 mb-8 leading-relaxed">{product.description}</p>
 
             {/* Size Selection */}
+            {/* Colour. Each carries its own stock, so switching colour
+                changes which sizes are still available. */}
+            {(product.colors ?? []).length > 0 && (
+              <div className="mb-6">
+                <label className="block font-medium mb-3">
+                  Colour{selectedColor ? `: ${selectedColor}` : ''}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {(product.colors ?? []).map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => setSelectedColor(color)}
+                      className={`px-4 py-2 border text-sm transition-all ${
+                        selectedColor === color
+                          ? 'border-[#008080] bg-[#008080] text-white'
+                          : 'border-gray-300 hover:border-[#008080]'
+                      }`}
+                    >
+                      {color}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {isBespoke(product) && (
               <div className="mb-6">
                 <label htmlFor="bespoke-notes" className="block font-medium mb-2">
@@ -311,10 +372,42 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
               <div className="mb-6 space-y-6">
                 {(product.size_groups ?? []).map((group) => {
                   const chosen = selectedSizes[group.label];
+                  const required = isPartRequired(group);
+                  const included = includedParts.includes(group.label);
+                  const available = availableSizesFor(product, group, selectedColor);
+
                   return (
-                    <div key={group.label}>
+                    <div
+                      key={group.label}
+                      className={included ? '' : 'opacity-50'}
+                    >
                       <div className="flex items-center justify-between mb-3">
-                        <label className="block font-medium">{group.label}</label>
+                        <div className="flex items-center gap-3">
+                          {/* An optional part can be left out entirely, so a
+                              top from one set can be bought on its own. */}
+                          {!required && (
+                            <input
+                              type="checkbox"
+                              checked={included}
+                              onChange={(e) =>
+                                setIncludedParts((prev) =>
+                                  e.target.checked
+                                    ? [...prev, group.label]
+                                    : prev.filter((l) => l !== group.label)
+                                )
+                              }
+                              aria-label={`Include ${group.label}`}
+                            />
+                          )}
+                          <label className="block font-medium">
+                            {group.label}
+                            {!required && group.price != null && (
+                              <span className="text-sm text-gray-600 ml-2">
+                                {formatPrice(Number(group.price))} alone
+                              </span>
+                            )}
+                          </label>
+                        </div>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -325,15 +418,22 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                           Size Guide
                         </Button>
                       </div>
+
                       <div className="grid grid-cols-6 gap-2">
                         {group.sizes.map((size) => {
-                          const remaining = groupStock(product, group.label, size);
-                          const unavailable = remaining <= 0;
+                          const remaining = stockFor(product, {
+                            color: selectedColor,
+                            group: group.label,
+                            size,
+                          });
+                          const unavailable = remaining <= 0 || !included;
                           return (
                             <button
                               key={size}
                               disabled={unavailable}
-                              title={unavailable ? 'Sold out' : `${remaining} available`}
+                              title={
+                                remaining <= 0 ? 'Sold out' : `${remaining} available`
+                              }
                               onClick={() =>
                                 !unavailable &&
                                 setSelectedSizes((prev) => ({
@@ -354,14 +454,30 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                           );
                         })}
                       </div>
-                      {availableGroupSizes(product, group).length === 0 && (
+
+                      {available.length === 0 && (
                         <p className="text-xs text-gray-500 mt-2">
                           Every {group.label.toLowerCase()} size is sold out
+                          {selectedColor ? ` in ${selectedColor}` : ''}
                         </p>
                       )}
                     </div>
                   );
                 })}
+
+                {/* What the current selection actually costs. */}
+                <div className="border-t border-gray-200 pt-4">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-sm text-gray-600">
+                      {includedParts.length === (product.size_groups ?? []).length
+                        ? 'Complete set'
+                        : `${includedParts.length} of ${(product.size_groups ?? []).length} pieces`}
+                    </span>
+                    <span className="text-xl">
+                      {formatPrice(priceForSelection(product, includedParts))}
+                    </span>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -382,7 +498,10 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                 <div className="grid grid-cols-6 gap-2">
                   {product.sizes.map((rawSize) => {
                     const size = String(rawSize);
-                    const remaining = stockForSize(product, size);
+                    const remaining = stockFor(product, {
+                      color: selectedColor,
+                      size,
+                    });
                     const unavailable = remaining <= 0;
                     return (
                       <button

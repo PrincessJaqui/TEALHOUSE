@@ -75,7 +75,13 @@ export interface Product {
    * each with its own sizes and its own per-piece stock. Empty means the
    * product uses the single `sizes` list as before.
    */
-  size_groups?: Array<{ label: string; scale?: string; sizes: string[] }>;
+  size_groups?: Array<{
+    label: string;
+    scale?: string;
+    sizes: string[];
+    required?: boolean;
+    price?: number | null;
+  }>;
   size_scale?: string;
   size_labels?: string[];
   /** in_stock, pre_order or made_to_order. Absent means in_stock. */
@@ -84,6 +90,8 @@ export interface Product {
   retainer_amount?: number | null;
   /** Estimated only, and the storefront says so. */
   preorder_ships_on?: string | null;
+  /** Colours this piece comes in. Each carries its own stock. */
+  colors?: string[];
 }
 
 export interface CartItem {
@@ -95,6 +103,8 @@ export interface CartItem {
   sizes?: Record<string, string>;
   /** What the customer wants, for a bespoke piece. */
   notes?: string;
+  /** Chosen colour, which has its own stock. */
+  color?: string;
 }
 
 function AppContent() {
@@ -148,18 +158,20 @@ function AppContent() {
     product: Product,
     size?: string,
     sizes?: Record<string, string>,
-    notes?: string
+    notes?: string,
+    color?: string
   ) => {
-    await supabaseAddToCart(product, size, sizes, notes);
+    await supabaseAddToCart(product, size, sizes, notes, color);
   };
 
   const removeFromCart = async (
     productId: number,
     size?: string,
     sizes?: Record<string, string>,
-    notes?: string
+    notes?: string,
+    color?: string
   ) => {
-    await supabaseRemoveFromCart(productId, size, sizes, notes);
+    await supabaseRemoveFromCart(productId, size, sizes, notes, color);
   };
 
   const updateQuantity = async (
@@ -167,9 +179,10 @@ function AppContent() {
     quantity: number,
     size?: string,
     sizes?: Record<string, string>,
-    notes?: string
+    notes?: string,
+    color?: string
   ) => {
-    await supabaseUpdateQuantity(productId, quantity, size, sizes, notes);
+    await supabaseUpdateQuantity(productId, quantity, size, sizes, notes, color);
   };
 
   const addToWishlist = async (product: Product) => {

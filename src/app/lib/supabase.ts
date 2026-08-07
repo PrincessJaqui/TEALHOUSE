@@ -46,7 +46,13 @@ export interface DbProduct {
    * each with its own sizes and its own per-piece stock. Empty means the
    * product uses the single `sizes` list as before.
    */
-  size_groups?: Array<{ label: string; scale?: string; sizes: string[] }>;
+  size_groups?: Array<{
+    label: string;
+    scale?: string;
+    sizes: string[];
+    required?: boolean;
+    price?: number | null;
+  }>;
   size_scale?: string;
   size_labels?: string[];
   /** in_stock, pre_order or made_to_order. Absent means in_stock. */
@@ -55,6 +61,8 @@ export interface DbProduct {
   retainer_amount?: number | null;
   /** Estimated only, and the storefront says so. */
   preorder_ships_on?: string | null;
+  /** Colours this piece comes in. Each carries its own stock. */
+  colors?: string[];
 }
 
 // Database order type

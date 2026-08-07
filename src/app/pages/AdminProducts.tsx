@@ -12,6 +12,7 @@ import { Plus, Trash2, Upload, Package, X, Video, Edit, Image as ImageIcon, Down
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { AdminLayout } from '../components/AdminLayout';
 import { exportCsv } from '../lib/csv';
+import { useCatalogLists } from '../hooks/useCatalogLists';
 import {
   FULFILLMENT_LABELS,
   defaultShipEstimate,
@@ -29,6 +30,7 @@ import {
   SIZE_SCALES,
   sizeScale as findSizeScale,
   groupStockKey,
+  stockKey,
   type SizeGroup,
 } from '../config/taxonomy';
 
@@ -60,7 +62,7 @@ export function AdminProducts() {
   const [description, setDescription] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['shoes']);
   const [selectedAudience, setSelectedAudience] = useState<string[]>(['women']);
-  const [selectedMaterials, setSelectedMaterials] = useState<string[]>(['Cactus Leather', 'Natural Rubber']);
+  const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<number[]>([36, 37, 38, 39, 40, 41]);
   // Stock per size, keyed by size as a string. Sizeless products use "default".
   const [stock, setStock] = useState<Record<string, number>>({});
@@ -68,6 +70,13 @@ export function AdminProducts() {
   const [sizeGroups, setSizeGroups] = useState<SizeGroup[]>([]);
   const [sizeScale, setSizeScale] = useState<string>('footwear-eu');
   const [fulfillmentType, setFulfillmentType] = useState<FulfillmentType>('in_stock');
+  const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [newMaterial, setNewMaterial] = useState('');
+  const [newColor, setNewColor] = useState('');
+
+  // Materials, colours and size scales are rows now, so new ones can be
+  // created here and become available to every product.
+  const catalog = useCatalogLists();
   const [retainerAmount, setRetainerAmount] = useState('');
   const [preorderShipsOn, setPreorderShipsOn] = useState('');
   const [isBestseller, setIsBestseller] = useState(false);
@@ -223,11 +232,6 @@ export function AdminProducts() {
       return;
     }
 
-    if (selectedMaterials.length === 0) {
-      toast.error('Please select at least one material');
-      return;
-    }
-
     if (selectedCategories.length === 0) {
       toast.error('Please select at least one category');
       return;
@@ -277,6 +281,7 @@ export function AdminProducts() {
           image_alt: imageAlt.trim() || null,
           size_groups: sizeGroups,
           size_scale: sizeScale,
+          colors: selectedColors,
           fulfillment_type: fulfillmentType,
           retainer_amount:
             fulfillmentType === 'made_to_order' && retainerAmount
@@ -314,24 +319,38 @@ export function AdminProducts() {
   const buildStockPayload = (): Record<string, number> => {
     // Multi-part product: one count per piece, so a bikini carries separate
     // numbers under Top:S and Bottom:M rather than one per pairing.
+    // A colour carries its own stock, so every colour multiplies the keys.
+    // No colours means one set of keys, exactly as before.
+    const colorKeys = selectedColors.length > 0 ? selectedColors : [null];
+
     if (sizeGroups.length > 0) {
       const payload: Record<string, number> = {};
-      for (const group of sizeGroups) {
-        for (const size of group.sizes) {
-          const key = groupStockKey(group.label, size);
-          payload[key] = Number(stock[key] ?? 0);
+      for (const color of colorKeys) {
+        for (const group of sizeGroups) {
+          for (const size of group.sizes) {
+            const key = stockKey({ color, group: group.label, size });
+            payload[key] = Number(stock[key] ?? 0);
+          }
         }
       }
       return payload;
     }
 
     if (selectedCategories.includes('accessories') || selectedSizes.length === 0) {
-      return { [DEFAULT_STOCK_KEY]: Number(stock[DEFAULT_STOCK_KEY] ?? 0) };
+      const payload: Record<string, number> = {};
+      for (const color of colorKeys) {
+        const key = stockKey({ color });
+        payload[key] = Number(stock[key] ?? 0);
+      }
+      return payload;
     }
 
     const payload: Record<string, number> = {};
-    for (const size of selectedSizes) {
-      payload[String(size)] = Number(stock[String(size)] ?? 0);
+    for (const color of colorKeys) {
+      for (const size of selectedSizes) {
+        const key = stockKey({ color, size: String(size) });
+        payload[key] = Number(stock[key] ?? 0);
+      }
     }
     return payload;
   };
@@ -412,12 +431,13 @@ export function AdminProducts() {
     setDescription('');
     setSelectedCategories(['shoes']);
     setSelectedAudience(['women']);
-    setSelectedMaterials(['Cactus Leather', 'Natural Rubber']);
+    setSelectedMaterials([]);
     setSelectedSizes([36, 37, 38, 39, 40, 41]);
     setStock({});
     setSizeGroups([]);
     setSizeScale('footwear-eu');
     setFulfillmentType('in_stock');
+    setSelectedColors([]);
     setRetainerAmount('');
     setPreorderShipsOn('');
     setIsBestseller(false);
@@ -450,6 +470,7 @@ export function AdminProducts() {
     setSizeGroups(product.size_groups ?? []);
     setSizeScale(product.size_scale ?? 'footwear-eu');
     setFulfillmentType((product.fulfillment_type as FulfillmentType) ?? 'in_stock');
+    setSelectedColors(product.colors ?? []);
     setRetainerAmount(product.retainer_amount ? String(product.retainer_amount) : '');
     setPreorderShipsOn(product.preorder_ships_on ?? '');
     setIsBestseller(product.is_bestseller ?? false);
@@ -505,12 +526,6 @@ export function AdminProducts() {
     if (!name || !price || !description) {
       console.log('ERROR: Missing required fields', { name, price, description });
       toast.error('Please fill in all required fields');
-      return;
-    }
-
-    if (selectedMaterials.length === 0) {
-      console.log('ERROR: No materials selected');
-      toast.error('Please select at least one material');
       return;
     }
 
@@ -574,6 +589,7 @@ export function AdminProducts() {
         image_alt: imageAlt.trim() || null,
         size_groups: sizeGroups,
         size_scale: sizeScale,
+        colors: selectedColors,
         fulfillment_type: fulfillmentType,
         retainer_amount:
           fulfillmentType === 'made_to_order' && retainerAmount
@@ -1029,20 +1045,36 @@ export function AdminProducts() {
               <div className="space-y-2">
                 <Label>Materials *</Label>
                 <div className="grid grid-cols-2 gap-2">
-                  {AVAILABLE_MATERIALS.map(material => (
+                  {catalog.materials.map((material) => (
                     <button
-                      key={material}
+                      key={material.id}
                       type="button"
-                      onClick={() => toggleMaterial(material)}
+                      onClick={() => toggleMaterial(material.name)}
                       className={`px-4 py-2 border text-sm transition-colors ${
-                        selectedMaterials.includes(material)
+                        selectedMaterials.includes(material.name)
                           ? 'bg-black text-white border-black'
                           : 'bg-white text-black border-neutral-200 hover:border-neutral-400'
                       }`}
                     >
-                      {material}
+                      {material.name}
                     </button>
                   ))}
+                  <input
+                    type="text"
+                    value={newMaterial}
+                    onChange={(e) => setNewMaterial(e.target.value)}
+                    onKeyDown={async (e) => {
+                      if (e.key !== 'Enter') return;
+                      e.preventDefault();
+                      // Creating one here makes it available to every product.
+                      if (await catalog.addMaterial(newMaterial)) {
+                        toggleMaterial(newMaterial.trim());
+                        setNewMaterial('');
+                      }
+                    }}
+                    placeholder="Add a material, then Enter"
+                    className="px-4 py-2 border border-neutral-200 text-sm"
+                  />
                 </div>
               </div>
 
@@ -1077,35 +1109,113 @@ export function AdminProducts() {
                   <input
                     type="number"
                     min={0}
-                    value={stock[DEFAULT_STOCK_KEY] ?? 0}
+                    value={stock[stockKey({ color: selectedColors[0] ?? null })] ?? 0}
                     onChange={(e) =>
-                      setStock({ ...stock, [DEFAULT_STOCK_KEY]: Math.max(0, Number(e.target.value)) })
+                      setStock({
+                        ...stock,
+                        [stockKey({ color: selectedColors[0] ?? null })]: Math.max(
+                          0,
+                          Number(e.target.value)
+                        ),
+                      })
                     }
                     className="w-32 px-3 py-2 border border-neutral-200 text-sm"
                   />
                 ) : (
-                  <div className="flex flex-wrap gap-3">
-                    {selectedSizes.map((size) => (
-                      <div key={size} className="flex flex-col items-center gap-1">
-                        <span className="text-xs text-neutral-500">{size}</span>
-                        <input
-                          type="number"
-                          min={0}
-                          value={stock[String(size)] ?? 0}
-                          onChange={(e) =>
-                            setStock({ ...stock, [String(size)]: Math.max(0, Number(e.target.value)) })
-                          }
-                          className="w-16 px-2 py-2 border border-neutral-200 text-sm text-center"
-                        />
+                  // One row of boxes per colour, since each colour is counted
+                  // separately. No colours means a single row, as before.
+                  (selectedColors.length > 0 ? selectedColors : [null]).map((color) => (
+                    <div key={color ?? 'none'} className="mb-3">
+                      {color && (
+                        <p className="text-xs text-neutral-600 mb-1">{color}</p>
+                      )}
+                      <div className="flex flex-wrap gap-3">
+                        {selectedSizes.map((size) => {
+                          const key = stockKey({ color, size: String(size) });
+                          return (
+                            <div key={size} className="flex flex-col items-center gap-1">
+                              <span className="text-xs text-neutral-500">{size}</span>
+                              <input
+                                type="number"
+                                min={0}
+                                value={stock[key] ?? 0}
+                                onChange={(e) =>
+                                  setStock({
+                                    ...stock,
+                                    [key]: Math.max(0, Number(e.target.value)),
+                                  })
+                                }
+                                className="w-16 px-2 py-2 border border-neutral-200 text-sm text-center"
+                              />
+                            </div>
+                          );
+                        })}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))
                 )}
                 <p className="text-xs text-neutral-500 mt-2">
                   Zero means sold out. The database refuses any order that would take a size below zero.
                 </p>
               </div>
 
+
+              {/* Colour. Each one carries its own stock, so adding a colour
+                  multiplies the stock boxes below rather than replacing them. */}
+              <div className="border border-neutral-200 p-4">
+                <p className="text-xs uppercase tracking-wider text-neutral-500 mb-4">
+                  Colours
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {catalog.colors.map((color) => (
+                    <button
+                      key={color.id}
+                      type="button"
+                      onClick={() =>
+                        setSelectedColors((prev) =>
+                          prev.includes(color.name)
+                            ? prev.filter((c) => c !== color.name)
+                            : [...prev, color.name]
+                        )
+                      }
+                      className={`flex items-center gap-2 px-4 py-2 border text-sm transition-colors ${
+                        selectedColors.includes(color.name)
+                          ? 'bg-black text-white border-black'
+                          : 'bg-white text-black border-neutral-200 hover:border-neutral-400'
+                      }`}
+                    >
+                      {color.hex && (
+                        <span
+                          className="w-3 h-3 rounded-full border border-neutral-300 inline-block"
+                          style={{ backgroundColor: color.hex }}
+                        />
+                      )}
+                      {color.name}
+                    </button>
+                  ))}
+                  <input
+                    type="text"
+                    value={newColor}
+                    onChange={(e) => setNewColor(e.target.value)}
+                    onKeyDown={async (e) => {
+                      if (e.key !== 'Enter') return;
+                      e.preventDefault();
+                      if (await catalog.addColor(newColor)) {
+                        setSelectedColors((prev) => [...prev, newColor.trim()]);
+                        setNewColor('');
+                      }
+                    }}
+                    placeholder="Add a colour, then Enter"
+                    className="px-4 py-2 border border-neutral-200 text-sm"
+                  />
+                </div>
+                {selectedColors.length > 0 && (
+                  <p className="text-xs text-neutral-500 mt-3">
+                    Stock is held per colour, so each one below is counted
+                    separately. Leave this empty for a piece that comes one way.
+                  </p>
+                )}
+              </div>
 
               {/* How this piece is sold. In stock behaves as before. */}
               <div className="border border-neutral-200 p-4">
@@ -1225,7 +1335,9 @@ export function AdminProducts() {
                       <select
                         value={group.scale ?? 'alpha'}
                         onChange={(e) => {
-                          const scale = findSizeScale(e.target.value);
+                          const scale = catalog.scales.find(
+                            (row) => row.key === e.target.value
+                          );
                           const next = [...sizeGroups];
                           next[groupIndex] = {
                             ...group,
@@ -1236,8 +1348,11 @@ export function AdminProducts() {
                         }}
                         className="flex-1 px-3 py-2 border border-neutral-200 text-sm"
                       >
-                        {SIZE_SCALES.map((scale) => (
-                          <option key={scale.key} value={scale.key}>
+                        {/* Only the scales that suit the categories ticked
+                            above, so shoes offer footwear sizes and apparel
+                            offers alpha and US womens. */}
+                        {catalog.scalesForCategories(selectedCategories).map((scale) => (
+                          <option key={scale.id} value={scale.key}>
                             {scale.label}
                           </option>
                         ))}
@@ -1254,28 +1369,81 @@ export function AdminProducts() {
                       </Button>
                     </div>
 
-                    <div className="flex flex-wrap gap-3">
-                      {group.sizes.map((size) => {
-                        const key = groupStockKey(group.label, size);
-                        return (
-                          <div key={size} className="flex flex-col items-center gap-1">
-                            <span className="text-xs text-neutral-500">{size}</span>
-                            <input
-                              type="number"
-                              min={0}
-                              value={stock[key] ?? 0}
-                              onChange={(e) =>
-                                setStock({
-                                  ...stock,
-                                  [key]: Math.max(0, Number(e.target.value)),
-                                })
-                              }
-                              className="w-16 px-2 py-2 border border-neutral-200 text-sm text-center"
-                            />
-                          </div>
-                        );
-                      })}
+                    {/* An optional part can be bought on its own, so it needs
+                        a price of its own. Selecting every part charges the
+                        product price instead, which is the set price. */}
+                    <div className="flex flex-wrap items-center gap-4 mb-4">
+                      <label className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={group.required !== false}
+                          onChange={(e) => {
+                            const next = [...sizeGroups];
+                            next[groupIndex] = { ...group, required: e.target.checked };
+                            setSizeGroups(next);
+                          }}
+                        />
+                        Must be bought with the set
+                      </label>
+
+                      {group.required === false && (
+                        <label className="flex items-center gap-2 text-sm">
+                          Price alone
+                          <input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            value={group.price ?? ''}
+                            onChange={(e) => {
+                              const next = [...sizeGroups];
+                              next[groupIndex] = {
+                                ...group,
+                                price: e.target.value ? parseFloat(e.target.value) : null,
+                              };
+                              setSizeGroups(next);
+                            }}
+                            className="w-28 px-3 py-2 border border-neutral-200 text-sm"
+                          />
+                        </label>
+                      )}
                     </div>
+
+                    {selectedColors.length > 0 && (
+                      <p className="text-xs text-neutral-500 mb-2">
+                        Stock per colour
+                      </p>
+                    )}
+
+                    {(selectedColors.length > 0 ? selectedColors : [null]).map((color) => (
+                      <div key={color ?? 'none'} className="mb-3">
+                        {color && (
+                          <p className="text-xs text-neutral-600 mb-1">{color}</p>
+                        )}
+                        <div className="flex flex-wrap gap-3">
+                          {group.sizes.map((size) => {
+                            const key = stockKey({ color, group: group.label, size });
+                            return (
+                              <div key={size} className="flex flex-col items-center gap-1">
+                                <span className="text-xs text-neutral-500">{size}</span>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  value={stock[key] ?? 0}
+                                  onChange={(e) =>
+                                    setStock({
+                                      ...stock,
+                                      [key]: Math.max(0, Number(e.target.value)),
+                                    })
+                                  }
+                                  className="w-16 px-2 py-2 border border-neutral-200 text-sm text-center"
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+
 
                     <input
                       type="text"
@@ -1674,20 +1842,36 @@ export function AdminProducts() {
               <div className="space-y-2">
                 <Label>Materials *</Label>
                 <div className="grid grid-cols-2 gap-2">
-                  {AVAILABLE_MATERIALS.map(material => (
+                  {catalog.materials.map((material) => (
                     <button
-                      key={material}
+                      key={material.id}
                       type="button"
-                      onClick={() => toggleMaterial(material)}
+                      onClick={() => toggleMaterial(material.name)}
                       className={`px-4 py-2 border text-sm transition-colors ${
-                        selectedMaterials.includes(material)
+                        selectedMaterials.includes(material.name)
                           ? 'bg-black text-white border-black'
                           : 'bg-white text-black border-neutral-200 hover:border-neutral-400'
                       }`}
                     >
-                      {material}
+                      {material.name}
                     </button>
                   ))}
+                  <input
+                    type="text"
+                    value={newMaterial}
+                    onChange={(e) => setNewMaterial(e.target.value)}
+                    onKeyDown={async (e) => {
+                      if (e.key !== 'Enter') return;
+                      e.preventDefault();
+                      // Creating one here makes it available to every product.
+                      if (await catalog.addMaterial(newMaterial)) {
+                        toggleMaterial(newMaterial.trim());
+                        setNewMaterial('');
+                      }
+                    }}
+                    placeholder="Add a material, then Enter"
+                    className="px-4 py-2 border border-neutral-200 text-sm"
+                  />
                 </div>
               </div>
 
@@ -1722,35 +1906,113 @@ export function AdminProducts() {
                   <input
                     type="number"
                     min={0}
-                    value={stock[DEFAULT_STOCK_KEY] ?? 0}
+                    value={stock[stockKey({ color: selectedColors[0] ?? null })] ?? 0}
                     onChange={(e) =>
-                      setStock({ ...stock, [DEFAULT_STOCK_KEY]: Math.max(0, Number(e.target.value)) })
+                      setStock({
+                        ...stock,
+                        [stockKey({ color: selectedColors[0] ?? null })]: Math.max(
+                          0,
+                          Number(e.target.value)
+                        ),
+                      })
                     }
                     className="w-32 px-3 py-2 border border-neutral-200 text-sm"
                   />
                 ) : (
-                  <div className="flex flex-wrap gap-3">
-                    {selectedSizes.map((size) => (
-                      <div key={size} className="flex flex-col items-center gap-1">
-                        <span className="text-xs text-neutral-500">{size}</span>
-                        <input
-                          type="number"
-                          min={0}
-                          value={stock[String(size)] ?? 0}
-                          onChange={(e) =>
-                            setStock({ ...stock, [String(size)]: Math.max(0, Number(e.target.value)) })
-                          }
-                          className="w-16 px-2 py-2 border border-neutral-200 text-sm text-center"
-                        />
+                  // One row of boxes per colour, since each colour is counted
+                  // separately. No colours means a single row, as before.
+                  (selectedColors.length > 0 ? selectedColors : [null]).map((color) => (
+                    <div key={color ?? 'none'} className="mb-3">
+                      {color && (
+                        <p className="text-xs text-neutral-600 mb-1">{color}</p>
+                      )}
+                      <div className="flex flex-wrap gap-3">
+                        {selectedSizes.map((size) => {
+                          const key = stockKey({ color, size: String(size) });
+                          return (
+                            <div key={size} className="flex flex-col items-center gap-1">
+                              <span className="text-xs text-neutral-500">{size}</span>
+                              <input
+                                type="number"
+                                min={0}
+                                value={stock[key] ?? 0}
+                                onChange={(e) =>
+                                  setStock({
+                                    ...stock,
+                                    [key]: Math.max(0, Number(e.target.value)),
+                                  })
+                                }
+                                className="w-16 px-2 py-2 border border-neutral-200 text-sm text-center"
+                              />
+                            </div>
+                          );
+                        })}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))
                 )}
                 <p className="text-xs text-neutral-500 mt-2">
                   Zero means sold out. The database refuses any order that would take a size below zero.
                 </p>
               </div>
 
+
+              {/* Colour. Each one carries its own stock, so adding a colour
+                  multiplies the stock boxes below rather than replacing them. */}
+              <div className="border border-neutral-200 p-4">
+                <p className="text-xs uppercase tracking-wider text-neutral-500 mb-4">
+                  Colours
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {catalog.colors.map((color) => (
+                    <button
+                      key={color.id}
+                      type="button"
+                      onClick={() =>
+                        setSelectedColors((prev) =>
+                          prev.includes(color.name)
+                            ? prev.filter((c) => c !== color.name)
+                            : [...prev, color.name]
+                        )
+                      }
+                      className={`flex items-center gap-2 px-4 py-2 border text-sm transition-colors ${
+                        selectedColors.includes(color.name)
+                          ? 'bg-black text-white border-black'
+                          : 'bg-white text-black border-neutral-200 hover:border-neutral-400'
+                      }`}
+                    >
+                      {color.hex && (
+                        <span
+                          className="w-3 h-3 rounded-full border border-neutral-300 inline-block"
+                          style={{ backgroundColor: color.hex }}
+                        />
+                      )}
+                      {color.name}
+                    </button>
+                  ))}
+                  <input
+                    type="text"
+                    value={newColor}
+                    onChange={(e) => setNewColor(e.target.value)}
+                    onKeyDown={async (e) => {
+                      if (e.key !== 'Enter') return;
+                      e.preventDefault();
+                      if (await catalog.addColor(newColor)) {
+                        setSelectedColors((prev) => [...prev, newColor.trim()]);
+                        setNewColor('');
+                      }
+                    }}
+                    placeholder="Add a colour, then Enter"
+                    className="px-4 py-2 border border-neutral-200 text-sm"
+                  />
+                </div>
+                {selectedColors.length > 0 && (
+                  <p className="text-xs text-neutral-500 mt-3">
+                    Stock is held per colour, so each one below is counted
+                    separately. Leave this empty for a piece that comes one way.
+                  </p>
+                )}
+              </div>
 
               {/* How this piece is sold. In stock behaves as before. */}
               <div className="border border-neutral-200 p-4">
@@ -1870,7 +2132,9 @@ export function AdminProducts() {
                       <select
                         value={group.scale ?? 'alpha'}
                         onChange={(e) => {
-                          const scale = findSizeScale(e.target.value);
+                          const scale = catalog.scales.find(
+                            (row) => row.key === e.target.value
+                          );
                           const next = [...sizeGroups];
                           next[groupIndex] = {
                             ...group,
@@ -1881,8 +2145,11 @@ export function AdminProducts() {
                         }}
                         className="flex-1 px-3 py-2 border border-neutral-200 text-sm"
                       >
-                        {SIZE_SCALES.map((scale) => (
-                          <option key={scale.key} value={scale.key}>
+                        {/* Only the scales that suit the categories ticked
+                            above, so shoes offer footwear sizes and apparel
+                            offers alpha and US womens. */}
+                        {catalog.scalesForCategories(selectedCategories).map((scale) => (
+                          <option key={scale.id} value={scale.key}>
                             {scale.label}
                           </option>
                         ))}
@@ -1899,28 +2166,81 @@ export function AdminProducts() {
                       </Button>
                     </div>
 
-                    <div className="flex flex-wrap gap-3">
-                      {group.sizes.map((size) => {
-                        const key = groupStockKey(group.label, size);
-                        return (
-                          <div key={size} className="flex flex-col items-center gap-1">
-                            <span className="text-xs text-neutral-500">{size}</span>
-                            <input
-                              type="number"
-                              min={0}
-                              value={stock[key] ?? 0}
-                              onChange={(e) =>
-                                setStock({
-                                  ...stock,
-                                  [key]: Math.max(0, Number(e.target.value)),
-                                })
-                              }
-                              className="w-16 px-2 py-2 border border-neutral-200 text-sm text-center"
-                            />
-                          </div>
-                        );
-                      })}
+                    {/* An optional part can be bought on its own, so it needs
+                        a price of its own. Selecting every part charges the
+                        product price instead, which is the set price. */}
+                    <div className="flex flex-wrap items-center gap-4 mb-4">
+                      <label className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={group.required !== false}
+                          onChange={(e) => {
+                            const next = [...sizeGroups];
+                            next[groupIndex] = { ...group, required: e.target.checked };
+                            setSizeGroups(next);
+                          }}
+                        />
+                        Must be bought with the set
+                      </label>
+
+                      {group.required === false && (
+                        <label className="flex items-center gap-2 text-sm">
+                          Price alone
+                          <input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            value={group.price ?? ''}
+                            onChange={(e) => {
+                              const next = [...sizeGroups];
+                              next[groupIndex] = {
+                                ...group,
+                                price: e.target.value ? parseFloat(e.target.value) : null,
+                              };
+                              setSizeGroups(next);
+                            }}
+                            className="w-28 px-3 py-2 border border-neutral-200 text-sm"
+                          />
+                        </label>
+                      )}
                     </div>
+
+                    {selectedColors.length > 0 && (
+                      <p className="text-xs text-neutral-500 mb-2">
+                        Stock per colour
+                      </p>
+                    )}
+
+                    {(selectedColors.length > 0 ? selectedColors : [null]).map((color) => (
+                      <div key={color ?? 'none'} className="mb-3">
+                        {color && (
+                          <p className="text-xs text-neutral-600 mb-1">{color}</p>
+                        )}
+                        <div className="flex flex-wrap gap-3">
+                          {group.sizes.map((size) => {
+                            const key = stockKey({ color, group: group.label, size });
+                            return (
+                              <div key={size} className="flex flex-col items-center gap-1">
+                                <span className="text-xs text-neutral-500">{size}</span>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  value={stock[key] ?? 0}
+                                  onChange={(e) =>
+                                    setStock({
+                                      ...stock,
+                                      [key]: Math.max(0, Number(e.target.value)),
+                                    })
+                                  }
+                                  className="w-16 px-2 py-2 border border-neutral-200 text-sm text-center"
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+
 
                     <input
                       type="text"

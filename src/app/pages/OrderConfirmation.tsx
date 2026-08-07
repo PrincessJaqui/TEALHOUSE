@@ -135,13 +135,20 @@ export function OrderConfirmation() {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-sm">{item.name}</p>
-                    {item.sizes ? (
+                    {(item.color || item.sizes || item.size) && (
                       <p className="text-xs text-gray-600 mt-1">
-                        {describeSelection(item.sizes)}
+                        {[
+                          item.color,
+                          item.sizes
+                            ? describeSelection(item.sizes)
+                            : item.size
+                              ? `Size ${item.size}`
+                              : null,
+                        ]
+                          .filter(Boolean)
+                          .join(' / ')}
                       </p>
-                    ) : item.size ? (
-                      <p className="text-xs text-gray-600 mt-1">Size {item.size}</p>
-                    ) : null}
+                    )}
                     <p className="text-xs text-gray-500 mt-1">
                       Quantity {item.quantity}
                     </p>
