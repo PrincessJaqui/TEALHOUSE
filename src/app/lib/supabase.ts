@@ -31,7 +31,8 @@ export interface DbProduct {
   audience: string[];
   description: string;
   materials: string[];
-  sizes?: number[];
+  /** Size labels. Text, so they can hold XS, 00 or 34DD as well as 38. */
+  sizes?: string[];
   stock?: Record<string, number>;
   is_bestseller?: boolean;
   is_published?: boolean;

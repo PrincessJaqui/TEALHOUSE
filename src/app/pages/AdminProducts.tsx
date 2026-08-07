@@ -40,7 +40,6 @@ import {
 const AVAILABLE_CATEGORIES = [...CATEGORIES];
 const AVAILABLE_MATERIALS = [...MATERIALS];
 const AVAILABLE_AUDIENCE = [...AUDIENCES];
-const AVAILABLE_SIZES = [...SHOE_SIZES];
 import { getPrimaryProductImage } from '../lib/default-image';
 
 
@@ -63,7 +62,7 @@ export function AdminProducts() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedAudience, setSelectedAudience] = useState<string[]>([]);
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
-  const [selectedSizes, setSelectedSizes] = useState<number[]>([36, 37, 38, 39, 40, 41]);
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   // Stock per size, keyed by size as a string. Sizeless products use "default".
   const [stock, setStock] = useState<Record<string, number>>({});
   // Multi-part sizing. Empty means the product uses the single size row.
@@ -77,6 +76,20 @@ export function AdminProducts() {
   // Materials, colours and size scales are rows now, so new ones can be
   // created here and become available to every product.
   const catalog = useCatalogLists();
+
+  // The scales on offer follow the categories ticked, so Resort Wear offers
+  // Alpha and Women's Clothing rather than EU shoe sizes. If the current
+  // scale does not suit the new categories, move to one that does.
+  const offeredScales = catalog.scalesForCategories(selectedCategories);
+  const activeScale =
+    offeredScales.find((row) => row.key === sizeScale) ?? offeredScales[0];
+
+  useEffect(() => {
+    if (offeredScales.length === 0) return;
+    if (offeredScales.some((row) => row.key === sizeScale)) return;
+    setSizeScale(offeredScales[0].key);
+    setSelectedSizes([]);
+  }, [selectedCategories, catalog.scales]);
   const [retainerAmount, setRetainerAmount] = useState('');
   const [preorderShipsOn, setPreorderShipsOn] = useState('');
   const [isBestseller, setIsBestseller] = useState(false);
@@ -432,7 +445,7 @@ export function AdminProducts() {
     setSelectedCategories([]);
     setSelectedAudience([]);
     setSelectedMaterials([]);
-    setSelectedSizes([36, 37, 38, 39, 40, 41]);
+    setSelectedSizes([]);
     setStock({});
     setSizeGroups([]);
     setSizeScale('footwear-eu');
@@ -465,7 +478,7 @@ export function AdminProducts() {
     setSelectedCategories(product.categories);
     setSelectedAudience(product.audience);
     setSelectedMaterials(product.materials);
-    setSelectedSizes(product.sizes || []);
+    setSelectedSizes((product.sizes ?? []).map(String));
     setStock(product.stock ?? {});
     setSizeGroups(product.size_groups ?? []);
     setSizeScale(product.size_scale ?? 'footwear-eu');
@@ -722,11 +735,15 @@ export function AdminProducts() {
     );
   };
 
-  const toggleSize = (size: number) => {
-    setSelectedSizes(prev => 
+  const toggleSize = (size: string) => {
+    setSelectedSizes((prev) =>
       prev.includes(size)
-        ? prev.filter(s => s !== size)
-        : [...prev, size].sort((a, b) => a - b)
+        ? prev.filter((s) => s !== size)
+        // Keep the scale's own order rather than sorting, so XS S M L stays
+        // in that order instead of becoming alphabetical.
+        : (activeScale?.sizes ?? []).filter(
+            (candidate) => prev.includes(candidate) || candidate === size
+          )
     );
   };
 
@@ -1081,9 +1098,34 @@ export function AdminProducts() {
               {/* Sizes */}
               {fulfillmentType !== 'made_to_order' && sizeGroups.length === 0 && !selectedCategories.includes('accessories') && (
                 <div className="space-y-2">
-                  <Label>Available Sizes</Label>
+                  <Label>Sizing</Label>
+
+                  {/* Only the scales that suit the categories ticked above.
+                      Resort Wear offers Alpha and Women's Clothing; Shoes
+                      offers the two footwear charts. */}
+                  <select
+                    value={activeScale?.key ?? ''}
+                    onChange={(e) => {
+                      setSizeScale(e.target.value);
+                      setSelectedSizes([]);
+                    }}
+                    className="w-full px-3 py-2 border border-neutral-200 text-sm mb-3"
+                  >
+                    {offeredScales.map((scale) => (
+                      <option key={scale.id} value={scale.key}>
+                        {scale.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  {selectedCategories.length === 0 && (
+                    <p className="text-xs text-neutral-500 mb-2">
+                      Tick a category above to narrow this list.
+                    </p>
+                  )}
+
                   <div className="grid grid-cols-6 gap-2">
-                    {AVAILABLE_SIZES.map(size => (
+                    {(activeScale?.sizes ?? []).map((size) => (
                       <button
                         key={size}
                         type="button"
@@ -1878,9 +1920,34 @@ export function AdminProducts() {
               {/* Sizes */}
               {fulfillmentType !== 'made_to_order' && sizeGroups.length === 0 && !selectedCategories.includes('accessories') && (
                 <div className="space-y-2">
-                  <Label>Available Sizes</Label>
+                  <Label>Sizing</Label>
+
+                  {/* Only the scales that suit the categories ticked above.
+                      Resort Wear offers Alpha and Women's Clothing; Shoes
+                      offers the two footwear charts. */}
+                  <select
+                    value={activeScale?.key ?? ''}
+                    onChange={(e) => {
+                      setSizeScale(e.target.value);
+                      setSelectedSizes([]);
+                    }}
+                    className="w-full px-3 py-2 border border-neutral-200 text-sm mb-3"
+                  >
+                    {offeredScales.map((scale) => (
+                      <option key={scale.id} value={scale.key}>
+                        {scale.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  {selectedCategories.length === 0 && (
+                    <p className="text-xs text-neutral-500 mb-2">
+                      Tick a category above to narrow this list.
+                    </p>
+                  )}
+
                   <div className="grid grid-cols-6 gap-2">
-                    {AVAILABLE_SIZES.map(size => (
+                    {(activeScale?.sizes ?? []).map((size) => (
                       <button
                         key={size}
                         type="button"

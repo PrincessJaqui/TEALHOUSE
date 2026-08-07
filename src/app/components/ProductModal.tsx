@@ -20,13 +20,9 @@ interface ProductModalProps {
 }
 
 // Convert European size to US size
-const convertEUtoUS = (euSize: number): number => {
-  // Women's conversion (approximate)
-  return euSize - 30;
-};
 
 export function ProductModal({ product, isOpen, onClose, onAddToCart, onAddToWishlist, isInWishlist }: ProductModalProps) {
-  const [selectedSize, setSelectedSize] = useState<number | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -55,7 +51,7 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart, onAddToWis
       return;
     }
     
-    onAddToCart(product, selectedSize ? String(selectedSize) : undefined);
+    onAddToCart(product, selectedSize ?? undefined);
     toast.success('Added to cart');
     onClose();
     setSelectedSize(null);
@@ -152,10 +148,10 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart, onAddToWis
                               }
                             `}
                           >
-                            <div className="flex flex-col">
-                              <span>EU {size}</span>
-                              <span className="text-xs opacity-75">US {convertEUtoUS(size)}</span>
-                            </div>
+                            {/* The scale defines what the label means, so
+                                showing it plainly is correct for XS as well
+                                as for 38. */}
+                            <span>{size}</span>
                           </button>
                         ))}
                       </div>

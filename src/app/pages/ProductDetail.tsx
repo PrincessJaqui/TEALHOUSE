@@ -484,7 +484,7 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
             {!isBespoke(product) && !hasSizeGroups(product) && product.sizes && product.sizes.length > 0 && (
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-3">
-                  <label className="block font-medium">Size (EU)</label>
+                  <label className="block font-medium">Size</label>
                   <Button
                     variant="ghost"
                     size="sm"
