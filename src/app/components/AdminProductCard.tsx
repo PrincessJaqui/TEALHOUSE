@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Product } from '../App';
 import { getPrimaryProductImage } from '../lib/default-image';
+import { separatePartPrices } from '../config/taxonomy';
 
 /**
  * One product in the admin catalogue.
@@ -47,6 +48,7 @@ export function AdminProductCard({
   const gallery = images.length > 0 ? images : [getPrimaryProductImage(product)];
 
   const [index, setIndex] = useState(0);
+  const partPrices = separatePartPrices(product);
   const hasMany = gallery.length > 1;
 
   // Wraps at both ends, so you can keep clicking in one direction rather
@@ -144,8 +146,20 @@ export function AdminProductCard({
 
       <CardContent className="p-4">
         <h3 className="mb-1">{product.name}</h3>
+        {/* The set price, then what each piece costs alone, so you can see
+            both at a glance without opening the product. */}
         <p className="text-sm text-neutral-600 mb-2">
-          ${product.price.toLocaleString()}
+          <span>${product.price.toLocaleString()}</span>
+          {partPrices.length > 0 && (
+            <>
+              <span className="text-neutral-300 mx-2">|</span>
+              <span className="text-neutral-500">
+                {partPrices
+                  .map((part) => `${part.label}: $${part.price.toLocaleString()}`)
+                  .join('  ')}
+              </span>
+            </>
+          )}
         </p>
 
         <div className="flex gap-1 flex-wrap">

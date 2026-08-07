@@ -486,3 +486,18 @@ export function joinComponents(
   const separator = scale?.components?.join ?? '';
   return values.join(separator);
 }
+
+
+/**
+ * Parts a customer can buy on their own, with what each costs.
+ *
+ * Empty unless the product actually offers pieces separately, so a plain
+ * product shows nothing extra.
+ */
+export function separatePartPrices(
+  product: Product
+): Array<{ label: string; price: number }> {
+  return (product.size_groups ?? [])
+    .filter((group) => group.required === false && Number(group.price) > 0)
+    .map((group) => ({ label: group.label, price: Number(group.price) }));
+}
