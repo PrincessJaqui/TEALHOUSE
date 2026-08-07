@@ -8,10 +8,11 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, Trash2, Upload, Package, X, Video, Edit, Image as ImageIcon, Download, ExternalLink, Copy } from 'lucide-react';
+import { Plus, Trash2, Upload, Package, X, Video, Edit, Image as ImageIcon, Download } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { AdminLayout } from '../components/AdminLayout';
 import { exportCsv } from '../lib/csv';
+import { AdminProductCard } from '../components/AdminProductCard';
 import { productPath } from '../config/taxonomy';
 import { useCatalogLists } from '../hooks/useCatalogLists';
 import {
@@ -931,83 +932,17 @@ export function AdminProducts() {
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {products.map(product => (
-                  <Card key={product.id} className="overflow-hidden">
-                    <div className="aspect-square relative">
-                      <img 
-                        src={getPrimaryProductImage(product)}
-                        alt={product.name}
-                        className="w-full h-full object-cover"
-                      />
-                      {product.images && product.images.length > 1 && (
-                        <div className="absolute top-2 right-2 bg-black text-white px-2 py-1 text-xs">
-                          +{product.images.length - 1} more
-                        </div>
-                      )}
-                      {product.video && (
-                        <div className="absolute top-2 left-2 bg-black text-white p-1.5 ">
-                          <Video className="w-4 h-4" />
-                        </div>
-                      )}
-                    </div>
-                    <CardContent className="p-4">
-                      <h3 className="mb-1">{product.name}</h3>
-                      <p className="text-sm text-neutral-600 mb-2">${product.price.toLocaleString()}</p>
-                      <div className="flex gap-1 flex-wrap mb-3">
-                        {product.categories.map(cat => (
-                          <span key={cat} className="text-xs px-2 py-0.5 bg-neutral-100 capitalize">
-                            {cat}
-                          </span>
-                        ))}
-                      </div>
-                      <div className="flex gap-1 flex-wrap mb-3">
-                        {product.audience.map(aud => (
-                          <span key={aud} className="text-xs px-2 py-0.5 bg-teal-50 text-teal-800 capitalize">
-                            {aud}
-                          </span>
-                        ))}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(productPath(product), '_blank')}
-                          className="flex-1"
-                          title="Open the storefront page in a new tab"
-                        >
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          View
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEditModal(product)}
-                          className="flex-1"
-                        >
-                          <Edit className="w-4 h-4 mr-2" />
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openCloneModal(product)}
-                          className="flex-1"
-                        >
-                          <Copy className="w-4 h-4 mr-2" />
-                          Clone
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(product.id, product.images || [product.image], product.video)}
-                          className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                {products.map((product) => (
+                  <AdminProductCard
+                    key={product.id}
+                    product={product}
+                    onEdit={openEditModal}
+                    onView={(p) => window.open(productPath(p), '_blank')}
+                    onClone={openCloneModal}
+                    onDelete={(p) =>
+                      handleDelete(p.id, p.images || [p.image], p.video)
+                    }
+                  />
                 ))}
               </div>
             )}
