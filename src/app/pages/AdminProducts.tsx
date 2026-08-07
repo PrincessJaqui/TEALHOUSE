@@ -118,6 +118,26 @@ export function AdminProducts() {
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const [savingOrder, setSavingOrder] = useState(false);
 
+  // Reordering a product's own photographs. The first is the primary shot.
+  const [imageDragIndex, setImageDragIndex] = useState<number | null>(null);
+  const [imageOverIndex, setImageOverIndex] = useState<number | null>(null);
+
+  const dropImage = (targetIndex: number) => {
+    if (imageDragIndex === null || imageDragIndex === targetIndex) {
+      setImageDragIndex(null);
+      setImageOverIndex(null);
+      return;
+    }
+
+    const next = [...existingImages];
+    const [moved] = next.splice(imageDragIndex, 1);
+    next.splice(targetIndex, 0, moved);
+
+    setExistingImages(next);
+    setImageDragIndex(null);
+    setImageOverIndex(null);
+  };
+
   const commitOrder = async (ordered: Product[]) => {
     setSavingOrder(true);
     setProducts(ordered);
@@ -2037,12 +2057,41 @@ export function AdminProducts() {
                     <div className="mb-4">
                       <p className="text-xs text-neutral-600 mb-2">Existing Images ({existingImages.length})</p>
                       <div className="grid grid-cols-3 gap-4 mb-4">
+                        {/* Drag to arrange. The first is the primary shot:
+                            it heads the product page, sits on the collection
+                            grid, and is the image a shared link shows. */}
                         {existingImages.map((imageUrl, index) => (
-                          <div key={imageUrl} className="relative">
-                            <img 
-                              src={imageUrl} 
-                              alt={`Existing ${index + 1}`} 
-                              className="w-full h-32 object-cover "
+                          <div
+                            key={imageUrl}
+                            draggable
+                            onDragStart={() => setImageDragIndex(index)}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              setImageOverIndex(index);
+                            }}
+                            onDragLeave={() =>
+                              setImageOverIndex((prev) =>
+                                prev === index ? null : prev
+                              )
+                            }
+                            onDrop={() => dropImage(index)}
+                            onDragEnd={() => {
+                              setImageDragIndex(null);
+                              setImageOverIndex(null);
+                            }}
+                            className={`relative cursor-move transition-opacity ${
+                              imageDragIndex === index ? 'opacity-40' : ''
+                            } ${
+                              imageOverIndex === index && imageDragIndex !== index
+                                ? 'ring-2 ring-black ring-offset-2'
+                                : ''
+                            }`}
+                          >
+                            <img
+                              src={imageUrl}
+                              alt={`Existing ${index + 1}`}
+                              draggable={false}
+                              className="w-full h-32 object-cover"
                             />
                             <button
                               type="button"
@@ -2051,11 +2100,9 @@ export function AdminProducts() {
                             >
                               <X className="w-4 h-4" />
                             </button>
-                            {index === 0 && (
-                              <div className="absolute bottom-1 left-1 bg-black text-white text-xs px-1.5 py-0.5 ">
-                                Primary
-                              </div>
-                            )}
+                            <div className="absolute bottom-1 left-1 bg-black text-white text-xs px-1.5 py-0.5">
+                              {index === 0 ? 'Primary' : index + 1}
+                            </div>
                           </div>
                         ))}
                       </div>

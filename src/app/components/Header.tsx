@@ -5,6 +5,11 @@ import imgLogo from "figma:asset/3f298acd9128513aa329c386495f656e449305d1.png";
 import { Instagram, Youtube, Facebook, Linkedin } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useCategoryCounts } from '../hooks/useCategoryCounts';
+import {
+  useInterfaceStudio,
+  DEFAULT_NAV,
+  type NavCollection,
+} from '../hooks/useInterfaceStudio';
 
 interface HeaderProps {
   cartItemCount: number;
@@ -27,6 +32,11 @@ export function Header({ cartItemCount, wishlistItemCount, onCartClick, onWishli
   // A link to an empty category page reads as an unfinished shop, so each
   // one waits until its category actually has a published product.
   const { hasProducts } = useCategoryCounts();
+
+  // The menu order she arranged in the Studio, falling back to the built-in
+  // order so the menu is never empty while that loads.
+  const { get } = useInterfaceStudio();
+  const collections: NavCollection[] = get('navigation').collections ?? DEFAULT_NAV;
 
   const [isCustomer, setIsCustomer] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -136,42 +146,29 @@ export function Header({ cartItemCount, wishlistItemCount, onCartClick, onWishli
 
             {/* Menu Items */}
             <nav className="px-6 pb-8">
-              <Link
-                to="/shoes"
-                className="flex items-center justify-between py-3 hover:text-gray-600 transition-colors group text-sm"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <span>Footwear</span>
-                <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-              </Link>
-              {/* Resort Wear is always shown. Accents below still waits
-                  until it has something to sell. */}
-              <Link
-                to="/resort-wear"
-                className="flex items-center justify-between py-3 hover:text-gray-600 transition-colors group text-sm"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <span>Resort Wear</span>
-                <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-              </Link>
-              {hasProducts('accessories') && (
-                <Link
-                  to="/accessories"
-                  className="flex items-center justify-between py-3 hover:text-gray-600 transition-colors group text-sm"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <span>Accents</span>
-                  <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                </Link>
-              )}
-              <Link 
-                to="/bespoke-design" 
-                className="flex items-center justify-between py-3 hover:text-gray-600 transition-colors group text-sm"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <span>Bespoke</span>
-                <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-              </Link>
+              {/* Order comes from the Studio, so the menu can be arranged
+                  without a deploy. Accents still waits until it has
+                  something to sell; everything else always shows. */}
+              {collections.map((collection) => {
+                if (
+                  collection.key === 'accessories' &&
+                  !hasProducts('accessories')
+                ) {
+                  return null;
+                }
+
+                return (
+                  <Link
+                    key={collection.key}
+                    to={collection.path}
+                    className="flex items-center justify-between py-3 hover:text-gray-600 transition-colors group text-sm"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span>{collection.label}</span>
+                    <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                );
+              })}
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);

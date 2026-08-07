@@ -12,8 +12,11 @@ import {
   HERO_TEXT_POSITIONS,
 } from '../components/StudioSections';
 import { CropEditor } from '../components/CropEditor';
+import { GripVertical } from 'lucide-react';
 import {
   useInterfaceStudio,
+  DEFAULT_NAV,
+  type NavCollection,
   uploadSiteMedia,
   SECTION_LABELS,
   SECTION_HELP,
@@ -29,6 +32,7 @@ import {
  */
 
 const ORDER: SectionKey[] = [
+  'navigation',
   'hero',
   'editorial',
   'split_one',
@@ -416,6 +420,8 @@ export function AdminInterfaceStudio() {
   const [drafts, setDrafts] = useState<Record<string, any>>({});
   const [actives, setActives] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState<string | null>(null);
+  const [navDrag, setNavDrag] = useState<number | null>(null);
+  const [navOver, setNavOver] = useState<number | null>(null);
 
   useEffect(() => {
     const nextDrafts: Record<string, any> = {};
@@ -450,6 +456,60 @@ export function AdminInterfaceStudio() {
 
   const renderFields = (key: SectionKey) => {
     const draft = drafts[key] ?? {};
+
+    if (key === 'navigation') {
+      const collections: NavCollection[] = draft.collections ?? DEFAULT_NAV;
+
+      const move = (from: number, to: number) => {
+        const next = [...collections];
+        const [item] = next.splice(from, 1);
+        next.splice(to, 0, item);
+        setField(key, 'collections', next);
+      };
+
+      return (
+        <div>
+          <p className="text-xs text-neutral-500 mb-4">
+            Drag to arrange. This is the order a customer sees in the menu.
+          </p>
+          <ul className="border border-neutral-200">
+            {collections.map((collection, index) => (
+              <li
+                key={collection.key}
+                draggable
+                onDragStart={() => setNavDrag(index)}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setNavOver(index);
+                }}
+                onDragLeave={() =>
+                  setNavOver((prev) => (prev === index ? null : prev))
+                }
+                onDrop={() => {
+                  if (navDrag !== null && navDrag !== index) move(navDrag, index);
+                  setNavDrag(null);
+                  setNavOver(null);
+                }}
+                onDragEnd={() => {
+                  setNavDrag(null);
+                  setNavOver(null);
+                }}
+                className={`flex items-center gap-3 px-4 py-3 border-b border-neutral-100 last:border-0 cursor-move bg-white transition-colors ${
+                  navDrag === index ? 'opacity-40' : ''
+                } ${navOver === index && navDrag !== index ? 'bg-neutral-100' : ''}`}
+              >
+                <span className="text-xs text-neutral-400 w-5">{index + 1}</span>
+                <GripVertical className="w-4 h-4 text-neutral-400" />
+                <span className="text-sm">{collection.label}</span>
+                <span className="text-xs text-neutral-400 ml-auto">
+                  {collection.path}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
 
     if (key === 'hero') {
       return (

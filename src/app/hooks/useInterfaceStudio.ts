@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabase';
  */
 
 export type SectionKey =
+  | 'navigation'
   | 'hero'
   | 'editorial'
   | 'split_one'
@@ -25,6 +26,7 @@ export interface StudioSection {
 }
 
 export const SECTION_LABELS: Record<SectionKey, string> = {
+  navigation: 'Menu order',
   hero: 'Hero',
   editorial: 'Editorial note',
   split_one: 'Two panels, upper',
@@ -34,6 +36,8 @@ export const SECTION_LABELS: Record<SectionKey, string> = {
 };
 
 export const SECTION_HELP: Record<SectionKey, string> = {
+  navigation:
+    'The order collections appear in the menu. Drag to arrange.',
   hero: 'The film or image at the top. Desktop and mobile are set separately, each with a still image used while the video loads and on any device that will not play it.',
   editorial: 'A short line of type with a link, sitting on white between the imagery.',
   split_one: 'Two images side by side, each with its own link.',
@@ -119,3 +123,24 @@ export async function uploadSiteMedia(file: File): Promise<string | null> {
   const { data } = supabase.storage.from('site-media').getPublicUrl(path);
   return data.publicUrl;
 }
+
+
+/** What a collection looks like in the menu. */
+export interface NavCollection {
+  key: string;
+  label: string;
+  path: string;
+}
+
+/**
+ * The order used when the studio has nothing saved, so a fresh install has
+ * a sensible menu rather than an empty one.
+ */
+export const DEFAULT_NAV: NavCollection[] = [
+  { key: 'shoes', label: 'Footwear', path: '/shoes' },
+  { key: 'resort-wear', label: 'Resort Wear', path: '/resort-wear' },
+  { key: 'accessories', label: 'Accents', path: '/accessories' },
+  { key: 'new-arrivals', label: 'New Arrivals', path: '/new-arrivals' },
+  { key: 'best-sellers', label: 'Best Sellers', path: '/best-sellers' },
+  { key: 'bespoke', label: 'Bespoke', path: '/bespoke-design' },
+];
