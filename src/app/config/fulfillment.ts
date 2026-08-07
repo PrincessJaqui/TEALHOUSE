@@ -147,6 +147,9 @@ export const MADE_TO_MEASURE_COPY = {
   intro:
     'Cut to your measurements. Choose the closest value for each; our ' +
     'atelier works to these figures, so measure carefully.',
+  /** Shown when a made to measure product has no parts defined yet. */
+  noParts:
+    'Sizing for this piece is being finalised. Please contact us to order.',
   leadTime: (weeks?: number | null) =>
     weeks && weeks > 0
       ? `Made to measure, so please allow about ${weeks} ` +
@@ -163,13 +166,20 @@ export function tracksStock(product: { fulfillment_type?: string }): boolean {
   return (product.fulfillment_type ?? 'in_stock') === 'in_stock';
 }
 
-/** True when the customer must supply measurements before adding to bag. */
+/**
+ * Made to measure uses the parts container, the same one a bikini uses,
+ * rather than a separate measurement list. Each part carries whichever
+ * scale suits it: a bra part offers band and cup dropdowns, a waist part
+ * offers inches, a hip part offers alpha sizes.
+ *
+ * The measurement_fields column is left in place but no longer read.
+ */
 export function needsMeasurements(product: {
   fulfillment_type?: string;
-  measurement_fields?: string[];
+  size_groups?: Array<{ label: string }>;
 }): boolean {
   return (
     product.fulfillment_type === 'made_to_measure' &&
-    (product.measurement_fields ?? []).length > 0
+    (product.size_groups ?? []).length > 0
   );
 }

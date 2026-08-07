@@ -31,6 +31,14 @@ export interface SizeScaleRow {
   sizes: string[];
   /** The full conversion chart, rendered on the size guide. */
   conversions?: Array<Record<string, string>>;
+  /**
+   * A compound scale, chosen from more than one dropdown that combine into
+   * a single value. Bra size is a band and a cup, so 34 and D become 34D.
+   */
+  components?: {
+    join: string;
+    parts: Array<{ label: string; values: string[] }>;
+  } | null;
   note?: string | null;
   /** Which product categories this scale is offered for. Empty means all. */
   categories: string[];

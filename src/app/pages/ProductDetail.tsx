@@ -14,11 +14,13 @@ import {
   availableSizesFor,
   isPartRequired,
   priceForSelection,
+  partOptions,
+  partComponents,
+  joinComponents,
 } from '../config/taxonomy';
 import {
   isBespoke,
   isMadeToMeasure,
-  measurementOptions,
   MADE_TO_MEASURE_COPY,
   isPreOrder,
   tracksStock,
@@ -28,6 +30,7 @@ import {
   PREORDER_COPY,
 } from '../config/fulfillment';
 import { Seo, productJsonLd } from '../components/Seo';
+import { useCatalogLists } from '../hooks/useCatalogLists';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Heart, ShoppingCart, Info } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -64,7 +67,15 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
   const [includedParts, setIncludedParts] = useState<string[]>([]);
   // Made to measure. These are the customer's own figures, not sizes we
   // stock, so nothing here touches inventory.
-  const [measurements, setMeasurements] = useState<Record<string, string>>({});
+  // Compound scales are chosen piece by piece, for example a bra band and
+  // cup, before being combined into the single value the order carries.
+  const [componentChoices, setComponentChoices] = useState<
+    Record<string, Record<string, string>>
+  >({});
+
+  // Scales come from the database, so a made to measure part can offer a
+  // bra chart, an inch measurement, or alpha sizes without a deploy.
+  const catalog = useCatalogLists();
   const [selectedImage, setSelectedImage] = useState(0);
 
   useEffect(() => {
@@ -143,22 +154,23 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
     // Made to measure: the piece and its price are known, but it is cut to
     // the customer, so every measurement asked for must be given.
     if (isMadeToMeasure(product)) {
-      const fields = product.measurement_fields ?? [];
-      for (const field of fields) {
-        if (!measurements[field]) {
-          toast.error(`Please choose your ${field.toLowerCase()} measurement`);
-          return;
-        }
+      const groups = product.size_groups ?? [];
+      if (groups.length === 0) {
+        toast.error('This piece is not ready to order yet');
+        return;
       }
 
-      onAddToCart(
-        product,
-        selectedSize,
-        undefined,
-        undefined,
-        selectedColor,
-        measurements
-      );
+      const chosen: Record<string, string> = {};
+      for (const group of groups) {
+        const value = selectedSizes[group.label];
+        if (!value) {
+          toast.error(`Please choose your ${group.label.toLowerCase()}`);
+          return;
+        }
+        chosen[group.label] = value;
+      }
+
+      onAddToCart(product, undefined, chosen, undefined, selectedColor);
       toast.success('Added to bag');
       return;
     }
@@ -377,47 +389,110 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
               </div>
             )}
 
-            {/* Made to measure. Dropdowns rather than size buttons, because
-                these are the customer's own figures and carry no stock. */}
-            {isMadeToMeasure(product) && (product.measurement_fields ?? []).length > 0 && (
+            {/* Made to measure uses the parts container, so each part
+                carries whichever scale suits it. A bra part offers band and
+                cup dropdowns, a waist part offers inches, a hip part offers
+                alpha sizes. Nothing here touches stock. */}
+            {isMadeToMeasure(product) && (
               <div className="mb-6">
                 <label className="block font-medium mb-2">Your measurements</label>
                 <p className="text-sm text-gray-600 mb-4">
                   {MADE_TO_MEASURE_COPY.intro}
                 </p>
 
-                <div className="space-y-4">
-                  {(product.measurement_fields ?? []).map((field) => (
-                    <div key={field}>
-                      <label
-                        htmlFor={`measure-${field}`}
-                        className="block text-sm mb-2"
-                      >
-                        {field}
-                      </label>
-                      <select
-                        id={`measure-${field}`}
-                        value={measurements[field] ?? ''}
-                        onChange={(e) =>
-                          setMeasurements((prev) => ({
-                            ...prev,
-                            [field]: e.target.value,
-                          }))
-                        }
-                        className="w-full border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:border-[#008080] transition-colors"
-                      >
-                        <option value="">Select your {field.toLowerCase()}</option>
-                        {measurementOptions().map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ))}
-                </div>
+                {(product.size_groups ?? []).length === 0 ? (
+                  <p className="text-sm text-gray-600">
+                    {MADE_TO_MEASURE_COPY.noParts}
+                  </p>
+                ) : (
+                  <div className="space-y-5">
+                    {(product.size_groups ?? []).map((group) => {
+                      const components = partComponents(group, catalog.scales);
+                      const options = partOptions(group, catalog.scales, true);
 
-                <div className="border border-gray-200 bg-gray-50 p-4 mt-4 space-y-2">
+                      // A compound scale, bra being the one that matters,
+                      // needs a dropdown per component that combine into a
+                      // single value like 34D.
+                      if (components) {
+                        const current = componentChoices[group.label] ?? {};
+                        return (
+                          <div key={group.label}>
+                            <label className="block text-sm mb-2">{group.label}</label>
+                            <div className="flex gap-3">
+                              {components.map((component) => (
+                                <select
+                                  key={component.label}
+                                  value={current[component.label] ?? ''}
+                                  onChange={(e) => {
+                                    const next = {
+                                      ...current,
+                                      [component.label]: e.target.value,
+                                    };
+                                    setComponentChoices((prev) => ({
+                                      ...prev,
+                                      [group.label]: next,
+                                    }));
+
+                                    const ordered = components.map(
+                                      (c) => next[c.label] ?? ''
+                                    );
+                                    setSelectedSizes((prev) => ({
+                                      ...prev,
+                                      [group.label]: ordered.every(Boolean)
+                                        ? joinComponents(ordered, catalog.scales, group)
+                                        : '',
+                                    }));
+                                  }}
+                                  className="flex-1 border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:border-[#008080] transition-colors"
+                                >
+                                  <option value="">{component.label}</option>
+                                  {component.values.map((value) => (
+                                    <option key={value} value={value}>
+                                      {value}
+                                    </option>
+                                  ))}
+                                </select>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div key={group.label}>
+                          <label
+                            htmlFor={`part-${group.label}`}
+                            className="block text-sm mb-2"
+                          >
+                            {group.label}
+                          </label>
+                          <select
+                            id={`part-${group.label}`}
+                            value={selectedSizes[group.label] ?? ''}
+                            onChange={(e) =>
+                              setSelectedSizes((prev) => ({
+                                ...prev,
+                                [group.label]: e.target.value,
+                              }))
+                            }
+                            className="w-full border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:border-[#008080] transition-colors"
+                          >
+                            <option value="">
+                              Select your {group.label.toLowerCase()}
+                            </option>
+                            {options.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div className="border border-gray-200 bg-gray-50 p-4 mt-5 space-y-2">
                   <p className="text-sm text-gray-700 leading-relaxed">
                     {MADE_TO_MEASURE_COPY.leadTime(product.lead_time_weeks)}
                   </p>

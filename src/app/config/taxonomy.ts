@@ -431,3 +431,58 @@ export function describeMeasurements(
     .map(([label, value]) => `${label} ${value}`)
     .join('  ·  ');
 }
+
+
+/* ------------------------------------------------------------------ */
+/* Part options                                                        */
+/* ------------------------------------------------------------------ */
+
+export interface ScaleLike {
+  key: string;
+  sizes: string[];
+  components?: {
+    join: string;
+    parts: Array<{ label: string; values: string[] }>;
+  } | null;
+}
+
+/**
+ * The values a part offers.
+ *
+ * A stocked part offers only the sizes ticked in the admin, because each
+ * one needs a stock count. A made to measure part offers the whole scale,
+ * since nothing is being counted and the customer simply states their size.
+ */
+export function partOptions(
+  group: SizeGroup,
+  scales: ScaleLike[],
+  offerWholeScale = false
+): string[] {
+  const scale = scales.find((s) => s.key === (group.scale ?? ''));
+  if (offerWholeScale) return scale?.sizes ?? group.sizes ?? [];
+  return group.sizes ?? [];
+}
+
+/** The dropdowns a part needs. Bra returns two, everything else returns one. */
+export function partComponents(
+  group: SizeGroup,
+  scales: ScaleLike[]
+): Array<{ label: string; values: string[] }> | null {
+  const scale = scales.find((s) => s.key === (group.scale ?? ''));
+  const components = scale?.components;
+  if (!components || !Array.isArray(components.parts) || components.parts.length < 2) {
+    return null;
+  }
+  return components.parts;
+}
+
+/** Band 34 plus cup D becomes 34D. */
+export function joinComponents(
+  values: string[],
+  scales: ScaleLike[],
+  group: SizeGroup
+): string {
+  const scale = scales.find((s) => s.key === (group.scale ?? ''));
+  const separator = scale?.components?.join ?? '';
+  return values.join(separator);
+}

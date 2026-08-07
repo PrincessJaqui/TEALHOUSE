@@ -1335,32 +1335,6 @@ export function AdminProducts() {
 
                 {fulfillmentType === 'made_to_measure' && (
                   <div>
-                    <label className="block text-sm mb-2">
-                      Measurements to ask the customer for
-                    </label>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {MEASUREMENT_TYPES.map((field) => (
-                        <button
-                          key={field}
-                          type="button"
-                          onClick={() =>
-                            setMeasurementFields((prev) =>
-                              prev.includes(field)
-                                ? prev.filter((f) => f !== field)
-                                : [...prev, field]
-                            )
-                          }
-                          className={`px-4 py-2 border text-sm transition-colors ${
-                            measurementFields.includes(field)
-                              ? 'bg-black text-white border-black'
-                              : 'bg-white text-black border-neutral-200 hover:border-neutral-400'
-                          }`}
-                        >
-                          {field}
-                        </button>
-                      ))}
-                    </div>
-
                     <label className="block text-sm mb-2">Lead time in weeks</label>
                     <input
                       type="number"
@@ -1372,10 +1346,12 @@ export function AdminProducts() {
                     />
 
                     <p className="text-xs text-neutral-500 mt-3">
-                      The customer picks each measurement from a dropdown in
-                      half-inch steps, with centimetres alongside. Nothing here
-                      touches stock, because the piece is cut to them. Charged at
-                      the price above, with no retainer.
+                      Add a part below for each thing the customer states, then
+                      give it a scale. A bra part shows band and cup dropdowns,
+                      a waist part shows inches with centimetres, a hip part
+                      shows alpha sizes. Nothing here touches stock, because the
+                      piece is cut to them. Charged at the price above, with no
+                      retainer.
                     </p>
                   </div>
                 )}
@@ -1403,8 +1379,9 @@ export function AdminProducts() {
                 )}
               </div>
 
-              {/* Multi-part sizing. Leave this empty and the product uses the
-                  single size row above. Add parts and the customer picks a
+              {/* Parts. Leave this empty and the product uses the single size
+                  row above. A made to measure product uses parts for what the
+                  customer states, so this is where its dropdowns come from. Add parts and the customer picks a
                   size for each, with stock held separately per piece. */}
               <div className="border border-neutral-200 p-4">
                 <div className="flex items-center justify-between mb-4">
@@ -1487,9 +1464,10 @@ export function AdminProducts() {
                     </div>
 
 
-                    {/* Which sizes this part is offered in. Ticking one adds
-                        a stock box for it below, per colour. */}
-                    <div className="mb-4">
+                    {/* A stocked part offers only the sizes ticked here,
+                        because each needs a count. A made to measure part
+                        offers the whole scale, so there is nothing to tick. */}
+                    <div className={fulfillmentType === 'made_to_measure' ? 'hidden' : 'mb-4'}>
                       <p className="text-xs uppercase tracking-wider text-neutral-500 mb-2">
                         Sizes offered
                       </p>
@@ -1576,13 +1554,14 @@ export function AdminProducts() {
                       )}
                     </div>
 
-                    {selectedColors.length > 0 && (
+                    {fulfillmentType !== 'made_to_measure' && selectedColors.length > 0 && (
                       <p className="text-xs text-neutral-500 mb-2">
                         Stock per colour
                       </p>
                     )}
 
-                    {(selectedColors.length > 0 ? selectedColors : [null]).map((color) => (
+                    {fulfillmentType !== 'made_to_measure' &&
+                      (selectedColors.length > 0 ? selectedColors : [null]).map((color) => (
                       <div key={color ?? 'none'} className="mb-3">
                         {color && (
                           <p className="text-xs text-neutral-600 mb-1">{color}</p>
@@ -2254,32 +2233,6 @@ export function AdminProducts() {
 
                 {fulfillmentType === 'made_to_measure' && (
                   <div>
-                    <label className="block text-sm mb-2">
-                      Measurements to ask the customer for
-                    </label>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {MEASUREMENT_TYPES.map((field) => (
-                        <button
-                          key={field}
-                          type="button"
-                          onClick={() =>
-                            setMeasurementFields((prev) =>
-                              prev.includes(field)
-                                ? prev.filter((f) => f !== field)
-                                : [...prev, field]
-                            )
-                          }
-                          className={`px-4 py-2 border text-sm transition-colors ${
-                            measurementFields.includes(field)
-                              ? 'bg-black text-white border-black'
-                              : 'bg-white text-black border-neutral-200 hover:border-neutral-400'
-                          }`}
-                        >
-                          {field}
-                        </button>
-                      ))}
-                    </div>
-
                     <label className="block text-sm mb-2">Lead time in weeks</label>
                     <input
                       type="number"
@@ -2291,10 +2244,12 @@ export function AdminProducts() {
                     />
 
                     <p className="text-xs text-neutral-500 mt-3">
-                      The customer picks each measurement from a dropdown in
-                      half-inch steps, with centimetres alongside. Nothing here
-                      touches stock, because the piece is cut to them. Charged at
-                      the price above, with no retainer.
+                      Add a part below for each thing the customer states, then
+                      give it a scale. A bra part shows band and cup dropdowns,
+                      a waist part shows inches with centimetres, a hip part
+                      shows alpha sizes. Nothing here touches stock, because the
+                      piece is cut to them. Charged at the price above, with no
+                      retainer.
                     </p>
                   </div>
                 )}
@@ -2322,8 +2277,9 @@ export function AdminProducts() {
                 )}
               </div>
 
-              {/* Multi-part sizing. Leave this empty and the product uses the
-                  single size row above. Add parts and the customer picks a
+              {/* Parts. Leave this empty and the product uses the single size
+                  row above. A made to measure product uses parts for what the
+                  customer states, so this is where its dropdowns come from. Add parts and the customer picks a
                   size for each, with stock held separately per piece. */}
               <div className="border border-neutral-200 p-4">
                 <div className="flex items-center justify-between mb-4">
@@ -2406,9 +2362,10 @@ export function AdminProducts() {
                     </div>
 
 
-                    {/* Which sizes this part is offered in. Ticking one adds
-                        a stock box for it below, per colour. */}
-                    <div className="mb-4">
+                    {/* A stocked part offers only the sizes ticked here,
+                        because each needs a count. A made to measure part
+                        offers the whole scale, so there is nothing to tick. */}
+                    <div className={fulfillmentType === 'made_to_measure' ? 'hidden' : 'mb-4'}>
                       <p className="text-xs uppercase tracking-wider text-neutral-500 mb-2">
                         Sizes offered
                       </p>
@@ -2495,13 +2452,14 @@ export function AdminProducts() {
                       )}
                     </div>
 
-                    {selectedColors.length > 0 && (
+                    {fulfillmentType !== 'made_to_measure' && selectedColors.length > 0 && (
                       <p className="text-xs text-neutral-500 mb-2">
                         Stock per colour
                       </p>
                     )}
 
-                    {(selectedColors.length > 0 ? selectedColors : [null]).map((color) => (
+                    {fulfillmentType !== 'made_to_measure' &&
+                      (selectedColors.length > 0 ? selectedColors : [null]).map((color) => (
                       <div key={color ?? 'none'} className="mb-3">
                         {color && (
                           <p className="text-xs text-neutral-600 mb-1">{color}</p>

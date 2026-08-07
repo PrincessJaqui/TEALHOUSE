@@ -120,25 +120,17 @@ export async function priceCart({ items, shippingMethod = 'standard', region = '
 
     const prefix = color ? `${color}|` : '';
 
-    // Made to measure: every measurement the product asks for must be
-    // present, checked against the product rather than trusting the browser.
-    let measurements = null;
+    // Made to measure states its sizes through the parts container, the
+    // same one a bikini uses. Every part must carry a value, checked
+    // against the product rather than trusting the browser.
     if (fulfillment === 'made_to_measure') {
-      const required = product.measurement_fields ?? [];
       const given =
-        item.measurements && typeof item.measurements === 'object'
-          ? item.measurements
-          : {};
+        item.sizes && typeof item.sizes === 'object' ? item.sizes : {};
 
-      for (const field of required) {
-        if (!given[field]) {
-          throw new Error(`${product.name} needs a ${field.toLowerCase()} measurement`);
+      for (const g of groups) {
+        if (!given[g.label]) {
+          throw new Error(`${product.name} needs a ${g.label.toLowerCase()}`);
         }
-      }
-
-      measurements = {};
-      for (const field of required) {
-        measurements[field] = String(given[field]).slice(0, 40);
       }
     }
 
@@ -185,7 +177,6 @@ export async function priceCart({ items, shippingMethod = 'standard', region = '
       color,
       image: product.image || product.images?.[0] || null,
       fulfillment_type: fulfillment,
-      measurements,
       is_retainer: bespoke,
       list_price: bespoke ? Number(product.price) : null,
       notes: typeof item.notes === 'string' ? item.notes.slice(0, 2000) : null,
