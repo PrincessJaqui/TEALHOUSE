@@ -1,72 +1,100 @@
+import { Seo } from '../components/Seo';
+
+interface Material {
+  name: string;
+  body: string;
+}
+
+const FOOTWEAR: Material[] = [
+  {
+    name: 'Apple Leather',
+    body: 'Created from apple pomace sourced from northern Italian juice production. Delivers a smooth, supple finish that contours seamlessly with age.',
+  },
+  {
+    name: 'Cactus Leather (Desserto\u00ae)',
+    body: 'Harvested from organic cacti requiring zero irrigation. Remarkably soft, durable, and breathable with deep, lasting color retention.',
+  },
+  {
+    name: 'Pineapple Leather (Pi\u00f1atex\u00ae)',
+    body: 'Repurposed from agricultural pineapple leaf fibers. Naturally flexible, lightweight, and textured with an elevated grain.',
+  },
+  {
+    name: 'Grape Leather',
+    body: 'Sourced from grape marc and skins generated during Italian wine production. Rich, structured, and inherently circular.',
+  },
+  {
+    name: 'Mushroom Leather (Mylo\u2122)',
+    body: 'Grown from mycelium in controlled environments. Exceptionally soft with subtle natural variations that make each pair distinct.',
+  },
+  {
+    name: 'Signature Teal Sole',
+    body: 'Crafted from a natural rubber and cork compound to provide exceptional cushioning and longevity. Finished in our signature teal tone using plant-based dyes.',
+  },
+];
+
+const SWIMWEAR: Material[] = [
+  {
+    name: 'Recycled Performance Polyester',
+    body: 'Premium post-consumer recycled fibers engineered for high chlorine resistance, structural shape retention, and a smooth, second-skin fit.',
+  },
+  {
+    name: 'Recycled Lycra\u00ae',
+    body: 'Ultra-stretchy, resilient elastane woven from recycled materials to provide firm silhouette contouring, crisp recovery, and long-lasting wear.',
+  },
+];
+
+function MaterialList({ heading, items }: { heading: string; items: Material[] }) {
+  return (
+    <section>
+      <h3 className="mb-5 uppercase tracking-wider text-sm text-gray-500">
+        {heading}
+      </h3>
+      <div className="space-y-5">
+        {items.map((material) => (
+          <div key={material.name}>
+            <p className="mb-1">{material.name}</p>
+            <p className="text-gray-700 leading-relaxed text-sm">{material.body}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function PlantBasedMaterials() {
   return (
     <div className="min-h-screen bg-white">
+      <Seo
+        title="Materials"
+        description="TEALHOUSE is crafted from high-performance plant-based leathers and premium recycled synthetics. 100% vegan and cruelty-free."
+        path="/plant-based-materials"
+      />
+
       <div className="max-w-[900px] mx-auto px-5 py-16">
-        <h1 className="text-center mb-12 uppercase tracking-wider">Plant-Based Materials</h1>
-        
-        <div className="space-y-8">
+        <h1 className="text-center mb-3 uppercase tracking-wider">Materials</h1>
+        <p className="text-center text-sm text-gray-500 mb-14 uppercase tracking-wider">
+          100% Vegan &amp; Cruelty-Free
+        </p>
+
+        <div className="space-y-12">
           <section>
             <h2 className="mb-4">Innovation in Sustainable Luxury</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              TEALHOUSE shoes are crafted entirely from innovative plant-based materials that rival—and often surpass—traditional leather 
-              in quality, durability, and beauty. We work with cutting-edge material scientists to source the finest vegan alternatives 
-              from around the world.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="mb-4">Our Materials</h2>
-            
-            <div className="space-y-6">
-              <div>
-                <h3 className="mb-2">Pineapple Leather (Piñatex)</h3>
-                <p className="text-gray-700 leading-relaxed">
-                  Made from pineapple leaf fibers, a byproduct of existing agriculture. Soft, breathable, and durable with a natural texture. 
-                  No additional land, water, or pesticides required.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="mb-2">Apple Leather</h3>
-                <p className="text-gray-700 leading-relaxed">
-                  Created from apple pomace (waste from juice production) in northern Italy. Smooth finish similar to calf leather. 
-                  Fully biodegradable and carbon-neutral production.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="mb-2">Mushroom Leather (Mylo™)</h3>
-                <p className="text-gray-700 leading-relaxed">
-                  Grown from mycelium in controlled conditions. Incredibly supple with natural variations that make each piece unique. 
-                  Rapid growth cycle with minimal environmental impact.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="mb-2">Cactus Leather (Desserto®)</h3>
-                <p className="text-gray-700 leading-relaxed">
-                  Harvested from organic cactus farms in Mexico. Requires minimal water and no irrigation. Soft, durable, and breathable 
-                  with excellent color retention.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="mb-2">Grape Leather</h3>
-                <p className="text-gray-700 leading-relaxed">
-                  Made from grape marc and skins from Italian wine production. Luxurious finish with natural flexibility. 
-                  Diverts waste from landfills and supports circular economy.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          <section>
-            <h2 className="mb-4">Signature Teal Sole</h2>
             <p className="text-gray-700 leading-relaxed">
-              Our distinctive teal sole is made from natural rubber and cork, providing exceptional comfort and durability while 
-              remaining 100% biodegradable. The teal color comes from plant-based dyes, ensuring even our signature detail aligns 
-              with our sustainability values.
+              TEALHOUSE pieces are crafted exclusively from high-performance
+              plant-based leathers and premium recycled synthetics that surpass
+              traditional materials in quality, durability, and elevated
+              aesthetic. From our Italian-made footwear to our tailored
+              swimwear, every silhouette relies on cutting-edge material science
+              to deliver 100% vegan, cruelty-free luxury without compromise.
             </p>
+          </section>
+
+          <section>
+            <h2 className="mb-8">Our Materials</h2>
+            <div className="space-y-10">
+              <MaterialList heading="Footwear Architecture" items={FOOTWEAR} />
+              <MaterialList heading="Swimwear Engineering" items={SWIMWEAR} />
+            </div>
           </section>
         </div>
       </div>

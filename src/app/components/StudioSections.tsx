@@ -7,7 +7,7 @@ import { formatPrice } from '../config/store';
 import { getPrimaryProductImage } from '../lib/default-image';
 
 /**
- * The landing page, built from Interface Studio content.
+ * The landing page, built from Studio content.
  *
  * Every section returns null when it has nothing to show, so a half-filled
  * studio produces a shorter page rather than a broken one.

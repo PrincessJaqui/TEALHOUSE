@@ -18,7 +18,7 @@ interface HomeProps {
 }
 
 /**
- * The landing page is composed from Interface Studio, so its imagery, film
+ * The landing page is composed from Studio, so its imagery, film
  * and wording are edited in the admin rather than in this file.
  *
  * Products come from whatever is ticked as featured. Every section hides

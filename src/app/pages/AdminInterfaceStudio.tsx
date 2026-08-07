@@ -12,7 +12,7 @@ import {
 } from '../hooks/useInterfaceStudio';
 
 /**
- * Interface Studio.
+ * Studio.
  *
  * The landing page's imagery, film and wording, editable without a deploy.
  * Sections are fixed for now; each row carries a sort_order so they can be
@@ -335,7 +335,7 @@ export function AdminInterfaceStudio() {
   };
 
   return (
-    <AdminLayout title="Interface Studio" description="Design the landing page">
+    <AdminLayout title="Studio" description="Design the landing page">
       {loading ? (
         <p className="text-sm text-neutral-600">Loading</p>
       ) : (
