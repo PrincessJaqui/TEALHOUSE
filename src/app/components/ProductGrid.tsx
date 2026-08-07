@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Heart } from 'lucide-react';
+import { Heart, ChevronDown } from 'lucide-react';
 import { Product } from '../App';
 import {
   productMatchesFilter,
@@ -134,19 +134,25 @@ export function ProductGrid({
           category never appears. */}
       {showFilters && (
       <>
-      <div className="flex justify-end items-center gap-6 mb-6">
-        <label className="flex items-center gap-2 text-sm">
+      {/* Sort on the left, Filter on the right, both plain type with a
+          chevron. The select keeps its native behaviour and accessibility;
+          only the border and arrow are stripped so it reads as text. */}
+      <div className="flex justify-between items-center mb-6">
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
           <span className="uppercase tracking-wider">Sort</span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-black"
-          >
-            <option value="name">A to Z</option>
-            <option value="price-asc">Price, low to high</option>
-            <option value="price-desc">Price, high to low</option>
-            <option value="newest">Newest</option>
-          </select>
+          <span className="relative flex items-center">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="appearance-none bg-transparent border-0 pr-6 py-1 text-sm cursor-pointer focus:outline-none"
+            >
+              <option value="name">A to Z</option>
+              <option value="price-asc">Price, low to high</option>
+              <option value="price-desc">Price, high to low</option>
+              <option value="newest">Newest</option>
+            </select>
+            <ChevronDown className="w-4 h-4 absolute right-0 pointer-events-none" />
+          </span>
         </label>
 
         <button

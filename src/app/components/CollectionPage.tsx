@@ -47,7 +47,7 @@ export function CollectionPage({
 
       {/* No banner. The heading matches the rest of the site rather than
           sitting in a coloured block. */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2 text-center">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col justify-center min-h-[9rem] py-6">
         <h1 className="uppercase tracking-wider mb-3">{title}</h1>
         <p className="text-sm text-gray-600 max-w-2xl mx-auto">{intro}</p>
       </div>
