@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { User, Package, MapPin, CreditCard, LogOut, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
+import { describeSelection } from '../config/taxonomy';
 import { toast } from 'sonner';
 
 interface Order {
@@ -340,7 +341,11 @@ export function CustomerAccount() {
                               <div key={index} className="flex gap-4">
                                 <div className="flex-1">
                                   <p className="font-medium text-sm">{item.name}</p>
-                                  <p className="text-xs text-gray-600">Size: {item.size}</p>
+                                  <p className="text-xs text-gray-600">
+                                    {item.sizes
+                                      ? describeSelection(item.sizes)
+                                      : `Size: ${item.size}`}
+                                  </p>
                                   <p className="text-xs text-gray-600">Qty: {item.quantity}</p>
                                 </div>
                                 <p className="font-medium">${item.price.toLocaleString()}</p>

@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
 import { shippingCostFor, formatPrice, taxFor, SHIPPING } from '../config/store';
+import { describeSelection } from '../config/taxonomy';
 import { PayPalCheckout } from '../components/PayPalCheckout';
 
 interface CheckoutProps {
@@ -652,7 +653,7 @@ export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
                 {/* Order Items */}
                 <div className="space-y-6 mb-8">
                   {items.map((item, index) => (
-                    <div key={`${item.product.id}-${item.size}-${index}`} className="flex gap-4">
+                    <div key={`${item.product.id}-${item.size ?? ""}-${describeSelection(item.sizes)}-${index}`} className="flex gap-4">
                       <div className="w-24 h-24 bg-gray-100 flex-shrink-0">
                         <img
                           src={item.product.image}
@@ -663,7 +664,11 @@ export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
                       <div className="flex-1">
                         <p className="mb-1">{item.product.name}</p>
                         <p className="text-sm text-gray-600 mb-1">Qty: {item.quantity}</p>
-                        {item.size && (
+                        {item.sizes ? (
+                          <p className="text-sm text-gray-600">
+                            {describeSelection(item.sizes)}
+                          </p>
+                        ) : item.size && (
                           <p className="text-sm text-gray-600">Size: {item.size}</p>
                         )}
                       </div>

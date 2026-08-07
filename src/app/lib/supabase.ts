@@ -41,6 +41,14 @@ export interface DbProduct {
   meta_title?: string;
   meta_description?: string;
   image_alt?: string;
+  /**
+   * Optional multi-part sizing. A bikini has two entries, Top and Bottom,
+   * each with its own sizes and its own per-piece stock. Empty means the
+   * product uses the single `sizes` list as before.
+   */
+  size_groups?: Array<{ label: string; scale?: string; sizes: string[] }>;
+  size_scale?: string;
+  size_labels?: string[];
 }
 
 // Database order type

@@ -1,6 +1,16 @@
 import { useState, useEffect } from 'react';
 import { SHIPPING, RETURNS, formatPrice } from '../config/store';
-import { stockForSize, isSoldOut, totalStock, productPath, slugify } from '../config/taxonomy';
+import {
+  stockForSize,
+  isSoldOut,
+  totalStock,
+  productPath,
+  slugify,
+  hasSizeGroups,
+  groupStock,
+  availableGroupSizes,
+  isGroupedSoldOut,
+} from '../config/taxonomy';
 import { Seo, productJsonLd } from '../components/Seo';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Heart, ShoppingCart, Info } from 'lucide-react';
@@ -10,7 +20,11 @@ import { useSupabaseProducts } from '../hooks/useSupabaseProducts';
 import { toast } from 'sonner';
 
 interface ProductDetailProps {
-  onAddToCart: (product: Product, size?: number) => void;
+  onAddToCart: (
+    product: Product,
+    size?: string,
+    sizes?: Record<string, string>
+  ) => void;
   onAddToWishlist: (product: Product) => void;
   isInWishlist: (productId: number) => boolean;
 }
@@ -20,7 +34,9 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
   const navigate = useNavigate();
   const { products, loading } = useSupabaseProducts();
   const [product, setProduct] = useState<Product | null>(null);
-  const [selectedSize, setSelectedSize] = useState<number | undefined>();
+  const [selectedSize, setSelectedSize] = useState<string | undefined>();
+  // Multi-part products, for example { Top: "S", Bottom: "M" }
+  const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
   const [selectedImage, setSelectedImage] = useState(0);
 
   useEffect(() => {
@@ -39,8 +55,20 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
     if (!found) return;
 
     setProduct(found);
-    if (found.sizes && found.sizes.length > 0) {
-      setSelectedSize(found.sizes[0]);
+
+    if (hasSizeGroups(found)) {
+      // Preselect the first size in each part that still has stock, so the
+      // customer is not staring at an empty picker.
+      const initial: Record<string, string> = {};
+      for (const group of found.size_groups ?? []) {
+        const first = availableGroupSizes(found, group)[0];
+        if (first) initial[group.label] = first;
+      }
+      setSelectedSizes(initial);
+      setSelectedSize(undefined);
+    } else if (found.sizes && found.sizes.length > 0) {
+      setSelectedSize(String(found.sizes[0]));
+      setSelectedSizes({});
     }
 
     // One product, one URL. Anything reaching this page by id, or by the
@@ -78,6 +106,26 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
   const inWishlist = isInWishlist(product.id);
 
   const handleAddToCart = () => {
+    if (hasSizeGroups(product)) {
+      // Every part needs a choice, and each is checked against its own
+      // stock, because stock is held per piece.
+      for (const group of product.size_groups ?? []) {
+        const chosen = selectedSizes[group.label];
+        if (!chosen) {
+          toast.error(`Please choose a ${group.label.toLowerCase()} size`);
+          return;
+        }
+        if (groupStock(product, group.label, chosen) <= 0) {
+          toast.error(`${group.label} ${chosen} is sold out`);
+          return;
+        }
+      }
+
+      onAddToCart(product, undefined, selectedSizes);
+      toast.success('Added to bag');
+      return;
+    }
+
     if (product.sizes && product.sizes.length > 0 && !selectedSize) {
       toast.error('Please select a size');
       return;
@@ -88,7 +136,7 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
     }
 
     onAddToCart(product, selectedSize);
-    toast.success('Added to cart');
+    toast.success('Added to bag');
   };
 
   const handleAddToWishlist = () => {
@@ -183,7 +231,68 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
             <p className="text-gray-700 mb-8 leading-relaxed">{product.description}</p>
 
             {/* Size Selection */}
-            {product.sizes && product.sizes.length > 0 && (
+            {/* Multi-part sizing. A bikini gets a Top picker and a Bottom
+                picker, each with its own stock, because the pieces are
+                stocked separately rather than as fixed pairs. */}
+            {hasSizeGroups(product) && (
+              <div className="mb-6 space-y-6">
+                {(product.size_groups ?? []).map((group) => {
+                  const chosen = selectedSizes[group.label];
+                  return (
+                    <div key={group.label}>
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="block font-medium">{group.label}</label>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate('/size-guide')}
+                          className="text-[#008080] hover:text-[#006666]"
+                        >
+                          <Info className="h-4 w-4 mr-1" />
+                          Size Guide
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-6 gap-2">
+                        {group.sizes.map((size) => {
+                          const remaining = groupStock(product, group.label, size);
+                          const unavailable = remaining <= 0;
+                          return (
+                            <button
+                              key={size}
+                              disabled={unavailable}
+                              title={unavailable ? 'Sold out' : `${remaining} available`}
+                              onClick={() =>
+                                !unavailable &&
+                                setSelectedSizes((prev) => ({
+                                  ...prev,
+                                  [group.label]: size,
+                                }))
+                              }
+                              className={`py-3 border text-center transition-all ${
+                                unavailable
+                                  ? 'border-gray-200 text-gray-300 line-through cursor-not-allowed'
+                                  : chosen === size
+                                    ? 'border-[#008080] bg-[#008080] text-white'
+                                    : 'border-gray-300 hover:border-[#008080]'
+                              }`}
+                            >
+                              {size}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {availableGroupSizes(product, group).length === 0 && (
+                        <p className="text-xs text-gray-500 mt-2">
+                          Every {group.label.toLowerCase()} size is sold out
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {!hasSizeGroups(product) && product.sizes && product.sizes.length > 0 && (
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-3">
                   <label className="block font-medium">Size (EU)</label>
@@ -198,7 +307,8 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                   </Button>
                 </div>
                 <div className="grid grid-cols-6 gap-2">
-                  {product.sizes.map((size) => {
+                  {product.sizes.map((rawSize) => {
+                    const size = String(rawSize);
                     const remaining = stockForSize(product, size);
                     const unavailable = remaining <= 0;
                     return (
@@ -227,11 +337,13 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
             <div className="flex gap-4 mb-8">
               <Button
                 onClick={handleAddToCart}
-                disabled={isSoldOut(product)}
+                disabled={hasSizeGroups(product) ? isGroupedSoldOut(product) : isSoldOut(product)}
                 className="flex-1 bg-[#008080] hover:bg-[#006666] text-white h-14 text-lg disabled:opacity-50"
               >
                 <ShoppingCart className="h-5 w-5 mr-2" />
-                {isSoldOut(product) ? 'Sold Out' : 'Add to Cart'}
+                {(hasSizeGroups(product) ? isGroupedSoldOut(product) : isSoldOut(product))
+                  ? 'Sold Out'
+                  : 'Add to Bag'}
               </Button>
               <Button
                 variant="outline"

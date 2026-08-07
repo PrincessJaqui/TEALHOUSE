@@ -69,12 +69,23 @@ export interface Product {
   meta_title?: string;
   meta_description?: string;
   image_alt?: string;
+  /**
+   * Optional multi-part sizing. A bikini has two entries, Top and Bottom,
+   * each with its own sizes and its own per-piece stock. Empty means the
+   * product uses the single `sizes` list as before.
+   */
+  size_groups?: Array<{ label: string; scale?: string; sizes: string[] }>;
+  size_scale?: string;
+  size_labels?: string[];
 }
 
 export interface CartItem {
   product: Product;
   quantity: number;
-  size?: number;
+  /** Single-size products. Text now, so it can hold XS, 00 or 34DD. */
+  size?: string;
+  /** Multi-part products, for example { Top: "S", Bottom: "M" }. */
+  sizes?: Record<string, string>;
 }
 
 function AppContent() {
@@ -123,19 +134,30 @@ function AppContent() {
   }, [authLoading, user]);
 
   // Wrapper functions to ensure user is signed in
-  const addToCart = async (product: Product, size?: number) => {
-    // Always call the hook function - it handles both Supabase and localStorage
-    await supabaseAddToCart(product, size);
+  // sizes carries a multi-part selection, for example { Top: "S", Bottom: "M" }
+  const addToCart = async (
+    product: Product,
+    size?: string,
+    sizes?: Record<string, string>
+  ) => {
+    await supabaseAddToCart(product, size, sizes);
   };
 
-  const removeFromCart = async (productId: number, size?: number) => {
-    // Always call the hook function - it handles both Supabase and localStorage
-    await supabaseRemoveFromCart(productId, size);
+  const removeFromCart = async (
+    productId: number,
+    size?: string,
+    sizes?: Record<string, string>
+  ) => {
+    await supabaseRemoveFromCart(productId, size, sizes);
   };
 
-  const updateQuantity = async (productId: number, quantity: number, size?: number) => {
-    // Always call the hook function - it handles both Supabase and localStorage
-    await supabaseUpdateQuantity(productId, quantity, size);
+  const updateQuantity = async (
+    productId: number,
+    quantity: number,
+    size?: string,
+    sizes?: Record<string, string>
+  ) => {
+    await supabaseUpdateQuantity(productId, quantity, size, sizes);
   };
 
   const addToWishlist = async (product: Product) => {

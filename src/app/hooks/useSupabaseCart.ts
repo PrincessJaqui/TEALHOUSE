@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Product, CartItem } from '../App';
+import type { SizeSelection } from '../config/taxonomy';
 import { products } from '../data/products';
 
 const CART_STORAGE_KEY = 'tealhouse_cart';
@@ -97,57 +98,72 @@ export function useSupabaseCart(userId: string | undefined) {
     }
   };
 
-  const addToCart = async (product: Product, size?: number) => {
-    // Check if item already exists
-    const existingItem = cartItems.find(
-      item => item.product.id === product.id && item.size === size
-    );
+  /**
+   * A cart line is identified by the product plus everything the customer
+   * chose. For a bikini that is two sizes, so Top S with Bottom M is a
+   * different line from Top S with Bottom L.
+   */
+  const lineKey = (
+    productId: number,
+    size?: string,
+    sizes?: SizeSelection
+  ) => {
+    const selection = sizes
+      ? Object.keys(sizes)
+          .sort()
+          .map((k) => `${k}=${sizes[k]}`)
+          .join('|')
+      : '';
+    return `${productId}::${size ?? ''}::${selection}`;
+  };
+
+  const matches = (item: CartItem, productId: number, size?: string, sizes?: SizeSelection) =>
+    lineKey(item.product.id, item.size, item.sizes) === lineKey(productId, size, sizes);
+
+  const addToCart = async (
+    product: Product,
+    size?: string,
+    sizes?: SizeSelection
+  ) => {
+    const existingItem = cartItems.find((item) => matches(item, product.id, size, sizes));
 
     if (existingItem) {
-      return updateQuantity(product.id, existingItem.quantity + 1, size);
+      return updateQuantity(product.id, existingItem.quantity + 1, size, sizes);
     }
 
-    // Optimistic update
-    const newItem: CartItem = { product, quantity: 1, size };
-    setCartItems(prev => [...prev, newItem]);
+    const newItem: CartItem = { product, quantity: 1, size, sizes };
+    setCartItems((prev) => [...prev, newItem]);
 
-    // If no user, localStorage save happens automatically
     if (!userId) return true;
 
-    // With user, save to Supabase
     try {
-      const { error } = await supabase
-        .from('cart')
-        .insert({
-          user_id: userId,
-          product_id: product.id,
-          quantity: 1,
-          size: size || null
-        });
+      const { error } = await supabase.from('cart').insert({
+        user_id: userId,
+        product_id: product.id,
+        quantity: 1,
+        size: size || null,
+        sizes: sizes ?? null,
+      });
 
       if (error) throw error;
       return true;
     } catch (error) {
       console.error('Error adding to cart:', error);
-      // Rollback on error
-      setCartItems(prev => prev.filter(
-        item => !(item.product.id === product.id && item.size === size)
-      ));
+      setCartItems((prev) => prev.filter((item) => !matches(item, product.id, size, sizes)));
       return false;
     }
   };
 
-  const removeFromCart = async (productId: number, size?: number) => {
-    // Optimistic update
+  const removeFromCart = async (
+    productId: number,
+    size?: string,
+    sizes?: SizeSelection
+  ) => {
     const previousItems = cartItems;
-    setCartItems(prev => prev.filter(
-      item => !(item.product.id === productId && item.size === size)
-    ));
+    setCartItems((prev) => prev.filter((item) => !matches(item, productId, size, sizes)));
 
-    // If no user, localStorage save happens automatically
     if (!userId) return true;
 
-    // With user, remove from Supabase
     try {
       let query = supabase
         .from('cart')
@@ -155,11 +171,8 @@ export function useSupabaseCart(userId: string | undefined) {
         .eq('user_id', userId)
         .eq('product_id', productId);
 
-      if (size !== undefined) {
-        query = query.eq('size', size);
-      } else {
-        query = query.is('size', null);
-      }
+      query = size ? query.eq('size', size) : query.is('size', null);
+      if (sizes) query = query.eq('sizes', sizes as any);
 
       const { error } = await query;
 
@@ -167,31 +180,30 @@ export function useSupabaseCart(userId: string | undefined) {
       return true;
     } catch (error) {
       console.error('Error removing from cart:', error);
-      // Rollback on error
       setCartItems(previousItems);
       return false;
     }
   };
 
-  const updateQuantity = async (productId: number, quantity: number, size?: number) => {
+  const updateQuantity = async (
+    productId: number,
+    quantity: number,
+    size?: string,
+    sizes?: SizeSelection
+  ) => {
     if (quantity === 0) {
-      return removeFromCart(productId, size);
+      return removeFromCart(productId, size, sizes);
     }
 
-    // Optimistic update
     const previousItems = cartItems;
-    setCartItems(prev =>
-      prev.map(item =>
-        item.product.id === productId && item.size === size
-          ? { ...item, quantity }
-          : item
+    setCartItems((prev) =>
+      prev.map((item) =>
+        matches(item, productId, size, sizes) ? { ...item, quantity } : item
       )
     );
 
-    // If no user, localStorage save happens automatically
     if (!userId) return true;
 
-    // With user, update in Supabase
     try {
       let query = supabase
         .from('cart')
@@ -199,11 +211,8 @@ export function useSupabaseCart(userId: string | undefined) {
         .eq('user_id', userId)
         .eq('product_id', productId);
 
-      if (size !== undefined) {
-        query = query.eq('size', size);
-      } else {
-        query = query.is('size', null);
-      }
+      query = size ? query.eq('size', size) : query.is('size', null);
+      if (sizes) query = query.eq('sizes', sizes as any);
 
       const { error } = await query;
 
@@ -211,7 +220,6 @@ export function useSupabaseCart(userId: string | undefined) {
       return true;
     } catch (error) {
       console.error('Error updating quantity:', error);
-      // Rollback on error
       setCartItems(previousItems);
       return false;
     }

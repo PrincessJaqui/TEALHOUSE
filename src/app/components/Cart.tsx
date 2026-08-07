@@ -1,5 +1,6 @@
 import { ShoppingCart, X, Minus, Plus } from 'lucide-react';
 import { CartItem } from '../App';
+import { describeSelection } from '../config/taxonomy';
 import { Button } from './ui/button';
 import { getPrimaryProductImage } from '../lib/default-image';
 import { useNavigate } from 'react-router-dom';
@@ -8,8 +9,17 @@ interface CartProps {
   isOpen: boolean;
   onClose: () => void;
   items: CartItem[];
-  onUpdateQuantity: (productId: number, quantity: number, size?: number) => void;
-  onRemoveItem: (productId: number, size?: number) => void;
+  onUpdateQuantity: (
+    productId: number,
+    quantity: number,
+    size?: string,
+    sizes?: Record<string, string>
+  ) => void;
+  onRemoveItem: (
+    productId: number,
+    size?: string,
+    sizes?: Record<string, string>
+  ) => void;
 }
 
 export function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem }: CartProps) {
@@ -59,7 +69,7 @@ export function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem }:
           ) : (
             <div className="space-y-6">
               {items.map((item, index) => (
-                <div key={`${item.product.id}-${item.size}-${index}`} className="flex gap-4">
+                <div key={`${item.product.id}-${item.size ?? ""}-${describeSelection(item.sizes)}-${index}`} className="flex gap-4">
                   <div className="w-24 h-28 bg-gray-100 flex-shrink-0">
                     <img
                       src={getPrimaryProductImage(item.product)}
@@ -72,12 +82,16 @@ export function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem }:
                     <div className="flex justify-between mb-2">
                       <div>
                         <h4 className="font-['Tinos'] mb-1">{item.product.name}</h4>
-                        {item.size && (
+                        {item.sizes ? (
+                          <p className="text-sm text-[#666666]">
+                            {describeSelection(item.sizes)}
+                          </p>
+                        ) : item.size && (
                           <p className="text-sm text-[#666666]">Size: {item.size}</p>
                         )}
                       </div>
                       <button
-                        onClick={() => onRemoveItem(item.product.id, item.size)}
+                        onClick={() => onRemoveItem(item.product.id, item.size, item.sizes)}
                         className="text-[#666666] hover:text-black"
                         aria-label="Remove item"
                       >
@@ -88,7 +102,7 @@ export function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem }:
                     <div className="mt-auto flex items-center justify-between">
                       <div className="flex items-center gap-3 border border-gray-300 ">
                         <button
-                          onClick={() => onUpdateQuantity(item.product.id, item.quantity - 1, item.size)}
+                          onClick={() => onUpdateQuantity(item.product.id, item.quantity - 1, item.size, item.sizes)}
                           className="p-2 hover:bg-gray-100 transition-colors"
                           aria-label="Decrease quantity"
                         >
@@ -96,7 +110,7 @@ export function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem }:
                         </button>
                         <span className="text-sm w-8 text-center">{item.quantity}</span>
                         <button
-                          onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1, item.size)}
+                          onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1, item.size, item.sizes)}
                           className="p-2 hover:bg-gray-100 transition-colors"
                           aria-label="Increase quantity"
                         >

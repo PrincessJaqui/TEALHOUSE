@@ -70,17 +70,32 @@ export async function priceCart({ items, shippingMethod = 'standard', region = '
     if (product.is_published === false) throw new Error(`${product.name} is no longer available`);
 
     const quantity = Math.max(1, Math.floor(Number(item.quantity) || 1));
-    const sizeKey = item.size === undefined || item.size === null || item.size === ''
-      ? 'default'
-      : String(item.size);
+    const stock = product.stock ?? {};
 
-    const available = Number((product.stock ?? {})[sizeKey] ?? 0);
-    if (available < quantity) {
-      throw new Error(
-        sizeKey === 'default'
-          ? `${product.name} is sold out`
-          : `${product.name} in size ${sizeKey} has only ${available} left`
-      );
+    // A multi-part product, a bikini for example, holds stock per piece, so
+    // every part is checked separately against its own count.
+    const selection =
+      item.sizes && typeof item.sizes === 'object' && Object.keys(item.sizes).length > 0
+        ? item.sizes
+        : null;
+
+    const stockKeys = selection
+      ? Object.entries(selection).map(([label, value]) => `${label}:${value}`)
+      : [
+          item.size === undefined || item.size === null || item.size === ''
+            ? 'default'
+            : String(item.size),
+        ];
+
+    for (const key of stockKeys) {
+      const available = Number(stock[key] ?? 0);
+      if (available < quantity) {
+        throw new Error(
+          key === 'default'
+            ? `${product.name} is sold out`
+            : `${product.name} (${key.replace(':', ' ')}) has only ${available} left`
+        );
+      }
     }
 
     const unitPrice = Number(product.price);
@@ -91,7 +106,8 @@ export async function priceCart({ items, shippingMethod = 'standard', region = '
       name: product.name,
       price: unitPrice,
       quantity,
-      size: sizeKey === 'default' ? null : item.size,
+      size: selection ? null : stockKeys[0] === 'default' ? null : item.size,
+      sizes: selection,
       image: product.image || product.images?.[0] || null,
     });
   }

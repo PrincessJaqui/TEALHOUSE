@@ -16,6 +16,7 @@ import type { Product } from '../App';
 export const CATEGORIES = [
   'shoes',
   'accessories',
+  'resort-wear',
   'apparel',
   'jewelry',
   'gifts',
@@ -161,6 +162,7 @@ export function availableSizes(product: Product): number[] {
 export const CATEGORY_URL_SEGMENT: Record<string, string> = {
   shoes: 'footwear',
   accessories: 'accents',
+  'resort-wear': 'resort-wear',
   apparel: 'apparel',
   jewelry: 'jewelry',
   gifts: 'gifts',
@@ -196,4 +198,131 @@ export function categorySegment(product: Product): string {
 export function productPath(product: Product): string {
   const slug = product.slug || slugify(product.name) || String(product.id);
   return `/products/${categorySegment(product)}/${slug}`;
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Size scales                                                         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Named size scales.
+ *
+ * The old system stored sizes as integers, which could hold 38 but not XS,
+ * 00 or 34DD. Sizes are text now, and a product picks the scale that suits
+ * it. Anything missing can be typed in per product without touching this.
+ */
+export interface SizeScale {
+  key: string;
+  label: string;
+  sizes: string[];
+}
+
+function braSizes(): string[] {
+  const bands = [30, 32, 34, 36, 38, 40, 42];
+  const cups = ['A', 'B', 'C', 'D', 'DD', 'DDD'];
+  const out: string[] = [];
+  for (const band of bands) {
+    for (const cup of cups) out.push(`${band}${cup}`);
+  }
+  return out;
+}
+
+export const SIZE_SCALES: SizeScale[] = [
+  {
+    key: 'alpha',
+    label: 'Alpha (XS to XXL)',
+    sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+  },
+  {
+    key: 'us-womens',
+    label: 'US Womens (00 to 24)',
+    sizes: ['00', '0', '2', '4', '6', '8', '10', '12', '14', '16', '18', '20', '22', '24'],
+  },
+  {
+    key: 'bra',
+    label: 'Bra (30A to 42DDD)',
+    sizes: braSizes(),
+  },
+  {
+    key: 'footwear-eu',
+    label: 'Footwear EU (35 to 45)',
+    sizes: ['35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45'],
+  },
+  {
+    key: 'footwear-us-womens',
+    label: 'Footwear US Womens (5 to 12)',
+    sizes: ['5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '11', '12'],
+  },
+  {
+    key: 'us-mens',
+    label: 'US Mens waist (28 to 44)',
+    sizes: ['28', '30', '32', '34', '36', '38', '40', '42', '44'],
+  },
+  {
+    key: 'one-size',
+    label: 'One size',
+    sizes: ['One Size'],
+  },
+];
+
+export function sizeScale(key: string | undefined | null): SizeScale | undefined {
+  return SIZE_SCALES.find((scale) => scale.key === key);
+}
+
+/* ------------------------------------------------------------------ */
+/* Multi-part sizing                                                   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * One sizeable part of a product. A bikini has two: Top and Bottom, each
+ * with its own scale and its own stock.
+ */
+export interface SizeGroup {
+  label: string;
+  scale?: string;
+  sizes: string[];
+}
+
+/** What the customer picked, for example { Top: "S", Bottom: "M" }. */
+export type SizeSelection = Record<string, string>;
+
+export function hasSizeGroups(product: Product): boolean {
+  return Array.isArray(product.size_groups) && product.size_groups.length > 0;
+}
+
+/**
+ * The stock key for one piece. Stock is held per piece, so a bikini has
+ * separate counts under "Top:S" and "Bottom:M" rather than one count for
+ * the pairing. Six tops in S and two bottoms in M are two numbers.
+ */
+export function groupStockKey(groupLabel: string, size: string): string {
+  return `${groupLabel}:${size}`;
+}
+
+export function groupStock(product: Product, groupLabel: string, size: string): number {
+  return Number((product.stock ?? {})[groupStockKey(groupLabel, size)] ?? 0);
+}
+
+/** Sizes still available within one part. */
+export function availableGroupSizes(product: Product, group: SizeGroup): string[] {
+  return group.sizes.filter((size) => groupStock(product, group.label, size) > 0);
+}
+
+/**
+ * A multi-part product is sold out only when a whole part has nothing left,
+ * because you cannot ship a bikini with no bottoms whatever the tops say.
+ */
+export function isGroupedSoldOut(product: Product): boolean {
+  const groups = product.size_groups ?? [];
+  if (groups.length === 0) return false;
+  return groups.some((group) => availableGroupSizes(product, group).length === 0);
+}
+
+/** How a selection reads in the cart, on the order, and in the pick list. */
+export function describeSelection(selection: SizeSelection | undefined): string {
+  if (!selection) return '';
+  return Object.entries(selection)
+    .map(([label, value]) => `${label} ${value}`)
+    .join(' / ');
 }

@@ -8,7 +8,11 @@ interface ProductModalProps {
   product: Product | null;
   isOpen: boolean;
   onClose: () => void;
-  onAddToCart: (product: Product, size?: number) => void;
+  onAddToCart: (
+    product: Product,
+    size?: string,
+    sizes?: Record<string, string>
+  ) => void;
   onAddToWishlist: (product: Product) => void;
   isInWishlist: (productId: number) => boolean;
 }
@@ -49,7 +53,7 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart, onAddToWis
       return;
     }
     
-    onAddToCart(product, selectedSize || undefined);
+    onAddToCart(product, selectedSize ? String(selectedSize) : undefined);
     toast.success('Added to cart');
     onClose();
     setSelectedSize(null);

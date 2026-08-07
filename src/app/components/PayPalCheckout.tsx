@@ -65,6 +65,7 @@ export function PayPalCheckout({
             product_id: item.product.id,
             quantity: item.quantity,
             size: item.size ?? null,
+            sizes: item.sizes ?? null,
           })),
         }),
       });
@@ -94,6 +95,7 @@ export function PayPalCheckout({
                 product_id: item.product.id,
                 quantity: item.quantity,
                 size: item.size ?? null,
+                sizes: item.sizes ?? null,
               })),
             }),
           });

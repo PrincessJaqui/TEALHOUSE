@@ -21,6 +21,10 @@ import {
   SHOE_SIZES,
   DEFAULT_STOCK_KEY,
   totalStock,
+  SIZE_SCALES,
+  sizeScale as findSizeScale,
+  groupStockKey,
+  type SizeGroup,
 } from '../config/taxonomy';
 
 // These used to be four private arrays here that disagreed with what the
@@ -55,6 +59,9 @@ export function AdminProducts() {
   const [selectedSizes, setSelectedSizes] = useState<number[]>([36, 37, 38, 39, 40, 41]);
   // Stock per size, keyed by size as a string. Sizeless products use "default".
   const [stock, setStock] = useState<Record<string, number>>({});
+  // Multi-part sizing. Empty means the product uses the single size row.
+  const [sizeGroups, setSizeGroups] = useState<SizeGroup[]>([]);
+  const [sizeScale, setSizeScale] = useState<string>('footwear-eu');
   const [isBestseller, setIsBestseller] = useState(false);
   const [slug, setSlug] = useState('');
   const [metaTitle, setMetaTitle] = useState('');
@@ -259,7 +266,9 @@ export function AdminProducts() {
           slug: slug.trim() || null,
           meta_title: metaTitle.trim() || null,
           meta_description: metaDescription.trim() || null,
-          image_alt: imageAlt.trim() || null
+          image_alt: imageAlt.trim() || null,
+          size_groups: sizeGroups,
+          size_scale: sizeScale
         })
         .select()
         .single();
@@ -288,9 +297,23 @@ export function AdminProducts() {
    * not leave an orphan count behind. Sizeless products get a single count.
    */
   const buildStockPayload = (): Record<string, number> => {
+    // Multi-part product: one count per piece, so a bikini carries separate
+    // numbers under Top:S and Bottom:M rather than one per pairing.
+    if (sizeGroups.length > 0) {
+      const payload: Record<string, number> = {};
+      for (const group of sizeGroups) {
+        for (const size of group.sizes) {
+          const key = groupStockKey(group.label, size);
+          payload[key] = Number(stock[key] ?? 0);
+        }
+      }
+      return payload;
+    }
+
     if (selectedCategories.includes('accessories') || selectedSizes.length === 0) {
       return { [DEFAULT_STOCK_KEY]: Number(stock[DEFAULT_STOCK_KEY] ?? 0) };
     }
+
     const payload: Record<string, number> = {};
     for (const size of selectedSizes) {
       payload[String(size)] = Number(stock[String(size)] ?? 0);
@@ -377,6 +400,8 @@ export function AdminProducts() {
     setSelectedMaterials(['Cactus Leather', 'Natural Rubber']);
     setSelectedSizes([36, 37, 38, 39, 40, 41]);
     setStock({});
+    setSizeGroups([]);
+    setSizeScale('footwear-eu');
     setIsBestseller(false);
     setSlug('');
     setMetaTitle('');
@@ -404,6 +429,8 @@ export function AdminProducts() {
     setSelectedMaterials(product.materials);
     setSelectedSizes(product.sizes || []);
     setStock(product.stock ?? {});
+    setSizeGroups(product.size_groups ?? []);
+    setSizeScale(product.size_scale ?? 'footwear-eu');
     setIsBestseller(product.is_bestseller ?? false);
     setSlug(product.slug ?? '');
     setMetaTitle(product.meta_title ?? '');
@@ -524,6 +551,8 @@ export function AdminProducts() {
         meta_title: metaTitle.trim() || null,
         meta_description: metaDescription.trim() || null,
         image_alt: imageAlt.trim() || null,
+        size_groups: sizeGroups,
+        size_scale: sizeScale,
         updated_at: new Date().toISOString()
       };
 
@@ -990,7 +1019,7 @@ export function AdminProducts() {
               </div>
 
               {/* Sizes */}
-              {!selectedCategories.includes('accessories') && (
+              {sizeGroups.length === 0 && !selectedCategories.includes('accessories') && (
                 <div className="space-y-2">
                   <Label>Available Sizes</Label>
                   <div className="grid grid-cols-6 gap-2">
@@ -1049,6 +1078,137 @@ export function AdminProducts() {
                 </p>
               </div>
 
+
+              {/* Multi-part sizing. Leave this empty and the product uses the
+                  single size row above. Add parts and the customer picks a
+                  size for each, with stock held separately per piece. */}
+              <div className="border border-neutral-200 p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-neutral-500">
+                      Multiple parts
+                    </p>
+                    <p className="text-xs text-neutral-500 mt-1">
+                      For a bikini or a set, where top and bottom are sized separately
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setSizeGroups([
+                        ...sizeGroups,
+                        {
+                          label: sizeGroups.length === 0 ? 'Top' : 'Bottom',
+                          scale: 'alpha',
+                          sizes: findSizeScale('alpha')?.sizes ?? [],
+                        },
+                      ])
+                    }
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add part
+                  </Button>
+                </div>
+
+                {sizeGroups.map((group, groupIndex) => (
+                  <div key={groupIndex} className="border-t border-neutral-200 pt-4 mt-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <input
+                        type="text"
+                        value={group.label}
+                        onChange={(e) => {
+                          const next = [...sizeGroups];
+                          next[groupIndex] = { ...group, label: e.target.value };
+                          setSizeGroups(next);
+                        }}
+                        placeholder="Top"
+                        className="w-40 px-3 py-2 border border-neutral-200 text-sm"
+                      />
+                      <select
+                        value={group.scale ?? 'alpha'}
+                        onChange={(e) => {
+                          const scale = findSizeScale(e.target.value);
+                          const next = [...sizeGroups];
+                          next[groupIndex] = {
+                            ...group,
+                            scale: e.target.value,
+                            sizes: scale?.sizes ?? [],
+                          };
+                          setSizeGroups(next);
+                        }}
+                        className="flex-1 px-3 py-2 border border-neutral-200 text-sm"
+                      >
+                        {SIZE_SCALES.map((scale) => (
+                          <option key={scale.key} value={scale.key}>
+                            {scale.label}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setSizeGroups(sizeGroups.filter((_, i) => i !== groupIndex))
+                        }
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-3">
+                      {group.sizes.map((size) => {
+                        const key = groupStockKey(group.label, size);
+                        return (
+                          <div key={size} className="flex flex-col items-center gap-1">
+                            <span className="text-xs text-neutral-500">{size}</span>
+                            <input
+                              type="number"
+                              min={0}
+                              value={stock[key] ?? 0}
+                              onChange={(e) =>
+                                setStock({
+                                  ...stock,
+                                  [key]: Math.max(0, Number(e.target.value)),
+                                })
+                              }
+                              className="w-16 px-2 py-2 border border-neutral-200 text-sm text-center"
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <input
+                      type="text"
+                      placeholder="Add sizes, comma separated"
+                      onKeyDown={(e) => {
+                        if (e.key !== 'Enter') return;
+                        e.preventDefault();
+                        const extra = (e.target as HTMLInputElement).value
+                          .split(',')
+                          .map((v) => v.trim())
+                          .filter((v) => v && !group.sizes.includes(v));
+                        if (extra.length === 0) return;
+                        const next = [...sizeGroups];
+                        next[groupIndex] = { ...group, sizes: [...group.sizes, ...extra] };
+                        setSizeGroups(next);
+                        (e.target as HTMLInputElement).value = '';
+                      }}
+                      className="w-full mt-3 px-3 py-2 border border-neutral-200 text-sm"
+                    />
+                  </div>
+                ))}
+
+                {sizeGroups.length > 0 && (
+                  <p className="text-xs text-neutral-500 mt-4">
+                    Stock is per piece. Six tops in S and two bottoms in M are two
+                    separate counts, and buying one of each takes one from each.
+                  </p>
+                )}
+              </div>
 
               {/* Search engine listing. None of this existed before, so every
                   page on the site served the same title and description. */}
@@ -1436,7 +1596,7 @@ export function AdminProducts() {
               </div>
 
               {/* Sizes */}
-              {!selectedCategories.includes('accessories') && (
+              {sizeGroups.length === 0 && !selectedCategories.includes('accessories') && (
                 <div className="space-y-2">
                   <Label>Available Sizes</Label>
                   <div className="grid grid-cols-6 gap-2">
@@ -1495,6 +1655,137 @@ export function AdminProducts() {
                 </p>
               </div>
 
+
+              {/* Multi-part sizing. Leave this empty and the product uses the
+                  single size row above. Add parts and the customer picks a
+                  size for each, with stock held separately per piece. */}
+              <div className="border border-neutral-200 p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-neutral-500">
+                      Multiple parts
+                    </p>
+                    <p className="text-xs text-neutral-500 mt-1">
+                      For a bikini or a set, where top and bottom are sized separately
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setSizeGroups([
+                        ...sizeGroups,
+                        {
+                          label: sizeGroups.length === 0 ? 'Top' : 'Bottom',
+                          scale: 'alpha',
+                          sizes: findSizeScale('alpha')?.sizes ?? [],
+                        },
+                      ])
+                    }
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add part
+                  </Button>
+                </div>
+
+                {sizeGroups.map((group, groupIndex) => (
+                  <div key={groupIndex} className="border-t border-neutral-200 pt-4 mt-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <input
+                        type="text"
+                        value={group.label}
+                        onChange={(e) => {
+                          const next = [...sizeGroups];
+                          next[groupIndex] = { ...group, label: e.target.value };
+                          setSizeGroups(next);
+                        }}
+                        placeholder="Top"
+                        className="w-40 px-3 py-2 border border-neutral-200 text-sm"
+                      />
+                      <select
+                        value={group.scale ?? 'alpha'}
+                        onChange={(e) => {
+                          const scale = findSizeScale(e.target.value);
+                          const next = [...sizeGroups];
+                          next[groupIndex] = {
+                            ...group,
+                            scale: e.target.value,
+                            sizes: scale?.sizes ?? [],
+                          };
+                          setSizeGroups(next);
+                        }}
+                        className="flex-1 px-3 py-2 border border-neutral-200 text-sm"
+                      >
+                        {SIZE_SCALES.map((scale) => (
+                          <option key={scale.key} value={scale.key}>
+                            {scale.label}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setSizeGroups(sizeGroups.filter((_, i) => i !== groupIndex))
+                        }
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-3">
+                      {group.sizes.map((size) => {
+                        const key = groupStockKey(group.label, size);
+                        return (
+                          <div key={size} className="flex flex-col items-center gap-1">
+                            <span className="text-xs text-neutral-500">{size}</span>
+                            <input
+                              type="number"
+                              min={0}
+                              value={stock[key] ?? 0}
+                              onChange={(e) =>
+                                setStock({
+                                  ...stock,
+                                  [key]: Math.max(0, Number(e.target.value)),
+                                })
+                              }
+                              className="w-16 px-2 py-2 border border-neutral-200 text-sm text-center"
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <input
+                      type="text"
+                      placeholder="Add sizes, comma separated"
+                      onKeyDown={(e) => {
+                        if (e.key !== 'Enter') return;
+                        e.preventDefault();
+                        const extra = (e.target as HTMLInputElement).value
+                          .split(',')
+                          .map((v) => v.trim())
+                          .filter((v) => v && !group.sizes.includes(v));
+                        if (extra.length === 0) return;
+                        const next = [...sizeGroups];
+                        next[groupIndex] = { ...group, sizes: [...group.sizes, ...extra] };
+                        setSizeGroups(next);
+                        (e.target as HTMLInputElement).value = '';
+                      }}
+                      className="w-full mt-3 px-3 py-2 border border-neutral-200 text-sm"
+                    />
+                  </div>
+                ))}
+
+                {sizeGroups.length > 0 && (
+                  <p className="text-xs text-neutral-500 mt-4">
+                    Stock is per piece. Six tops in S and two bottoms in M are two
+                    separate counts, and buying one of each takes one from each.
+                  </p>
+                )}
+              </div>
 
               {/* Search engine listing. None of this existed before, so every
                   page on the site served the same title and description. */}
