@@ -112,6 +112,54 @@ export function AdminProducts() {
   // created here and become available to every product.
   const catalog = useCatalogLists();
 
+  // Drag to arrange. The order here is the order customers see, and the
+  // first product becomes its collection's share image.
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
+  const [savingOrder, setSavingOrder] = useState(false);
+
+  const commitOrder = async (ordered: Product[]) => {
+    setSavingOrder(true);
+    setProducts(ordered);
+
+    // Spaced by ten so a single product can later be slotted between two
+    // others without renumbering the whole catalogue.
+    const updates = ordered.map((product, index) =>
+      supabase
+        .from('products')
+        .update({ sort_order: (index + 1) * 10 })
+        .eq('id', product.id)
+    );
+
+    const results = await Promise.all(updates);
+    const failed = results.find((result) => result.error);
+
+    setSavingOrder(false);
+
+    if (failed?.error) {
+      toast.error(describeDbError(failed.error));
+      loadProducts();
+    } else {
+      toast.success('Order saved');
+    }
+  };
+
+  const handleDrop = (targetIndex: number) => {
+    if (dragIndex === null || dragIndex === targetIndex) {
+      setDragIndex(null);
+      setOverIndex(null);
+      return;
+    }
+
+    const next = [...products];
+    const [moved] = next.splice(dragIndex, 1);
+    next.splice(targetIndex, 0, moved);
+
+    setDragIndex(null);
+    setOverIndex(null);
+    commitOrder(next);
+  };
+
   // The scales on offer follow the categories ticked, so Resort Wear offers
   // Alpha and Women's Clothing rather than EU shoe sizes. If the current
   // scale does not suit the new categories, move to one that does.
@@ -170,11 +218,10 @@ export function AdminProducts() {
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        // Alphabetical by name. created_at is the tie-breaker so two
-        // products sharing a name keep a stable order rather than shuffling
-        // between loads.
-        .order('name', { ascending: true })
-        .order('created_at', { ascending: false });
+        // The order she arranged, with name as the tie-breaker so anything
+        // not yet placed still lands somewhere predictable.
+        .order('sort_order', { ascending: true })
+        .order('name', { ascending: true });
 
       console.log('Supabase response:', { data, error });
 
@@ -960,9 +1007,37 @@ export function AdminProducts() {
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {products.map((product) => (
-                  <AdminProductCard
+                {products.map((product, index) => (
+                  <div
                     key={product.id}
+                    draggable
+                    onDragStart={() => setDragIndex(index)}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setOverIndex(index);
+                    }}
+                    onDragLeave={() => setOverIndex((prev) => (prev === index ? null : prev))}
+                    onDrop={() => handleDrop(index)}
+                    onDragEnd={() => {
+                      setDragIndex(null);
+                      setOverIndex(null);
+                    }}
+                    className={`relative cursor-move transition-opacity ${
+                      dragIndex === index ? 'opacity-40' : ''
+                    } ${
+                      overIndex === index && dragIndex !== index
+                        ? 'ring-2 ring-black ring-offset-2'
+                        : ''
+                    }`}
+                  >
+                    {/* Position, so the arrangement is legible without
+                        counting across rows. The first is the one that
+                        becomes the collection's share image. */}
+                    <span className="absolute -top-2 -left-2 z-20 bg-black text-white text-xs w-6 h-6 flex items-center justify-center">
+                      {index + 1}
+                    </span>
+
+                  <AdminProductCard
                     product={product}
                     onEdit={openEditModal}
                     onView={(p) => window.open(productPath(p), '_blank')}
@@ -971,6 +1046,7 @@ export function AdminProducts() {
                       handleDelete(p.id, p.images || [p.image], p.video)
                     }
                   />
+                  </div>
                 ))}
               </div>
             )}

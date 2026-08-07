@@ -20,11 +20,10 @@ export function useSupabaseProducts() {
         .from('products')
         .select('*')
         .eq('is_published', true)
-        // Alphabetical by name. created_at is the tie-breaker so two
-        // products sharing a name keep a stable order rather than shuffling
-        // between loads.
-        .order('name', { ascending: true })
-        .order('created_at', { ascending: false });
+        // The order she arranged, with name as the tie-breaker so anything
+        // not yet placed still lands somewhere predictable.
+        .order('sort_order', { ascending: true })
+        .order('name', { ascending: true });
 
       if (fetchError) {
         console.error('Error loading products from Supabase:', fetchError);

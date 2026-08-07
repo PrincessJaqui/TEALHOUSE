@@ -29,6 +29,12 @@ export function Home(_props: HomeProps) {
   const { get, isActive } = useInterfaceStudio();
   const { products } = useSupabaseProducts();
 
+  // Sharing the landing page should show the hero, not a logo on white.
+  // The desktop still is used because a link preview is a still image, and
+  // it falls back to the mobile one if that is all there is.
+  const hero = get('hero');
+  const shareImage = hero.image_desktop || hero.image_mobile || undefined;
+
   const featured = products.filter(
     (product) => product.is_featured && product.is_published !== false
   );
@@ -39,6 +45,7 @@ export function Home(_props: HomeProps) {
         title="TEALHOUSE"
         description="Luxury vegan shoes, resort wear and accents made from plants, with our signature teal sole."
         path="/"
+        image={shareImage}
       />
 
       {isActive('hero') && <StudioHero content={get('hero')} />}

@@ -1,7 +1,9 @@
 import { ProductGrid } from './ProductGrid';
 import { Seo } from './Seo';
 import { Product } from '../App';
-import type { FilterKey } from '../config/taxonomy';
+import { productMatchesFilter, type FilterKey } from '../config/taxonomy';
+import { useSupabaseProducts } from '../hooks/useSupabaseProducts';
+import { getPrimaryProductImage } from '../lib/default-image';
 
 /**
  * One layout for every collection page.
@@ -41,9 +43,24 @@ export function CollectionPage({
   onAddToWishlist,
   isInWishlist,
 }: CollectionPageProps) {
+  // Sharing a collection should show what is in it. The first product in
+  // the order she arranged is the one that represents it.
+  const { products } = useSupabaseProducts();
+  const first = products.find(
+    (product) =>
+      product.is_published !== false &&
+      productMatchesFilter(product, filter)
+  );
+  const shareImage = first ? getPrimaryProductImage(first) : undefined;
+
   return (
     <div className="min-h-screen bg-white">
-      <Seo title={title} description={metaDescription} path={path} />
+      <Seo
+        title={title}
+        description={metaDescription}
+        path={path}
+        image={shareImage}
+      />
 
       {/* No banner. The heading matches the rest of the site rather than
           sitting in a coloured block. */}
