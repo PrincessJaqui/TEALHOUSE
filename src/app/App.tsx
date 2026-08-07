@@ -18,7 +18,6 @@ import { BespokeDesign } from './pages/BespokeDesign';
 import { ClientServices } from './pages/ClientServices';
 import { ContactUs } from './pages/ContactUs';
 import { DeliveryReturns } from './pages/DeliveryReturns';
-import { FAQ } from './pages/FAQ';
 import { SizeGuide } from './pages/SizeGuide';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { TermsOfService } from './pages/TermsOfService';
@@ -240,7 +239,6 @@ function AppContent() {
           <Route path="/client-services" element={<ClientServices />} />
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/delivery-returns" element={<DeliveryReturns />} />
-          <Route path="/faq" element={<FAQ />} />
           <Route path="/size-guide" element={<SizeGuide />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />

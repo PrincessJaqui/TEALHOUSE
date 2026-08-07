@@ -12,6 +12,12 @@ import { Plus, Trash2, Upload, Package, X, Video, Edit, Image as ImageIcon, Down
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { AdminLayout } from '../components/AdminLayout';
 import { exportCsv } from '../lib/csv';
+
+/**
+ * What a newly ticked size starts at. A size already saved keeps its own
+ * number, including a deliberate zero.
+ */
+const DEFAULT_STOCK_QTY = 25;
 import { AdminProductCard } from '../components/AdminProductCard';
 import { productPath } from '../config/taxonomy';
 import { useCatalogLists } from '../hooks/useCatalogLists';
@@ -400,7 +406,7 @@ export function AdminProducts() {
         for (const group of sizeGroups) {
           for (const size of group.sizes) {
             const key = stockKey({ color, group: group.label, size });
-            payload[key] = Number(stock[key] ?? 0);
+            payload[key] = Number(stock[key] ?? DEFAULT_STOCK_QTY);
           }
         }
       }
@@ -411,7 +417,7 @@ export function AdminProducts() {
       const payload: Record<string, number> = {};
       for (const color of colorKeys) {
         const key = stockKey({ color });
-        payload[key] = Number(stock[key] ?? 0);
+        payload[key] = Number(stock[key] ?? DEFAULT_STOCK_QTY);
       }
       return payload;
     }
@@ -420,7 +426,7 @@ export function AdminProducts() {
     for (const color of colorKeys) {
       for (const size of selectedSizes) {
         const key = stockKey({ color, size: String(size) });
-        payload[key] = Number(stock[key] ?? 0);
+        payload[key] = Number(stock[key] ?? DEFAULT_STOCK_QTY);
       }
     }
     return payload;
@@ -1247,7 +1253,7 @@ export function AdminProducts() {
                   <input
                     type="number"
                     min={0}
-                    value={stock[stockKey({ color: selectedColors[0] ?? null })] ?? 0}
+                    value={stock[stockKey({ color: selectedColors[0] ?? null })] ?? DEFAULT_STOCK_QTY}
                     onChange={(e) =>
                       setStock({
                         ...stock,
@@ -1276,7 +1282,7 @@ export function AdminProducts() {
                               <input
                                 type="number"
                                 min={0}
-                                value={stock[key] ?? 0}
+                                value={stock[key] ?? DEFAULT_STOCK_QTY}
                                 onChange={(e) =>
                                   setStock({
                                     ...stock,
@@ -1728,7 +1734,7 @@ export function AdminProducts() {
                                 <input
                                   type="number"
                                   min={0}
-                                  value={stock[key] ?? 0}
+                                  value={stock[key] ?? DEFAULT_STOCK_QTY}
                                   onChange={(e) =>
                                     setStock({
                                       ...stock,
@@ -2239,7 +2245,7 @@ export function AdminProducts() {
                   <input
                     type="number"
                     min={0}
-                    value={stock[stockKey({ color: selectedColors[0] ?? null })] ?? 0}
+                    value={stock[stockKey({ color: selectedColors[0] ?? null })] ?? DEFAULT_STOCK_QTY}
                     onChange={(e) =>
                       setStock({
                         ...stock,
@@ -2268,7 +2274,7 @@ export function AdminProducts() {
                               <input
                                 type="number"
                                 min={0}
-                                value={stock[key] ?? 0}
+                                value={stock[key] ?? DEFAULT_STOCK_QTY}
                                 onChange={(e) =>
                                   setStock({
                                     ...stock,
@@ -2720,7 +2726,7 @@ export function AdminProducts() {
                                 <input
                                   type="number"
                                   min={0}
-                                  value={stock[key] ?? 0}
+                                  value={stock[key] ?? DEFAULT_STOCK_QTY}
                                   onChange={(e) =>
                                     setStock({
                                       ...stock,

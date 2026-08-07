@@ -159,9 +159,6 @@ export function measurementOptions(): string[] {
 }
 
 export const MADE_TO_MEASURE_COPY = {
-  intro:
-    'Cut to your measurements. Choose the closest value for each; our ' +
-    'atelier works to these figures, so measure carefully.',
   /** Shown when a made to measure product has no parts defined yet. */
   noParts:
     'Sizing for this piece is being finalised. Please contact us to order.',

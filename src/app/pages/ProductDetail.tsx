@@ -395,11 +395,6 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                 alpha sizes. Nothing here touches stock. */}
             {isMadeToMeasure(product) && (
               <div className="mb-6">
-                <label className="block font-medium mb-2">Your measurements</label>
-                <p className="text-sm text-gray-600 mb-4">
-                  {MADE_TO_MEASURE_COPY.intro}
-                </p>
-
                 {(product.size_groups ?? []).length === 0 ? (
                   <p className="text-sm text-gray-600">
                     {MADE_TO_MEASURE_COPY.noParts}
@@ -733,22 +728,15 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
               <div className="flex items-start gap-3">
                 <div className="w-2 h-2 bg-[#008080] rounded-full mt-2"></div>
                 <div>
-                  <h4 className="font-medium mb-1">Handmade in Italy</h4>
-                  <p className="text-gray-600 text-sm">Crafted by master artisans in our Italian workshop</p>
+                  <h4 className="font-medium mb-1">Signature Teal</h4>
+                  <p className="text-gray-600 text-sm">Iconic signature teal accents</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-2 h-2 bg-[#008080] rounded-full mt-2"></div>
                 <div>
                   <h4 className="font-medium mb-1">100% Vegan</h4>
-                  <p className="text-gray-600 text-sm">Made entirely from plant-based materials</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-2 h-2 bg-[#008080] rounded-full mt-2"></div>
-                <div>
-                  <h4 className="font-medium mb-1">Signature Teal Sole</h4>
-                  <p className="text-gray-600 text-sm">Our iconic teal sole made from natural rubber</p>
+                  <p className="text-gray-600 text-sm">Consciously made</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">

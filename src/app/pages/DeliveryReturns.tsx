@@ -16,8 +16,8 @@ export function DeliveryReturns() {
               <div className="space-y-3 text-gray-700">
                 <p><strong>United States:</strong> 2-3 business days (Standard), 1-2 business days (Express)</p>
                 <p><strong>Canada:</strong> 4-6 business days</p>
-                <p><strong>Europe:</strong> 3-5 business days</p>
-                <p><strong>Rest of World:</strong> 5-10 business days</p>
+                <p><strong>Europe:</strong> You will be notified</p>
+                <p><strong>Rest of World:</strong> You will be notified</p>
               </div>
             </div>
 

@@ -14,7 +14,6 @@ export function Footer() {
       links: [
         { label: 'Contact Us', href: '/contact' },
         { label: 'Delivery & Returns', href: '/delivery-returns' },
-        { label: 'FAQ', href: '/faq' },
         { label: 'Size Guide', href: '/size-guide' }
       ]
     },
