@@ -196,3 +196,21 @@ html {
     font-family: 'Tinos', serif;
   }
 }
+
+/*
+ * Number inputs carry stepper arrows that also respond to the scroll wheel,
+ * so a trackpad scroll across a form rewrites values under the cursor. The
+ * arrows are hidden here and the wheel is cancelled in
+ * src/app/lib/number-input-guard.ts. Typing and the arrow keys still work.
+ */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
