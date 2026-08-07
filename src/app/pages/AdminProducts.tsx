@@ -124,6 +124,7 @@ export function AdminProducts() {
   const [measurementFields, setMeasurementFields] = useState<string[]>([]);
   const [leadTimeWeeks, setLeadTimeWeeks] = useState('');
   const [isBestseller, setIsBestseller] = useState(false);
+  const [isFeatured, setIsFeatured] = useState(false);
   const [slug, setSlug] = useState('');
   const [metaTitle, setMetaTitle] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
@@ -333,6 +334,7 @@ export function AdminProducts() {
               : selectedSizes,
           stock: buildStockPayload(),
           is_bestseller: isBestseller,
+          is_featured: isFeatured,
           is_published: isPublished,
           slug: slug.trim() || null,
           meta_title: metaTitle.trim() || null,
@@ -512,6 +514,7 @@ export function AdminProducts() {
     setMeasurementFields([]);
     setLeadTimeWeeks('');
     setIsBestseller(false);
+    setIsFeatured(false);
     setSlug('');
     setMetaTitle('');
     setMetaDescription('');
@@ -550,6 +553,7 @@ export function AdminProducts() {
     setMeasurementFields(product.measurement_fields ?? []);
     setLeadTimeWeeks(product.lead_time_weeks ? String(product.lead_time_weeks) : '');
     setIsBestseller(product.is_bestseller ?? false);
+    setIsFeatured(product.is_featured ?? false);
     setSlug(product.slug ?? '');
     setMetaTitle(product.meta_title ?? '');
     setMetaDescription(product.meta_description ?? '');
@@ -706,6 +710,7 @@ export function AdminProducts() {
               : selectedSizes,
         stock: buildStockPayload(),
         is_bestseller: isBestseller,
+        is_featured: isFeatured,
         is_published: isPublished,
         slug: slug.trim() || null,
         meta_title: metaTitle.trim() || null,
@@ -1852,6 +1857,14 @@ export function AdminProducts() {
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <input
                     type="checkbox"
+                    checked={isFeatured}
+                    onChange={(e) => setIsFeatured(e.target.checked)}
+                  />
+                  Feature on the landing page
+                </label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
                     checked={isBestseller}
                     onChange={(e) => setIsBestseller(e.target.checked)}
                   />
@@ -2833,6 +2846,14 @@ export function AdminProducts() {
               </div>
 
               <div className="flex items-center gap-6">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isFeatured}
+                    onChange={(e) => setIsFeatured(e.target.checked)}
+                  />
+                  Feature on the landing page
+                </label>
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <input
                     type="checkbox"

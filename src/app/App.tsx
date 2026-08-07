@@ -64,6 +64,8 @@ export interface Product {
   /** Map of size to quantity remaining. Sizeless products use the "default" key. */
   stock?: Record<string, number>;
   is_bestseller?: boolean;
+  /** Shown on the landing page. Separate from Best Seller. */
+  is_featured?: boolean;
   is_published?: boolean;
   created_at?: string;
   /** URL slug, generated from the name unless overridden. */

@@ -19,7 +19,15 @@ export function Home({ onProductClick, onAddToWishlist, isInWishlist }: HomeProp
         path="/"
       />
       <Hero />
-      <ProductGrid onProductClick={onProductClick} onAddToWishlist={onAddToWishlist} isInWishlist={isInWishlist} />
+      {/* Only the pieces ticked as featured in the admin, not the whole
+          catalogue. Disappears entirely while nothing is featured. */}
+      <ProductGrid
+        filter="featured"
+        hideWhenEmpty
+        onProductClick={onProductClick}
+        onAddToWishlist={onAddToWishlist}
+        isInWishlist={isInWishlist}
+      />
       <ServiceFeatures />
       {/* TEALHOUSE Logo Section */}
       <section className="bg-white py-16 border-t border-gray-200">

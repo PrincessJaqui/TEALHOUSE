@@ -68,6 +68,7 @@ export type FilterKey =
   | 'womens'
   | 'new'
   | 'bestseller'
+  | 'featured'
   | 'cactus-leather';
 
 const eq = (a: string | undefined | null, b: string) =>
@@ -103,6 +104,11 @@ export function productMatchesFilter(product: Product, filter: FilterKey): boole
 
     case 'bestseller':
       return Boolean(product.is_bestseller);
+
+    case 'featured':
+      // Chosen for the landing page, which is a separate decision from
+      // being a best seller.
+      return Boolean(product.is_featured);
 
     default:
       // plain category pages: shoes, accessories, apparel, jewelry

@@ -20,9 +20,21 @@ interface ProductGridProps {
    * line up with the strings the pages pass.
    */
   filter?: string;
+  /**
+   * Render nothing at all when nothing matches, rather than an empty grid.
+   * Used on the landing page, where an empty product section with a filter
+   * control above it would read as broken.
+   */
+  hideWhenEmpty?: boolean;
 }
 
-export function ProductGrid({ onProductClick, onAddToWishlist, isInWishlist, filter }: ProductGridProps) {
+export function ProductGrid({
+  onProductClick,
+  onAddToWishlist,
+  isInWishlist,
+  filter,
+  hideWhenEmpty,
+}: ProductGridProps) {
   const { products, loading } = useSupabaseProducts();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -51,6 +63,13 @@ export function ProductGrid({ onProductClick, onAddToWishlist, isInWishlist, fil
     selectedCategory === 'all'
       ? baseProducts
       : baseProducts.filter((p) => productMatchesFilter(p, selectedCategory as FilterKey));
+
+  // Nothing to show and the caller asked for silence. The landing page uses
+  // this so an empty featured section disappears instead of leaving a filter
+  // control hanging over blank space.
+  if (hideWhenEmpty && !loading && filteredProducts.length === 0) {
+    return null;
+  }
 
   return (
     <section className="max-w-[1200px] mx-auto px-5 py-8" id="shoes">
