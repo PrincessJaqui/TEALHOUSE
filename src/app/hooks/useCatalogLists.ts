@@ -29,6 +29,9 @@ export interface SizeScaleRow {
   key: string;
   label: string;
   sizes: string[];
+  /** The full conversion chart, rendered on the size guide. */
+  conversions?: Array<Record<string, string>>;
+  note?: string | null;
   /** Which product categories this scale is offered for. Empty means all. */
   categories: string[];
   is_active: boolean;

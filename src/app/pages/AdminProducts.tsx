@@ -60,8 +60,8 @@ export function AdminProducts() {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(['shoes']);
-  const [selectedAudience, setSelectedAudience] = useState<string[]>(['women']);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedAudience, setSelectedAudience] = useState<string[]>([]);
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<number[]>([36, 37, 38, 39, 40, 41]);
   // Stock per size, keyed by size as a string. Sizeless products use "default".
@@ -429,8 +429,8 @@ export function AdminProducts() {
     setName('');
     setPrice('');
     setDescription('');
-    setSelectedCategories(['shoes']);
-    setSelectedAudience(['women']);
+    setSelectedCategories([]);
+    setSelectedAudience([]);
     setSelectedMaterials([]);
     setSelectedSizes([36, 37, 38, 39, 40, 41]);
     setStock({});
