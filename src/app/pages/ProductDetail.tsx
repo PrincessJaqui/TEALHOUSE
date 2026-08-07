@@ -517,7 +517,10 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                   </div>
                 )}
 
-                <div className="border border-gray-200 bg-gray-50 p-4 mt-5 space-y-2">
+                <div className="border border-gray-200 bg-gray-50 p-4 mt-5 space-y-3">
+                  <p className="uppercase tracking-wider text-xs text-gray-900">
+                    {MADE_TO_MEASURE_COPY.heading}
+                  </p>
                   <p className="text-sm text-gray-700 leading-relaxed">
                     {MADE_TO_MEASURE_COPY.leadTime(product.lead_time_weeks)}
                   </p>

@@ -25,17 +25,6 @@ export const DEFAULT_PREORDER_MONTHS = 6;
 /** Made to measure takes about four months unless told otherwise. */
 export const DEFAULT_LEAD_TIME_WEEKS = 16;
 
-/**
- * "about 4 months" reads better than "about 16 weeks" for a long lead, so
- * anything that divides evenly into months is shown that way.
- */
-export function formatLeadTime(weeks: number): string {
-  if (weeks >= 8 && weeks % 4 === 0) {
-    const months = weeks / 4;
-    return `${months} ${months === 1 ? 'month' : 'months'}`;
-  }
-  return `${weeks} ${weeks === 1 ? 'week' : 'weeks'}`;
-}
 
 export const BESPOKE_COPY = {
   /**
@@ -162,15 +151,21 @@ export const MADE_TO_MEASURE_COPY = {
   /** Shown when a made to measure product has no parts defined yet. */
   noParts:
     'Sizing for this piece is being finalised. Please contact us to order.',
+  heading: 'Made to Measure',
+
+  /**
+   * Weeks rather than months, in her wording. The number comes from the
+   * product's own lead time so a piece that genuinely takes longer says so,
+   * falling back to 12 when none is set.
+   */
   leadTime: (weeks?: number | null) =>
-    weeks && weeks > 0
-      ? `Made to measure, so please allow about ${formatLeadTime(weeks)} ` +
-        'before dispatch.'
-      : 'Made to measure, so this takes longer than a stocked piece.',
+    'Individually tailored to your measurements. Please allow up to ' +
+    `${weeks && weeks > 0 ? weeks : 12} weeks for creation prior to dispatch.`,
   /** Cut to a person, so it cannot go back on the shelf. */
   returns:
-    'Because each piece is cut to your own measurements, made to measure ' +
-    'orders cannot be returned or exchanged unless the piece is faulty.',
+    'As each piece is cut to your personal proportions, made to measure ' +
+    'orders represent a singular creation, are non-returnable, and are ' +
+    'non-exchangeable unless a defect is identified upon delivery.',
 } as const;
 
 /** Stock only governs products actually sold from stock. */

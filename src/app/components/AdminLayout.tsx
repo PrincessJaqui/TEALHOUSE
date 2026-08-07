@@ -7,6 +7,7 @@ import {
   Mail,
   Users,
   LogOut,
+  Palette,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -35,6 +36,7 @@ const NAV = [
   { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/admin/orders', label: 'Orders', icon: Package },
   { path: '/admin/products', label: 'Products', icon: Edit },
+  { path: '/admin/interface-studio', label: 'Interface Studio', icon: Palette },
   { path: '/admin/messages', label: 'Messages', icon: Mail },
   { path: '/admin/customers', label: 'Customers', icon: Users },
 ];

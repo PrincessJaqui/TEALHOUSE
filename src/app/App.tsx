@@ -43,6 +43,7 @@ import { useSupabaseAuth } from './hooks/useSupabaseAuth';
 import { useSupabaseCart } from './hooks/useSupabaseCart';
 import { useSupabaseWishlist } from './hooks/useSupabaseWishlist';
 import { AdminProducts } from './pages/AdminProducts';
+import { AdminInterfaceStudio } from './pages/AdminInterfaceStudio';
 import { AdminCustomers } from './pages/AdminCustomers';
 import { AdminMessages } from './pages/AdminMessages';
 import { ProtectedAdminRoute } from './components/ProtectedAdminRoute';
@@ -261,6 +262,7 @@ function AppContent() {
           <Route path="/teal-sole" element={<TealSole onProductClick={openProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
           <Route path="/about-story" element={<AboutStory />} />
           <Route path="/not-found" element={<NotFound />} />
+          <Route path="/admin/interface-studio" element={<ProtectedAdminRoute><AdminInterfaceStudio /></ProtectedAdminRoute>} />
           <Route path="/admin/products" element={<ProtectedAdminRoute><AdminProducts /></ProtectedAdminRoute>} />
           <Route path="/admin/customers" element={<ProtectedAdminRoute><AdminCustomers /></ProtectedAdminRoute>} />
           <Route path="/admin/dashboard" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />

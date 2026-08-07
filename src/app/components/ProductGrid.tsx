@@ -8,6 +8,7 @@ import {
   type FilterKey,
 } from '../config/taxonomy';
 import { useCatalogLists } from '../hooks/useCatalogLists';
+import { ProductCardImage } from './ProductCardImage';
 import { getPrimaryProductImage } from '../lib/default-image';
 import { useSupabaseProducts } from '../hooks/useSupabaseProducts';
 
@@ -31,6 +32,8 @@ interface ProductGridProps {
    * control above it would read as broken.
    */
   hideWhenEmpty?: boolean;
+  /** The landing page is a shop window, not a search tool. */
+  showFilters?: boolean;
 }
 
 export function ProductGrid({
@@ -39,6 +42,7 @@ export function ProductGrid({
   isInWishlist,
   filter,
   hideWhenEmpty,
+  showFilters = true,
 }: ProductGridProps) {
   const { products, loading } = useSupabaseProducts();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -128,6 +132,8 @@ export function ProductGrid({
       {/* Filter and sort. Options come from the products actually on this
           page, so a Resort Wear page never offers a shoe size and an empty
           category never appears. */}
+      {showFilters && (
+      <>
       <div className="flex justify-end items-center gap-6 mb-6">
         <label className="flex items-center gap-2 text-sm">
           <span className="uppercase tracking-wider">Sort</span>
@@ -249,6 +255,8 @@ export function ProductGrid({
           )}
         </div>
       )}
+      </>
+      )}
 
       {/* Two different situations. Filters that exclude everything is the
           customer's own doing; an empty collection is ours, and reads better
@@ -271,13 +279,11 @@ export function ProductGrid({
             key={product.id} 
             className="group"
           >
-            <div className="relative aspect-[2/3] bg-gray-100 mb-3 overflow-hidden cursor-pointer" onClick={() => onProductClick(product)}>
-              <img
-                src={getPrimaryProductImage(product)}
-                alt={product.name}
-                className={`absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${
- isSoldOut(product) ? 'opacity-60' : ''
-                }`}
+            <div className="relative">
+              <ProductCardImage
+                product={product}
+                soldOut={isSoldOut(product)}
+                onClick={() => onProductClick(product)}
               />
 
               {isSoldOut(product) && (
@@ -285,7 +291,7 @@ export function ProductGrid({
                   Sold Out
                 </span>
               )}
-              
+
               {/* Wishlist Heart Button */}
               <button
                 className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm hover:bg-white transition-all z-10"
