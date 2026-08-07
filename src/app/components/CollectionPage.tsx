@@ -42,12 +42,12 @@ export function CollectionPage({
   isInWishlist,
 }: CollectionPageProps) {
   return (
-    <div className="min-h-screen bg-white pt-20">
+    <div className="min-h-screen bg-white">
       <Seo title={title} description={metaDescription} path={path} />
 
       {/* No banner. The heading matches the rest of the site rather than
           sitting in a coloured block. */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col justify-center min-h-[9rem] py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-[4.5rem]">
         <h1 className="uppercase tracking-wider mb-3">{title}</h1>
         <p className="text-sm text-gray-600 max-w-2xl mx-auto">{intro}</p>
       </div>
