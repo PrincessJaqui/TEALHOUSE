@@ -24,6 +24,7 @@ import { SizeGuide } from './pages/SizeGuide';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { TermsOfService } from './pages/TermsOfService';
 import { CustomerAccount } from './pages/CustomerAccount';
+import { OrderConfirmation } from './pages/OrderConfirmation';
 import { CompanyLogin } from './pages/CompanyLogin';
 import { Checkout } from './pages/Checkout';
 import { Accessories } from './pages/Accessories';
@@ -77,6 +78,12 @@ export interface Product {
   size_groups?: Array<{ label: string; scale?: string; sizes: string[] }>;
   size_scale?: string;
   size_labels?: string[];
+  /** in_stock, pre_order or made_to_order. Absent means in_stock. */
+  fulfillment_type?: string;
+  /** Fixed retainer charged for a bespoke piece, credited to the final price. */
+  retainer_amount?: number | null;
+  /** Estimated only, and the storefront says so. */
+  preorder_ships_on?: string | null;
 }
 
 export interface CartItem {
@@ -86,6 +93,8 @@ export interface CartItem {
   size?: string;
   /** Multi-part products, for example { Top: "S", Bottom: "M" }. */
   sizes?: Record<string, string>;
+  /** What the customer wants, for a bespoke piece. */
+  notes?: string;
 }
 
 function AppContent() {
@@ -138,26 +147,29 @@ function AppContent() {
   const addToCart = async (
     product: Product,
     size?: string,
-    sizes?: Record<string, string>
+    sizes?: Record<string, string>,
+    notes?: string
   ) => {
-    await supabaseAddToCart(product, size, sizes);
+    await supabaseAddToCart(product, size, sizes, notes);
   };
 
   const removeFromCart = async (
     productId: number,
     size?: string,
-    sizes?: Record<string, string>
+    sizes?: Record<string, string>,
+    notes?: string
   ) => {
-    await supabaseRemoveFromCart(productId, size, sizes);
+    await supabaseRemoveFromCart(productId, size, sizes, notes);
   };
 
   const updateQuantity = async (
     productId: number,
     quantity: number,
     size?: string,
-    sizes?: Record<string, string>
+    sizes?: Record<string, string>,
+    notes?: string
   ) => {
-    await supabaseUpdateQuantity(productId, quantity, size, sizes);
+    await supabaseUpdateQuantity(productId, quantity, size, sizes, notes);
   };
 
   const addToWishlist = async (product: Product) => {
@@ -210,6 +222,7 @@ function AppContent() {
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/customer-account" element={<CustomerAccount />} />
           <Route path="/company-login" element={<CompanyLogin />} />
+          <Route path="/order/:id" element={<OrderConfirmation />} />
           <Route path="/checkout" element={<Checkout items={supabaseCartItems} onOrderPlaced={clearCart} />} />
           <Route path="/accessories" element={<Accessories />} />
           <Route path="/shoes" element={<Shoes onProductClick={openProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />

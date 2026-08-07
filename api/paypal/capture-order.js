@@ -95,6 +95,7 @@ export default async function handler(req, res) {
       total: priced.total,
       items_count: priced.lines.reduce((n, l) => n + l.quantity, 0),
       items: priced.lines,
+      has_bespoke: priced.hasBespoke,
     })
     .select('id')
     .single();

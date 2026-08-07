@@ -85,7 +85,8 @@ export function useSupabaseCart(userId: string | undefined) {
           return {
             product,
             quantity: item.quantity,
-            size: item.size || undefined
+            size: item.size || undefined,
+            notes: item.notes || undefined
           };
         }).filter(Boolean) as CartItem[];
         
@@ -106,7 +107,8 @@ export function useSupabaseCart(userId: string | undefined) {
   const lineKey = (
     productId: number,
     size?: string,
-    sizes?: SizeSelection
+    sizes?: SizeSelection,
+    notes?: string
   ) => {
     const selection = sizes
       ? Object.keys(sizes)
@@ -114,24 +116,34 @@ export function useSupabaseCart(userId: string | undefined) {
           .map((k) => `${k}=${sizes[k]}`)
           .join('|')
       : '';
-    return `${productId}::${size ?? ''}::${selection}`;
+    return `${productId}::${size ?? ''}::${selection}::${notes ?? ''}`;
   };
 
-  const matches = (item: CartItem, productId: number, size?: string, sizes?: SizeSelection) =>
-    lineKey(item.product.id, item.size, item.sizes) === lineKey(productId, size, sizes);
+  const matches = (
+    item: CartItem,
+    productId: number,
+    size?: string,
+    sizes?: SizeSelection,
+    notes?: string
+  ) =>
+    lineKey(item.product.id, item.size, item.sizes, item.notes) ===
+    lineKey(productId, size, sizes, notes);
 
   const addToCart = async (
     product: Product,
     size?: string,
-    sizes?: SizeSelection
+    sizes?: SizeSelection,
+    notes?: string
   ) => {
-    const existingItem = cartItems.find((item) => matches(item, product.id, size, sizes));
+    const existingItem = cartItems.find((item) =>
+      matches(item, product.id, size, sizes, notes)
+    );
 
     if (existingItem) {
-      return updateQuantity(product.id, existingItem.quantity + 1, size, sizes);
+      return updateQuantity(product.id, existingItem.quantity + 1, size, sizes, notes);
     }
 
-    const newItem: CartItem = { product, quantity: 1, size, sizes };
+    const newItem: CartItem = { product, quantity: 1, size, sizes, notes };
     setCartItems((prev) => [...prev, newItem]);
 
     if (!userId) return true;
@@ -143,13 +155,16 @@ export function useSupabaseCart(userId: string | undefined) {
         quantity: 1,
         size: size || null,
         sizes: sizes ?? null,
+        notes: notes || null,
       });
 
       if (error) throw error;
       return true;
     } catch (error) {
       console.error('Error adding to cart:', error);
-      setCartItems((prev) => prev.filter((item) => !matches(item, product.id, size, sizes)));
+      setCartItems((prev) =>
+        prev.filter((item) => !matches(item, product.id, size, sizes, notes))
+      );
       return false;
     }
   };
@@ -157,10 +172,13 @@ export function useSupabaseCart(userId: string | undefined) {
   const removeFromCart = async (
     productId: number,
     size?: string,
-    sizes?: SizeSelection
+    sizes?: SizeSelection,
+    notes?: string
   ) => {
     const previousItems = cartItems;
-    setCartItems((prev) => prev.filter((item) => !matches(item, productId, size, sizes)));
+    setCartItems((prev) =>
+      prev.filter((item) => !matches(item, productId, size, sizes, notes))
+    );
 
     if (!userId) return true;
 
@@ -189,16 +207,17 @@ export function useSupabaseCart(userId: string | undefined) {
     productId: number,
     quantity: number,
     size?: string,
-    sizes?: SizeSelection
+    sizes?: SizeSelection,
+    notes?: string
   ) => {
     if (quantity === 0) {
-      return removeFromCart(productId, size, sizes);
+      return removeFromCart(productId, size, sizes, notes);
     }
 
     const previousItems = cartItems;
     setCartItems((prev) =>
       prev.map((item) =>
-        matches(item, productId, size, sizes) ? { ...item, quantity } : item
+        matches(item, productId, size, sizes, notes) ? { ...item, quantity } : item
       )
     );
 

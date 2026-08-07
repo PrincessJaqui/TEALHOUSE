@@ -13,6 +13,11 @@ import { Alert, AlertDescription } from '../components/ui/alert';
 import { AdminLayout } from '../components/AdminLayout';
 import { exportCsv } from '../lib/csv';
 import {
+  FULFILLMENT_LABELS,
+  defaultShipEstimate,
+  type FulfillmentType,
+} from '../config/fulfillment';
+import {
   CATEGORIES,
   slugify,
   CATEGORY_URL_SEGMENT,
@@ -62,6 +67,9 @@ export function AdminProducts() {
   // Multi-part sizing. Empty means the product uses the single size row.
   const [sizeGroups, setSizeGroups] = useState<SizeGroup[]>([]);
   const [sizeScale, setSizeScale] = useState<string>('footwear-eu');
+  const [fulfillmentType, setFulfillmentType] = useState<FulfillmentType>('in_stock');
+  const [retainerAmount, setRetainerAmount] = useState('');
+  const [preorderShipsOn, setPreorderShipsOn] = useState('');
   const [isBestseller, setIsBestseller] = useState(false);
   const [slug, setSlug] = useState('');
   const [metaTitle, setMetaTitle] = useState('');
@@ -268,7 +276,14 @@ export function AdminProducts() {
           meta_description: metaDescription.trim() || null,
           image_alt: imageAlt.trim() || null,
           size_groups: sizeGroups,
-          size_scale: sizeScale
+          size_scale: sizeScale,
+          fulfillment_type: fulfillmentType,
+          retainer_amount:
+            fulfillmentType === 'made_to_order' && retainerAmount
+              ? parseFloat(retainerAmount)
+              : null,
+          preorder_ships_on:
+            fulfillmentType === 'pre_order' && preorderShipsOn ? preorderShipsOn : null
         })
         .select()
         .single();
@@ -402,6 +417,9 @@ export function AdminProducts() {
     setStock({});
     setSizeGroups([]);
     setSizeScale('footwear-eu');
+    setFulfillmentType('in_stock');
+    setRetainerAmount('');
+    setPreorderShipsOn('');
     setIsBestseller(false);
     setSlug('');
     setMetaTitle('');
@@ -431,6 +449,9 @@ export function AdminProducts() {
     setStock(product.stock ?? {});
     setSizeGroups(product.size_groups ?? []);
     setSizeScale(product.size_scale ?? 'footwear-eu');
+    setFulfillmentType((product.fulfillment_type as FulfillmentType) ?? 'in_stock');
+    setRetainerAmount(product.retainer_amount ? String(product.retainer_amount) : '');
+    setPreorderShipsOn(product.preorder_ships_on ?? '');
     setIsBestseller(product.is_bestseller ?? false);
     setSlug(product.slug ?? '');
     setMetaTitle(product.meta_title ?? '');
@@ -553,6 +574,13 @@ export function AdminProducts() {
         image_alt: imageAlt.trim() || null,
         size_groups: sizeGroups,
         size_scale: sizeScale,
+        fulfillment_type: fulfillmentType,
+        retainer_amount:
+          fulfillmentType === 'made_to_order' && retainerAmount
+            ? parseFloat(retainerAmount)
+            : null,
+        preorder_ships_on:
+          fulfillmentType === 'pre_order' && preorderShipsOn ? preorderShipsOn : null,
         updated_at: new Date().toISOString()
       };
 
@@ -1019,7 +1047,7 @@ export function AdminProducts() {
               </div>
 
               {/* Sizes */}
-              {sizeGroups.length === 0 && !selectedCategories.includes('accessories') && (
+              {fulfillmentType !== 'made_to_order' && sizeGroups.length === 0 && !selectedCategories.includes('accessories') && (
                 <div className="space-y-2">
                   <Label>Available Sizes</Label>
                   <div className="grid grid-cols-6 gap-2">
@@ -1078,6 +1106,74 @@ export function AdminProducts() {
                 </p>
               </div>
 
+
+              {/* How this piece is sold. In stock behaves as before. */}
+              <div className="border border-neutral-200 p-4">
+                <p className="text-xs uppercase tracking-wider text-neutral-500 mb-4">
+                  How this is sold
+                </p>
+
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {(Object.keys(FULFILLMENT_LABELS) as FulfillmentType[]).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => {
+                        setFulfillmentType(type);
+                        if (type === 'pre_order' && !preorderShipsOn) {
+                          setPreorderShipsOn(defaultShipEstimate());
+                        }
+                      }}
+                      className={`px-4 py-2 text-xs uppercase tracking-wider transition-colors ${
+                        fulfillmentType === type
+                          ? 'bg-[#008080] text-white'
+                          : 'border border-neutral-200 text-neutral-600 hover:border-black'
+                      }`}
+                    >
+                      {FULFILLMENT_LABELS[type]}
+                    </button>
+                  ))}
+                </div>
+
+                {fulfillmentType === 'pre_order' && (
+                  <div>
+                    <label className="block text-sm mb-2">Estimated ship date</label>
+                    <input
+                      type="date"
+                      value={preorderShipsOn}
+                      onChange={(e) => setPreorderShipsOn(e.target.value)}
+                      className="px-3 py-2 border border-neutral-200 text-sm"
+                    />
+                    <p className="text-xs text-neutral-500 mt-2">
+                      Defaults to six months out. Shown to the customer as a month
+                      and year, labelled as an estimate. Stock is not checked, so
+                      a pre-order can be bought past zero.
+                    </p>
+                  </div>
+                )}
+
+                {fulfillmentType === 'made_to_order' && (
+                  <div>
+                    <label className="block text-sm mb-2">Retainer taken at checkout</label>
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={retainerAmount}
+                      onChange={(e) => setRetainerAmount(e.target.value)}
+                      placeholder="500.00"
+                      className="w-40 px-3 py-2 border border-neutral-200 text-sm"
+                    />
+                    <p className="text-xs text-neutral-500 mt-2">
+                      This is what PayPal charges, not the price above. It counts
+                      toward the final price, which you invoice once the
+                      specification is agreed. The customer gets a specifications
+                      box and no size picker. Leave this blank and the piece
+                      cannot be ordered.
+                    </p>
+                  </div>
+                )}
+              </div>
 
               {/* Multi-part sizing. Leave this empty and the product uses the
                   single size row above. Add parts and the customer picks a
@@ -1596,7 +1692,7 @@ export function AdminProducts() {
               </div>
 
               {/* Sizes */}
-              {sizeGroups.length === 0 && !selectedCategories.includes('accessories') && (
+              {fulfillmentType !== 'made_to_order' && sizeGroups.length === 0 && !selectedCategories.includes('accessories') && (
                 <div className="space-y-2">
                   <Label>Available Sizes</Label>
                   <div className="grid grid-cols-6 gap-2">
@@ -1655,6 +1751,74 @@ export function AdminProducts() {
                 </p>
               </div>
 
+
+              {/* How this piece is sold. In stock behaves as before. */}
+              <div className="border border-neutral-200 p-4">
+                <p className="text-xs uppercase tracking-wider text-neutral-500 mb-4">
+                  How this is sold
+                </p>
+
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {(Object.keys(FULFILLMENT_LABELS) as FulfillmentType[]).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => {
+                        setFulfillmentType(type);
+                        if (type === 'pre_order' && !preorderShipsOn) {
+                          setPreorderShipsOn(defaultShipEstimate());
+                        }
+                      }}
+                      className={`px-4 py-2 text-xs uppercase tracking-wider transition-colors ${
+                        fulfillmentType === type
+                          ? 'bg-[#008080] text-white'
+                          : 'border border-neutral-200 text-neutral-600 hover:border-black'
+                      }`}
+                    >
+                      {FULFILLMENT_LABELS[type]}
+                    </button>
+                  ))}
+                </div>
+
+                {fulfillmentType === 'pre_order' && (
+                  <div>
+                    <label className="block text-sm mb-2">Estimated ship date</label>
+                    <input
+                      type="date"
+                      value={preorderShipsOn}
+                      onChange={(e) => setPreorderShipsOn(e.target.value)}
+                      className="px-3 py-2 border border-neutral-200 text-sm"
+                    />
+                    <p className="text-xs text-neutral-500 mt-2">
+                      Defaults to six months out. Shown to the customer as a month
+                      and year, labelled as an estimate. Stock is not checked, so
+                      a pre-order can be bought past zero.
+                    </p>
+                  </div>
+                )}
+
+                {fulfillmentType === 'made_to_order' && (
+                  <div>
+                    <label className="block text-sm mb-2">Retainer taken at checkout</label>
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={retainerAmount}
+                      onChange={(e) => setRetainerAmount(e.target.value)}
+                      placeholder="500.00"
+                      className="w-40 px-3 py-2 border border-neutral-200 text-sm"
+                    />
+                    <p className="text-xs text-neutral-500 mt-2">
+                      This is what PayPal charges, not the price above. It counts
+                      toward the final price, which you invoice once the
+                      specification is agreed. The customer gets a specifications
+                      box and no size picker. Leave this blank and the piece
+                      cannot be ordered.
+                    </p>
+                  </div>
+                )}
+              </div>
 
               {/* Multi-part sizing. Leave this empty and the product uses the
                   single size row above. Add parts and the customer picks a

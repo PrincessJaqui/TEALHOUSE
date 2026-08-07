@@ -55,7 +55,7 @@ export async function priceCart({ items, shippingMethod = 'standard', region = '
 
   const { data: products, error } = await supabase
     .from('products')
-    .select('id, name, price, stock, sizes, is_published, image, images')
+    .select('id, name, price, stock, sizes, is_published, image, images, fulfillment_type, retainer_amount')
     .in('id', ids);
 
   if (error) throw new Error(`Could not load products: ${error.message}`);
@@ -71,6 +71,17 @@ export async function priceCart({ items, shippingMethod = 'standard', region = '
 
     const quantity = Math.max(1, Math.floor(Number(item.quantity) || 1));
     const stock = product.stock ?? {};
+    const fulfillment = product.fulfillment_type || 'in_stock';
+    const bespoke = fulfillment === 'made_to_order';
+
+    // A bespoke piece is charged at its retainer, not its price, because the
+    // final price is not known until the specification is agreed. The
+    // retainer is read from the product, never from the browser.
+    const unitPrice = bespoke ? Number(product.retainer_amount ?? 0) : Number(product.price);
+
+    if (bespoke && unitPrice <= 0) {
+      throw new Error(`${product.name} has no retainer set and cannot be ordered`);
+    }
 
     // A multi-part product, a bikini for example, holds stock per piece, so
     // every part is checked separately against its own count.
@@ -87,18 +98,20 @@ export async function priceCart({ items, shippingMethod = 'standard', region = '
             : String(item.size),
         ];
 
-    for (const key of stockKeys) {
-      const available = Number(stock[key] ?? 0);
-      if (available < quantity) {
-        throw new Error(
-          key === 'default'
-            ? `${product.name} is sold out`
-            : `${product.name} (${key.replace(':', ' ')}) has only ${available} left`
-        );
+    // Pre-order sells past zero, and a bespoke piece has no stock at all.
+    if (fulfillment === 'in_stock') {
+      for (const key of stockKeys) {
+        const available = Number(stock[key] ?? 0);
+        if (available < quantity) {
+          throw new Error(
+            key === 'default'
+              ? `${product.name} is sold out`
+              : `${product.name} (${key.replace(':', ' ')}) has only ${available} left`
+          );
+        }
       }
     }
 
-    const unitPrice = Number(product.price);
     subtotal += unitPrice * quantity;
 
     lines.push({
@@ -109,6 +122,10 @@ export async function priceCart({ items, shippingMethod = 'standard', region = '
       size: selection ? null : stockKeys[0] === 'default' ? null : item.size,
       sizes: selection,
       image: product.image || product.images?.[0] || null,
+      fulfillment_type: fulfillment,
+      is_retainer: bespoke,
+      list_price: bespoke ? Number(product.price) : null,
+      notes: typeof item.notes === 'string' ? item.notes.slice(0, 2000) : null,
     });
   }
 
@@ -118,5 +135,15 @@ export async function priceCart({ items, shippingMethod = 'standard', region = '
   const tax = taxFor(subtotal, state);
   const total = subtotal + shippingCost + tax;
 
-  return { lines, subtotal, shippingCost, tax, total, shippingMethod: method };
+  const hasBespoke = lines.some((line) => line.is_retainer);
+
+  return {
+    lines,
+    subtotal,
+    shippingCost,
+    tax,
+    total,
+    shippingMethod: method,
+    hasBespoke,
+  };
 }

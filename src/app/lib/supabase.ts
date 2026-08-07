@@ -49,6 +49,12 @@ export interface DbProduct {
   size_groups?: Array<{ label: string; scale?: string; sizes: string[] }>;
   size_scale?: string;
   size_labels?: string[];
+  /** in_stock, pre_order or made_to_order. Absent means in_stock. */
+  fulfillment_type?: string;
+  /** Fixed retainer charged for a bespoke piece, credited to the final price. */
+  retainer_amount?: number | null;
+  /** Estimated only, and the storefront says so. */
+  preorder_ships_on?: string | null;
 }
 
 // Database order type

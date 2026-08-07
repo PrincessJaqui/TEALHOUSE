@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
 import { shippingCostFor, formatPrice, taxFor, SHIPPING } from '../config/store';
 import { describeSelection } from '../config/taxonomy';
+import { isBespoke, unitChargeFor, BESPOKE_COPY } from '../config/fulfillment';
 import { PayPalCheckout } from '../components/PayPalCheckout';
 
 interface CheckoutProps {
@@ -52,7 +53,7 @@ export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
   });
 
   const subtotal = items.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
+    (sum, item) => sum + unitChargeFor(item.product) * item.quantity,
     0
   );
 
@@ -616,6 +617,20 @@ export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
                   <div className="mb-12">
                     <h2 className="font-['Tinos'] text-2xl mb-6">3. Payment</h2>
 
+                    {/* Repeated here deliberately. A customer should read the
+                        retainer terms immediately before paying, not only on
+                        the product page they may have left minutes ago. */}
+                    {items.some((item) => isBespoke(item.product)) && (
+                      <div className="border border-[#008080] p-5 mb-6">
+                        <p className="text-xs uppercase tracking-wider text-[#008080] mb-3">
+                          Your bespoke request
+                        </p>
+                        <p className="text-sm text-gray-700 leading-relaxed">
+                          {BESPOKE_COPY.beforeCheckout}
+                        </p>
+                      </div>
+                    )}
+
                     <PayPalCheckout
                       items={items}
                       shippingMethod={shippingMethod}
@@ -625,9 +640,9 @@ export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
                       onSuccess={(newOrderId) => {
                         onOrderPlaced?.();
                         toast.success('Payment received. Thank you.');
-                        navigate(isRegistered ? '/customer-account' : '/', {
-                          state: { orderId: newOrderId },
-                        });
+                        // A real confirmation page, rather than dropping a
+                        // guest on the homepage with nothing to read.
+                        navigate(`/order/${newOrderId}`);
                       }}
                     />
 

@@ -11,6 +11,15 @@ import {
   availableGroupSizes,
   isGroupedSoldOut,
 } from '../config/taxonomy';
+import {
+  isBespoke,
+  isPreOrder,
+  tracksStock,
+  unitChargeFor,
+  formatShipEstimate,
+  BESPOKE_COPY,
+  PREORDER_COPY,
+} from '../config/fulfillment';
 import { Seo, productJsonLd } from '../components/Seo';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Heart, ShoppingCart, Info } from 'lucide-react';
@@ -23,7 +32,8 @@ interface ProductDetailProps {
   onAddToCart: (
     product: Product,
     size?: string,
-    sizes?: Record<string, string>
+    sizes?: Record<string, string>,
+    notes?: string
   ) => void;
   onAddToWishlist: (product: Product) => void;
   isInWishlist: (productId: number) => boolean;
@@ -37,6 +47,8 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
   const [selectedSize, setSelectedSize] = useState<string | undefined>();
   // Multi-part products, for example { Top: "S", Bottom: "M" }
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
+  // A bespoke piece is specified in words, not picked off a shelf.
+  const [notes, setNotes] = useState('');
   const [selectedImage, setSelectedImage] = useState(0);
 
   useEffect(() => {
@@ -106,6 +118,18 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
   const inWishlist = isInWishlist(product.id);
 
   const handleAddToCart = () => {
+    // A bespoke piece has nothing to check against stock, and the retainer
+    // is what gets charged. What matters is that we know what they want.
+    if (isBespoke(product)) {
+      if (!notes.trim()) {
+        toast.error('Please tell us what you have in mind');
+        return;
+      }
+      onAddToCart(product, undefined, undefined, notes.trim());
+      toast.success('Added to bag');
+      return;
+    }
+
     if (hasSizeGroups(product)) {
       // Every part needs a choice, and each is checked against its own
       // stock, because stock is held per piece.
@@ -130,7 +154,7 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
       toast.error('Please select a size');
       return;
     }
-    if (stockForSize(product, selectedSize) <= 0) {
+    if (tracksStock(product) && stockForSize(product, selectedSize) <= 0) {
       toast.error('That size is sold out');
       return;
     }
@@ -226,15 +250,64 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
           {/* Product Info */}
           <div>
             <h1 className="text-4xl mb-4">{product.name}</h1>
-            <p className="text-3xl mb-6">${product.price.toLocaleString()}</p>
+            {isBespoke(product) ? (
+              <div className="mb-6">
+                <p className="text-3xl">
+                  {formatPrice(unitChargeFor(product))}
+                  <span className="text-sm text-gray-600 ml-2 align-middle">retainer</span>
+                </p>
+                <p className="text-sm text-gray-600 mt-2">
+                  Credited toward your final price, which we confirm once your
+                  specifications are agreed.
+                </p>
+              </div>
+            ) : (
+              <div className="mb-6">
+                <p className="text-3xl">{formatPrice(Number(product.price))}</p>
+                {isPreOrder(product) && formatShipEstimate(product.preorder_ships_on) && (
+                  <p className="text-sm text-gray-600 mt-2">
+                    Estimated to ship {formatShipEstimate(product.preorder_ships_on)}.{' '}
+                    {PREORDER_COPY.disclaimer}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {(isBespoke(product) || isPreOrder(product)) && (
+              <p className="inline-block mb-6 px-3 py-1 border border-[#008080] text-[#008080] text-xs uppercase tracking-wider">
+                {isBespoke(product) ? 'Made to order' : 'Pre-order'}
+              </p>
+            )}
 
             <p className="text-gray-700 mb-8 leading-relaxed">{product.description}</p>
 
             {/* Size Selection */}
+            {isBespoke(product) && (
+              <div className="mb-6">
+                <label htmlFor="bespoke-notes" className="block font-medium mb-2">
+                  {BESPOKE_COPY.notesLabel}
+                </label>
+                <p className="text-sm text-gray-600 mb-3">{BESPOKE_COPY.notesHelp}</p>
+                <textarea
+                  id="bespoke-notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={5}
+                  className="w-full border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:border-[#008080] transition-colors"
+                />
+
+                <div className="border border-gray-200 bg-gray-50 p-4 mt-4">
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    {BESPOKE_COPY.beforeCheckout}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Multi-part sizing. A bikini gets a Top picker and a Bottom
                 picker, each with its own stock, because the pieces are
                 stocked separately rather than as fixed pairs. */}
-            {hasSizeGroups(product) && (
+            {!isBespoke(product) && hasSizeGroups(product) && (
               <div className="mb-6 space-y-6">
                 {(product.size_groups ?? []).map((group) => {
                   const chosen = selectedSizes[group.label];
@@ -292,7 +365,7 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
               </div>
             )}
 
-            {!hasSizeGroups(product) && product.sizes && product.sizes.length > 0 && (
+            {!isBespoke(product) && !hasSizeGroups(product) && product.sizes && product.sizes.length > 0 && (
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-3">
                   <label className="block font-medium">Size (EU)</label>
@@ -337,13 +410,18 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
             <div className="flex gap-4 mb-8">
               <Button
                 onClick={handleAddToCart}
-                disabled={hasSizeGroups(product) ? isGroupedSoldOut(product) : isSoldOut(product)}
+                disabled={tracksStock(product) && (hasSizeGroups(product) ? isGroupedSoldOut(product) : isSoldOut(product))}
                 className="flex-1 bg-[#008080] hover:bg-[#006666] text-white h-14 text-lg disabled:opacity-50"
               >
                 <ShoppingCart className="h-5 w-5 mr-2" />
-                {(hasSizeGroups(product) ? isGroupedSoldOut(product) : isSoldOut(product))
-                  ? 'Sold Out'
-                  : 'Add to Bag'}
+                {isBespoke(product)
+                  ? 'Begin your commission'
+                  : tracksStock(product) &&
+                      (hasSizeGroups(product) ? isGroupedSoldOut(product) : isSoldOut(product))
+                    ? 'Sold Out'
+                    : isPreOrder(product)
+                      ? 'Pre-order'
+                      : 'Add to Bag'}
               </Button>
               <Button
                 variant="outline"

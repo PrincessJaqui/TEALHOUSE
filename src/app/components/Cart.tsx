@@ -1,6 +1,8 @@
 import { ShoppingCart, X, Minus, Plus } from 'lucide-react';
 import { CartItem } from '../App';
 import { describeSelection } from '../config/taxonomy';
+import { isBespoke, unitChargeFor } from '../config/fulfillment';
+import { formatPrice } from '../config/store';
 import { Button } from './ui/button';
 import { getPrimaryProductImage } from '../lib/default-image';
 import { useNavigate } from 'react-router-dom';
@@ -13,12 +15,14 @@ interface CartProps {
     productId: number,
     quantity: number,
     size?: string,
-    sizes?: Record<string, string>
+    sizes?: Record<string, string>,
+    notes?: string
   ) => void;
   onRemoveItem: (
     productId: number,
     size?: string,
-    sizes?: Record<string, string>
+    sizes?: Record<string, string>,
+    notes?: string
   ) => void;
 }
 
@@ -28,7 +32,7 @@ export function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem }:
   if (!isOpen) return null;
 
   const subtotal = items.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
+    (sum, item) => sum + unitChargeFor(item.product) * item.quantity,
     0
   );
 
@@ -91,7 +95,7 @@ export function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem }:
                         )}
                       </div>
                       <button
-                        onClick={() => onRemoveItem(item.product.id, item.size, item.sizes)}
+                        onClick={() => onRemoveItem(item.product.id, item.size, item.sizes, item.notes)}
                         className="text-[#666666] hover:text-black"
                         aria-label="Remove item"
                       >
@@ -102,7 +106,7 @@ export function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem }:
                     <div className="mt-auto flex items-center justify-between">
                       <div className="flex items-center gap-3 border border-gray-300 ">
                         <button
-                          onClick={() => onUpdateQuantity(item.product.id, item.quantity - 1, item.size, item.sizes)}
+                          onClick={() => onUpdateQuantity(item.product.id, item.quantity - 1, item.size, item.sizes, item.notes)}
                           className="p-2 hover:bg-gray-100 transition-colors"
                           aria-label="Decrease quantity"
                         >
@@ -110,14 +114,23 @@ export function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem }:
                         </button>
                         <span className="text-sm w-8 text-center">{item.quantity}</span>
                         <button
-                          onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1, item.size, item.sizes)}
+                          onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1, item.size, item.sizes, item.notes)}
                           className="p-2 hover:bg-gray-100 transition-colors"
                           aria-label="Increase quantity"
                         >
                           <Plus className="w-3 h-3" />
                         </button>
                       </div>
-                      <p className="text-[#666666]">${(item.product.price * item.quantity).toLocaleString()}</p>
+                      <div className="text-right">
+                        <p className="text-[#666666]">
+                          {formatPrice(unitChargeFor(item.product) * item.quantity)}
+                        </p>
+                        {isBespoke(item.product) && (
+                          <p className="text-xs text-[#008080] uppercase tracking-wider">
+                            Retainer
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
