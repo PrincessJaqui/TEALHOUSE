@@ -214,13 +214,31 @@ function RatioField({
   options: Array<{ label: string; value: string }>;
   onChange: (value: string) => void;
 }) {
+  const current = value ?? options[0].value;
+  const isPreset = options.some((option) => option.value === current);
+
+  // A saved value that is not one of the presets is a custom ratio, so the
+  // custom fields stay open on it rather than the choice being lost.
+  const [custom, setCustom] = useState(!isPreset && current !== 'full');
+
+  const [w, h] = current.split('/').map((part) => parseFloat(part.trim()) || 0);
+
   return (
     <div>
       <label className="block text-sm mb-1">{label}</label>
       {help && <p className="text-xs text-neutral-500 mb-2">{help}</p>}
+
       <select
-        value={value ?? options[0].value}
-        onChange={(e) => onChange(e.target.value)}
+        value={custom ? '__custom__' : current}
+        onChange={(e) => {
+          if (e.target.value === '__custom__') {
+            setCustom(true);
+            if (!current.includes('/')) onChange('16 / 9');
+            return;
+          }
+          setCustom(false);
+          onChange(e.target.value);
+        }}
         className="w-full px-3 py-2 border border-neutral-200 text-sm"
       >
         {options.map((option) => (
@@ -228,7 +246,35 @@ function RatioField({
             {option.label}
           </option>
         ))}
+        <option value="__custom__">Custom, set your own</option>
       </select>
+
+      {custom && (
+        <div className="flex items-center gap-2 mt-3">
+          <input
+            type="number"
+            min={1}
+            step="0.1"
+            value={w || ''}
+            onChange={(e) => onChange(`${e.target.value || 1} / ${h || 1}`)}
+            className="w-20 px-3 py-2 border border-neutral-200 text-sm"
+            aria-label="Width"
+          />
+          <span className="text-neutral-400">by</span>
+          <input
+            type="number"
+            min={1}
+            step="0.1"
+            value={h || ''}
+            onChange={(e) => onChange(`${w || 1} / ${e.target.value || 1}`)}
+            className="w-20 px-3 py-2 border border-neutral-200 text-sm"
+            aria-label="Height"
+          />
+          <span className="text-xs text-neutral-500">
+            {w && h ? `${(w / h).toFixed(2)} to 1` : ''}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

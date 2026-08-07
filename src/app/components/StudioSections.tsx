@@ -141,7 +141,7 @@ export function StudioHero({ content }: { content: Record<string, any> }) {
 
         {(content.headline || content.subheadline || content.link_label) && (
           <div
-            className={`absolute bottom-0 p-8 md:p-14 text-white w-full md:w-1/3 ${
+            className={`absolute bottom-0 p-8 md:p-14 text-white w-1/2 md:w-1/3 ${
               textPosition === 'right'
                 ? 'right-0 md:text-right'
                 : textPosition === 'center'

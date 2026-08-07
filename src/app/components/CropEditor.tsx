@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState } from 'react';
 import { ZoomIn, ZoomOut, RotateCcw, Move } from 'lucide-react';
 
 /**
@@ -89,45 +89,51 @@ export function CropEditor({ src, isVideo, ratio, value, onChange }: CropEditorP
   const setZoom = (next: number) =>
     onChange({ ...value, zoom: Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, next)) });
 
-  useEffect(() => {
-    if (!dragging) return;
+  /**
+   * Drag handling.
+   *
+   * The element captures the pointer, so every move and release comes back
+   * here even if the cursor leaves the frame. Latest props are held in a ref
+   * so the handler never reads a stale value, and nothing is subscribed or
+   * unsubscribed mid-drag. Mouse, trackpad, pen and touch all arrive through
+   * the same events.
+   */
+  const latest = useRef({ value, zoom, onChange, room });
+  latest.current = { value, zoom, onChange, room };
 
-    const move = (event: PointerEvent) => {
-      const box = frame.current?.getBoundingClientRect();
-      const from = start.current;
-      if (!box || !from) return;
-
-      // Dragging the full width of the frame moves the crop across its whole
-      // range. Divided by zoom so a tighter crop does not fly around.
-      const dx = ((event.clientX - from.x) / box.width) * 100;
-      const dy = ((event.clientY - from.y) / box.height) * 100;
-
-      // Only move on an axis that actually has somewhere to go.
-      onChange({
-        ...value,
-        focal: `${clamp(room.x ? from.fx - dx / zoom : from.fx)}% ${clamp(
-          room.y ? from.fy - dy / zoom : from.fy
-        )}%`,
-      });
-    };
-
-    const end = () => setDragging(false);
-
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', end);
-    window.addEventListener('pointercancel', end);
-
-    return () => {
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', end);
-      window.removeEventListener('pointercancel', end);
-    };
-  }, [dragging, value, zoom, onChange]);
-
-  const beginDrag = (event: React.PointerEvent) => {
+  const beginDrag = (event: React.PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
     start.current = { x: event.clientX, y: event.clientY, fx, fy };
     setDragging(true);
+  };
+
+  const onDragMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const from = start.current;
+    const box = frame.current?.getBoundingClientRect();
+    if (!from || !box) return;
+
+    const { value: v, zoom: z, onChange: change, room: r } = latest.current;
+
+    // Dragging the full width of the frame moves the crop across its whole
+    // range, divided by zoom so a tighter crop does not fly around.
+    const dx = ((event.clientX - from.x) / box.width) * 100;
+    const dy = ((event.clientY - from.y) / box.height) * 100;
+
+    change({
+      ...v,
+      focal: `${clamp(r.x ? from.fx - dx / z : from.fx)}% ${clamp(
+        r.y ? from.fy - dy / z : from.fy
+      )}%`,
+    });
+  };
+
+  const endDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    start.current = null;
+    setDragging(false);
   };
 
   const media = isVideo ? (
@@ -167,6 +173,9 @@ export function CropEditor({ src, isVideo, ratio, value, onChange }: CropEditorP
       <div
         ref={frame}
         onPointerDown={beginDrag}
+        onPointerMove={(e) => dragging && onDragMove(e)}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
         className={`relative w-full overflow-hidden bg-neutral-100 border border-neutral-200 touch-none ${
           dragging ? 'cursor-grabbing' : 'cursor-grab'
         }`}
