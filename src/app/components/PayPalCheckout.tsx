@@ -68,6 +68,7 @@ export function PayPalCheckout({
             sizes: item.sizes ?? null,
             color: item.color ?? null,
             notes: item.notes ?? null,
+            measurements: item.measurements ?? null,
           })),
         }),
       });
@@ -100,6 +101,7 @@ export function PayPalCheckout({
                 sizes: item.sizes ?? null,
                 color: item.color ?? null,
                 notes: item.notes ?? null,
+                measurements: item.measurements ?? null,
               })),
             }),
           });

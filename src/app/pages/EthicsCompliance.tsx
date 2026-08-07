@@ -1,84 +1,79 @@
 import { CONTACT } from '../config/contact';
+import { Seo } from '../components/Seo';
 
+/**
+ * Ethics & Conscious Design.
+ *
+ * Jaqui's own wording. The Sustainability page was removed and its ground is
+ * covered here, so there is one statement of position rather than two that
+ * could drift apart.
+ */
 export function EthicsCompliance() {
   return (
     <div className="min-h-screen bg-white">
+      <Seo
+        title="Ethics & Conscious Design"
+        description="TEALHOUSE is 100% vegan across every creation, with no animal components and an absolute ban on animal testing."
+        path="/ethics-compliance"
+      />
+
       <div className="max-w-[900px] mx-auto px-5 py-16">
-        <h1 className="text-center mb-12 uppercase tracking-wider">Ethics & Compliance</h1>
-        
-        <div className="space-y-8">
-          <section>
-            <h2 className="mb-4">Our Commitment</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              At TEALHOUSE, ethics are not an afterthought—they are the foundation of everything we do. We are committed to 
-              the highest standards of business conduct, ensuring that our pursuit of luxury never comes at the expense of 
-              people, animals, or the planet.
-            </p>
-          </section>
+        <h1 className="text-center mb-12 uppercase tracking-wider">
+          Ethics &amp; Conscious Design
+        </h1>
 
+        <div className="space-y-10">
           <section>
-            <h2 className="mb-4">Labor Standards</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              We maintain strict labor standards throughout our supply chain:
-            </p>
-            <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
-              <li>Fair wages above legal minimums for all workers</li>
-              <li>Safe working conditions with regular third-party audits</li>
-              <li>No child labor or forced labor of any kind</li>
-              <li>Freedom of association and collective bargaining rights</li>
-              <li>Regular working hours with paid overtime</li>
-              <li>Comprehensive health and safety training</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="mb-4">Animal Welfare</h2>
+            <h2 className="mb-4">Our Philosophy</h2>
             <p className="text-gray-700 leading-relaxed">
-              TEALHOUSE is 100% vegan and cruelty-free. We use no animal-derived materials of any kind and do not test on animals. 
-              We are certified by PETA and the Vegan Society, and we actively support animal welfare organizations worldwide.
+              TEALHOUSE rests on a clear conviction: true luxury is a practice of
+              care toward our planet and its cohabitants. Every piece is defined
+              by clean lines, masterful technique, and complete compassion. By
+              eliminating animal-derived materials entirely, we prove that
+              unyielding elegance requires no sacrifice.
             </p>
           </section>
 
           <section>
-            <h2 className="mb-4">Environmental Responsibility</h2>
+            <h2 className="mb-4">Uncompromisingly Cruelty-Free</h2>
+            <p className="text-gray-700 leading-relaxed mb-6">
+              TEALHOUSE remains 100% vegan across every creation and collection.
+              We use zero animal components and enforce an absolute ban on animal
+              testing throughout every phase of development.
+            </p>
+
+            <div className="space-y-4">
+              <p className="text-gray-700 leading-relaxed">
+                <strong>Footwear Architecture.</strong> Engineered with advanced,
+                non-animal leather alternatives to deliver exceptional structural
+                integrity, refined grain finishes, and enduring wear.
+              </p>
+              <p className="text-gray-700 leading-relaxed">
+                <strong>Swimwear Engineering.</strong> Crafted from premier
+                synthetic textiles chosen for maximum recovery, element
+                resistance, and precise contouring. We intentionally exclude
+                plant-based fibers from our swimwear to guarantee flawless fit,
+                longevity, and shape retention in the water.
+              </p>
+            </div>
+          </section>
+
+          <section>
+            <h2 className="mb-4">Integrity &amp; Confidential Reporting</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              We are committed to minimizing our environmental impact:
+              We maintain an exacting standard of accountability across our
+              corporate culture and global supply chain. We invite our patrons,
+              artisans, and partners to share any observations regarding
+              operational conduct or ethical standards.
             </p>
-            <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
-              <li>Carbon-neutral production and shipping</li>
-              <li>100% renewable energy in our facilities</li>
-              <li>Zero-waste manufacturing processes</li>
-              <li>Recyclable and biodegradable packaging</li>
-              <li>Water conservation and pollution prevention</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="mb-4">Supply Chain Transparency</h2>
-            <p className="text-gray-700 leading-relaxed">
-              We maintain complete transparency in our supply chain. Every material is traceable to its source, and we conduct 
-              regular audits of all partners and suppliers. Our annual Transparency Report details our suppliers, certifications, 
-              and continuous improvement initiatives.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="mb-4">Certifications</h2>
-            <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
-              <li>PETA-Approved Vegan</li>
-              <li>Vegan Society Certified</li>
-              <li>B Corporation Certified</li>
-              <li>Fair Trade Certified™</li>
-              <li>Climate Neutral Certified</li>
-              <li>GOTS (Global Organic Textile Standard)</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="mb-4">Reporting Concerns</h2>
-            <p className="text-gray-700 leading-relaxed">
-              We encourage anyone who observes or suspects unethical conduct in our operations or supply chain to report it. 
-              All reports are treated confidentially and investigated thoroughly. Contact: {CONTACT.ethics}
+            <p className="text-gray-700">
+              Confidential Inquiries &amp; Compliance:{' '}
+              <a
+                href={`mailto:${CONTACT.ethics}`}
+                className="underline hover:text-black"
+              >
+                {CONTACT.ethics}
+              </a>
             </p>
           </section>
         </div>

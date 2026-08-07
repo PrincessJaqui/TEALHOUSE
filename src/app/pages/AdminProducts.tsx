@@ -16,6 +16,7 @@ import { useCatalogLists } from '../hooks/useCatalogLists';
 import {
   FULFILLMENT_LABELS,
   defaultShipEstimate,
+  MEASUREMENT_TYPES,
   type FulfillmentType,
 } from '../config/fulfillment';
 import {
@@ -92,6 +93,8 @@ export function AdminProducts() {
   }, [selectedCategories, catalog.scales]);
   const [retainerAmount, setRetainerAmount] = useState('');
   const [preorderShipsOn, setPreorderShipsOn] = useState('');
+  const [measurementFields, setMeasurementFields] = useState<string[]>([]);
+  const [leadTimeWeeks, setLeadTimeWeeks] = useState('');
   const [isBestseller, setIsBestseller] = useState(false);
   const [slug, setSlug] = useState('');
   const [metaTitle, setMetaTitle] = useState('');
@@ -301,7 +304,13 @@ export function AdminProducts() {
               ? parseFloat(retainerAmount)
               : null,
           preorder_ships_on:
-            fulfillmentType === 'pre_order' && preorderShipsOn ? preorderShipsOn : null
+            fulfillmentType === 'pre_order' && preorderShipsOn ? preorderShipsOn : null,
+          measurement_fields:
+            fulfillmentType === 'made_to_measure' ? measurementFields : [],
+          lead_time_weeks:
+            fulfillmentType === 'made_to_measure' && leadTimeWeeks
+              ? parseInt(leadTimeWeeks, 10)
+              : null
         })
         .select()
         .single();
@@ -453,6 +462,8 @@ export function AdminProducts() {
     setSelectedColors([]);
     setRetainerAmount('');
     setPreorderShipsOn('');
+    setMeasurementFields([]);
+    setLeadTimeWeeks('');
     setIsBestseller(false);
     setSlug('');
     setMetaTitle('');
@@ -486,6 +497,8 @@ export function AdminProducts() {
     setSelectedColors(product.colors ?? []);
     setRetainerAmount(product.retainer_amount ? String(product.retainer_amount) : '');
     setPreorderShipsOn(product.preorder_ships_on ?? '');
+    setMeasurementFields(product.measurement_fields ?? []);
+    setLeadTimeWeeks(product.lead_time_weeks ? String(product.lead_time_weeks) : '');
     setIsBestseller(product.is_bestseller ?? false);
     setSlug(product.slug ?? '');
     setMetaTitle(product.meta_title ?? '');
@@ -610,6 +623,12 @@ export function AdminProducts() {
             : null,
         preorder_ships_on:
           fulfillmentType === 'pre_order' && preorderShipsOn ? preorderShipsOn : null,
+        measurement_fields:
+          fulfillmentType === 'made_to_measure' ? measurementFields : [],
+        lead_time_weeks:
+          fulfillmentType === 'made_to_measure' && leadTimeWeeks
+            ? parseInt(leadTimeWeeks, 10)
+            : null,
         updated_at: new Date().toISOString()
       };
 
@@ -1124,13 +1143,13 @@ export function AdminProducts() {
                     </p>
                   )}
 
-                  <div className="grid grid-cols-6 gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {(activeScale?.sizes ?? []).map((size) => (
                       <button
                         key={size}
                         type="button"
                         onClick={() => toggleSize(size)}
-                        className={`px-3 py-2 border text-sm transition-colors ${
+                        className={`min-w-[3.5rem] px-3 py-2 border text-sm transition-colors ${
                           selectedSizes.includes(size)
                             ? 'bg-black text-white border-black'
                             : 'bg-white text-black border-neutral-200 hover:border-neutral-400'
@@ -1300,6 +1319,53 @@ export function AdminProducts() {
                       Defaults to six months out. Shown to the customer as a month
                       and year, labelled as an estimate. Stock is not checked, so
                       a pre-order can be bought past zero.
+                    </p>
+                  </div>
+                )}
+
+                {fulfillmentType === 'made_to_measure' && (
+                  <div>
+                    <label className="block text-sm mb-2">
+                      Measurements to ask the customer for
+                    </label>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {MEASUREMENT_TYPES.map((field) => (
+                        <button
+                          key={field}
+                          type="button"
+                          onClick={() =>
+                            setMeasurementFields((prev) =>
+                              prev.includes(field)
+                                ? prev.filter((f) => f !== field)
+                                : [...prev, field]
+                            )
+                          }
+                          className={`px-4 py-2 border text-sm transition-colors ${
+                            measurementFields.includes(field)
+                              ? 'bg-black text-white border-black'
+                              : 'bg-white text-black border-neutral-200 hover:border-neutral-400'
+                          }`}
+                        >
+                          {field}
+                        </button>
+                      ))}
+                    </div>
+
+                    <label className="block text-sm mb-2">Lead time in weeks</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={leadTimeWeeks}
+                      onChange={(e) => setLeadTimeWeeks(e.target.value)}
+                      placeholder="6"
+                      className="w-28 px-3 py-2 border border-neutral-200 text-sm"
+                    />
+
+                    <p className="text-xs text-neutral-500 mt-3">
+                      The customer picks each measurement from a dropdown in
+                      half-inch steps, with centimetres alongside. Nothing here
+                      touches stock, because the piece is cut to them. Charged at
+                      the price above, with no retainer.
                     </p>
                   </div>
                 )}
@@ -1946,13 +2012,13 @@ export function AdminProducts() {
                     </p>
                   )}
 
-                  <div className="grid grid-cols-6 gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {(activeScale?.sizes ?? []).map((size) => (
                       <button
                         key={size}
                         type="button"
                         onClick={() => toggleSize(size)}
-                        className={`px-3 py-2 border text-sm transition-colors ${
+                        className={`min-w-[3.5rem] px-3 py-2 border text-sm transition-colors ${
                           selectedSizes.includes(size)
                             ? 'bg-black text-white border-black'
                             : 'bg-white text-black border-neutral-200 hover:border-neutral-400'
@@ -2122,6 +2188,53 @@ export function AdminProducts() {
                       Defaults to six months out. Shown to the customer as a month
                       and year, labelled as an estimate. Stock is not checked, so
                       a pre-order can be bought past zero.
+                    </p>
+                  </div>
+                )}
+
+                {fulfillmentType === 'made_to_measure' && (
+                  <div>
+                    <label className="block text-sm mb-2">
+                      Measurements to ask the customer for
+                    </label>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {MEASUREMENT_TYPES.map((field) => (
+                        <button
+                          key={field}
+                          type="button"
+                          onClick={() =>
+                            setMeasurementFields((prev) =>
+                              prev.includes(field)
+                                ? prev.filter((f) => f !== field)
+                                : [...prev, field]
+                            )
+                          }
+                          className={`px-4 py-2 border text-sm transition-colors ${
+                            measurementFields.includes(field)
+                              ? 'bg-black text-white border-black'
+                              : 'bg-white text-black border-neutral-200 hover:border-neutral-400'
+                          }`}
+                        >
+                          {field}
+                        </button>
+                      ))}
+                    </div>
+
+                    <label className="block text-sm mb-2">Lead time in weeks</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={leadTimeWeeks}
+                      onChange={(e) => setLeadTimeWeeks(e.target.value)}
+                      placeholder="6"
+                      className="w-28 px-3 py-2 border border-neutral-200 text-sm"
+                    />
+
+                    <p className="text-xs text-neutral-500 mt-3">
+                      The customer picks each measurement from a dropdown in
+                      half-inch steps, with centimetres alongside. Nothing here
+                      touches stock, because the piece is cut to them. Charged at
+                      the price above, with no retainer.
                     </p>
                   </div>
                 )}

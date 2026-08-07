@@ -17,6 +17,9 @@ import {
 } from '../config/taxonomy';
 import {
   isBespoke,
+  isMadeToMeasure,
+  measurementOptions,
+  MADE_TO_MEASURE_COPY,
   isPreOrder,
   tracksStock,
   unitChargeFor,
@@ -38,7 +41,8 @@ interface ProductDetailProps {
     size?: string,
     sizes?: Record<string, string>,
     notes?: string,
-    color?: string
+    color?: string,
+    measurements?: Record<string, string>
   ) => void;
   onAddToWishlist: (product: Product) => void;
   isInWishlist: (productId: number) => boolean;
@@ -58,6 +62,9 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
   // Optional parts the customer has chosen to include. A bikini top can be
   // bought without its bottom when the part is not required.
   const [includedParts, setIncludedParts] = useState<string[]>([]);
+  // Made to measure. These are the customer's own figures, not sizes we
+  // stock, so nothing here touches inventory.
+  const [measurements, setMeasurements] = useState<Record<string, string>>({});
   const [selectedImage, setSelectedImage] = useState(0);
 
   useEffect(() => {
@@ -133,6 +140,29 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
   const inWishlist = isInWishlist(product.id);
 
   const handleAddToCart = () => {
+    // Made to measure: the piece and its price are known, but it is cut to
+    // the customer, so every measurement asked for must be given.
+    if (isMadeToMeasure(product)) {
+      const fields = product.measurement_fields ?? [];
+      for (const field of fields) {
+        if (!measurements[field]) {
+          toast.error(`Please choose your ${field.toLowerCase()} measurement`);
+          return;
+        }
+      }
+
+      onAddToCart(
+        product,
+        selectedSize,
+        undefined,
+        undefined,
+        selectedColor,
+        measurements
+      );
+      toast.success('Added to bag');
+      return;
+    }
+
     // A bespoke piece has nothing to check against stock, and the retainer
     // is what gets charged. What matters is that we know what they want.
     if (isBespoke(product)) {
@@ -309,9 +339,13 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
               </div>
             )}
 
-            {(isBespoke(product) || isPreOrder(product)) && (
+            {(isBespoke(product) || isPreOrder(product) || isMadeToMeasure(product)) && (
               <p className="inline-block mb-6 px-3 py-1 border border-[#008080] text-[#008080] text-xs uppercase tracking-wider">
-                {isBespoke(product) ? 'Made to order' : 'Pre-order'}
+                {isBespoke(product)
+                  ? 'Made to order'
+                  : isMadeToMeasure(product)
+                    ? 'Made to measure'
+                    : 'Pre-order'}
               </p>
             )}
 
@@ -339,6 +373,57 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                       {color}
                     </button>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Made to measure. Dropdowns rather than size buttons, because
+                these are the customer's own figures and carry no stock. */}
+            {isMadeToMeasure(product) && (product.measurement_fields ?? []).length > 0 && (
+              <div className="mb-6">
+                <label className="block font-medium mb-2">Your measurements</label>
+                <p className="text-sm text-gray-600 mb-4">
+                  {MADE_TO_MEASURE_COPY.intro}
+                </p>
+
+                <div className="space-y-4">
+                  {(product.measurement_fields ?? []).map((field) => (
+                    <div key={field}>
+                      <label
+                        htmlFor={`measure-${field}`}
+                        className="block text-sm mb-2"
+                      >
+                        {field}
+                      </label>
+                      <select
+                        id={`measure-${field}`}
+                        value={measurements[field] ?? ''}
+                        onChange={(e) =>
+                          setMeasurements((prev) => ({
+                            ...prev,
+                            [field]: e.target.value,
+                          }))
+                        }
+                        className="w-full border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:border-[#008080] transition-colors"
+                      >
+                        <option value="">Select your {field.toLowerCase()}</option>
+                        {measurementOptions().map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="border border-gray-200 bg-gray-50 p-4 mt-4 space-y-2">
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    {MADE_TO_MEASURE_COPY.leadTime(product.lead_time_weeks)}
+                  </p>
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    {MADE_TO_MEASURE_COPY.returns}
+                  </p>
                 </div>
               </div>
             )}
@@ -419,7 +504,7 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                         </Button>
                       </div>
 
-                      <div className="grid grid-cols-6 gap-2">
+                      <div className="flex flex-wrap gap-2">
                         {group.sizes.map((size) => {
                           const remaining = stockFor(product, {
                             color: selectedColor,
@@ -441,7 +526,7 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                                   [group.label]: size,
                                 }))
                               }
-                              className={`py-3 border text-center transition-all ${
+                              className={`min-w-[3.5rem] px-3 py-3 border text-center text-sm transition-all ${
                                 unavailable
                                   ? 'border-gray-200 text-gray-300 line-through cursor-not-allowed'
                                   : chosen === size
@@ -495,7 +580,7 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                     Size Guide
                   </Button>
                 </div>
-                <div className="grid grid-cols-6 gap-2">
+                <div className="flex flex-wrap gap-2">
                   {product.sizes.map((rawSize) => {
                     const size = String(rawSize);
                     const remaining = stockFor(product, {
@@ -509,7 +594,7 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                         onClick={() => !unavailable && setSelectedSize(size)}
                         disabled={unavailable}
                         title={unavailable ? 'Sold out' : `${remaining} available`}
-                        className={`py-3 border text-center transition-all ${
+                        className={`min-w-[3.5rem] px-3 py-3 border text-center text-sm transition-all ${
                           unavailable
                             ? 'border-gray-200 text-gray-300 line-through cursor-not-allowed'
                             : selectedSize === size
@@ -535,6 +620,8 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                 <ShoppingCart className="h-5 w-5 mr-2" />
                 {isBespoke(product)
                   ? 'Begin your commission'
+                  : isMadeToMeasure(product)
+                    ? 'Add to Bag'
                   : tracksStock(product) &&
                       (hasSizeGroups(product) ? isGroupedSoldOut(product) : isSoldOut(product))
                     ? 'Sold Out'

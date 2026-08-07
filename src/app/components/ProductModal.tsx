@@ -13,7 +13,8 @@ interface ProductModalProps {
     size?: string,
     sizes?: Record<string, string>,
     notes?: string,
-    color?: string
+    color?: string,
+    measurements?: Record<string, string>
   ) => void;
   onAddToWishlist: (product: Product) => void;
   isInWishlist: (productId: number) => boolean;

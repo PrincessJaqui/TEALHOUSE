@@ -1,6 +1,6 @@
 import { ShoppingCart, X, Minus, Plus } from 'lucide-react';
 import { CartItem } from '../App';
-import { describeSelection } from '../config/taxonomy';
+import { describeSelection, describeMeasurements } from '../config/taxonomy';
 import { isBespoke, unitChargeFor } from '../config/fulfillment';
 import { formatPrice } from '../config/store';
 import { Button } from './ui/button';
@@ -17,14 +17,16 @@ interface CartProps {
     size?: string,
     sizes?: Record<string, string>,
     notes?: string,
-    color?: string
+    color?: string,
+    measurements?: Record<string, string>
   ) => void;
   onRemoveItem: (
     productId: number,
     size?: string,
     sizes?: Record<string, string>,
     notes?: string,
-    color?: string
+    color?: string,
+    measurements?: Record<string, string>
   ) => void;
 }
 
@@ -75,7 +77,7 @@ export function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem }:
           ) : (
             <div className="space-y-6">
               {items.map((item, index) => (
-                <div key={`${item.product.id}-${item.size ?? ""}-${[item.color, describeSelection(item.sizes)].filter(Boolean).join(" / ")}-${index}`} className="flex gap-4">
+                <div key={`${item.product.id}-${item.size ?? ""}-${[item.color, describeSelection(item.sizes), describeMeasurements(item.measurements)].filter(Boolean).join(" / ")}-${index}`} className="flex gap-4">
                   <div className="w-24 h-28 bg-gray-100 flex-shrink-0">
                     <img
                       src={getPrimaryProductImage(item.product)}
@@ -90,14 +92,14 @@ export function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem }:
                         <h4 className="font-['Tinos'] mb-1">{item.product.name}</h4>
                         {item.sizes ? (
                           <p className="text-sm text-[#666666]">
-                            {[item.color, describeSelection(item.sizes)].filter(Boolean).join(" / ")}
+                            {[item.color, describeSelection(item.sizes), describeMeasurements(item.measurements)].filter(Boolean).join(" / ")}
                           </p>
                         ) : item.size && (
                           <p className="text-sm text-[#666666]">Size: {item.size}</p>
                         )}
                       </div>
                       <button
-                        onClick={() => onRemoveItem(item.product.id, item.size, item.sizes, item.notes, item.color)}
+                        onClick={() => onRemoveItem(item.product.id, item.size, item.sizes, item.notes, item.color, item.measurements)}
                         className="text-[#666666] hover:text-black"
                         aria-label="Remove item"
                       >
@@ -108,7 +110,7 @@ export function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem }:
                     <div className="mt-auto flex items-center justify-between">
                       <div className="flex items-center gap-3 border border-gray-300 ">
                         <button
-                          onClick={() => onUpdateQuantity(item.product.id, item.quantity - 1, item.size, item.sizes, item.notes, item.color)}
+                          onClick={() => onUpdateQuantity(item.product.id, item.quantity - 1, item.size, item.sizes, item.notes, item.color, item.measurements)}
                           className="p-2 hover:bg-gray-100 transition-colors"
                           aria-label="Decrease quantity"
                         >
@@ -116,7 +118,7 @@ export function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem }:
                         </button>
                         <span className="text-sm w-8 text-center">{item.quantity}</span>
                         <button
-                          onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1, item.size, item.sizes, item.notes, item.color)}
+                          onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1, item.size, item.sizes, item.notes, item.color, item.measurements)}
                           className="p-2 hover:bg-gray-100 transition-colors"
                           aria-label="Increase quantity"
                         >

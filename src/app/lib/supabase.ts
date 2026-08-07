@@ -64,6 +64,10 @@ export interface DbProduct {
   preorder_ships_on?: string | null;
   /** Colours this piece comes in. Each carries its own stock. */
   colors?: string[];
+  /** Which measurements a made to measure piece asks the customer for. */
+  measurement_fields?: string[];
+  /** Roughly how long a made to measure piece takes before dispatch. */
+  lead_time_weeks?: number | null;
 }
 
 // Database order type

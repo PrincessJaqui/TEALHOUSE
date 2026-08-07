@@ -420,3 +420,14 @@ export function priceForSelection(
     .filter((group) => chosenParts.includes(group.label))
     .reduce((sum, group) => sum + Number(group.price ?? 0), 0);
 }
+
+
+/** "Chest 34" / 86cm  ·  Waist 27" / 69cm" */
+export function describeMeasurements(
+  measurements: Record<string, string> | undefined
+): string {
+  if (!measurements) return '';
+  return Object.entries(measurements)
+    .map(([label, value]) => `${label} ${value}`)
+    .join('  ·  ');
+}

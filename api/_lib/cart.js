@@ -55,7 +55,7 @@ export async function priceCart({ items, shippingMethod = 'standard', region = '
 
   const { data: products, error } = await supabase
     .from('products')
-    .select('id, name, price, stock, sizes, size_groups, colors, is_published, image, images, fulfillment_type, retainer_amount')
+    .select('id, name, price, stock, sizes, size_groups, colors, is_published, image, images, fulfillment_type, retainer_amount, measurement_fields')
     .in('id', ids);
 
   if (error) throw new Error(`Could not load products: ${error.message}`);
@@ -120,6 +120,28 @@ export async function priceCart({ items, shippingMethod = 'standard', region = '
 
     const prefix = color ? `${color}|` : '';
 
+    // Made to measure: every measurement the product asks for must be
+    // present, checked against the product rather than trusting the browser.
+    let measurements = null;
+    if (fulfillment === 'made_to_measure') {
+      const required = product.measurement_fields ?? [];
+      const given =
+        item.measurements && typeof item.measurements === 'object'
+          ? item.measurements
+          : {};
+
+      for (const field of required) {
+        if (!given[field]) {
+          throw new Error(`${product.name} needs a ${field.toLowerCase()} measurement`);
+        }
+      }
+
+      measurements = {};
+      for (const field of required) {
+        measurements[field] = String(given[field]).slice(0, 40);
+      }
+    }
+
     const unitPrice = bespoke ? Number(product.retainer_amount ?? 0) : listPrice;
 
     if (bespoke && unitPrice <= 0) {
@@ -163,6 +185,7 @@ export async function priceCart({ items, shippingMethod = 'standard', region = '
       color,
       image: product.image || product.images?.[0] || null,
       fulfillment_type: fulfillment,
+      measurements,
       is_retainer: bespoke,
       list_price: bespoke ? Number(product.price) : null,
       notes: typeof item.notes === 'string' ? item.notes.slice(0, 2000) : null,

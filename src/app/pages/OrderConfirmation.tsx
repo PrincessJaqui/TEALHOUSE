@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Seo } from '../components/Seo';
 import { formatPrice } from '../config/store';
-import { describeSelection } from '../config/taxonomy';
+import { describeSelection, describeMeasurements } from '../config/taxonomy';
 import { BESPOKE_COPY, formatShipEstimate } from '../config/fulfillment';
 
 /**
@@ -152,6 +152,11 @@ export function OrderConfirmation() {
                     <p className="text-xs text-gray-500 mt-1">
                       Quantity {item.quantity}
                     </p>
+                    {item.measurements && (
+                      <p className="text-xs text-gray-600 mt-2">
+                        {describeMeasurements(item.measurements)}
+                      </p>
+                    )}
                     {item.is_retainer && (
                       <p className="text-xs text-[#008080] uppercase tracking-wider mt-2">
                         Retainer, credited toward your final price

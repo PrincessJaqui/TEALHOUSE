@@ -6,8 +6,7 @@ export function Footer() {
       title: 'TEALHOUSE',
       links: [
         { label: 'Plant-Based Materials', href: '/plant-based-materials' },
-        { label: 'Ethics & Compliance', href: '/ethics-compliance' },
-        { label: 'Sustainability', href: '/sustainability' }
+        { label: 'Ethics & Conscious Design', href: '/ethics-compliance' }
       ]
     },
     {

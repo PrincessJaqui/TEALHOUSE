@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
 import { shippingCostFor, formatPrice, taxFor, SHIPPING } from '../config/store';
-import { describeSelection } from '../config/taxonomy';
+import { describeSelection, describeMeasurements } from '../config/taxonomy';
 import { isBespoke, unitChargeFor, BESPOKE_COPY } from '../config/fulfillment';
 import { PayPalCheckout } from '../components/PayPalCheckout';
 
@@ -668,7 +668,7 @@ export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
                 {/* Order Items */}
                 <div className="space-y-6 mb-8">
                   {items.map((item, index) => (
-                    <div key={`${item.product.id}-${item.size ?? ""}-${[item.color, describeSelection(item.sizes)].filter(Boolean).join(" / ")}-${index}`} className="flex gap-4">
+                    <div key={`${item.product.id}-${item.size ?? ""}-${[item.color, describeSelection(item.sizes), describeMeasurements(item.measurements)].filter(Boolean).join(" / ")}-${index}`} className="flex gap-4">
                       <div className="w-24 h-24 bg-gray-100 flex-shrink-0">
                         <img
                           src={item.product.image}
@@ -681,7 +681,7 @@ export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
                         <p className="text-sm text-gray-600 mb-1">Qty: {item.quantity}</p>
                         {item.sizes ? (
                           <p className="text-sm text-gray-600">
-                            {[item.color, describeSelection(item.sizes)].filter(Boolean).join(" / ")}
+                            {[item.color, describeSelection(item.sizes), describeMeasurements(item.measurements)].filter(Boolean).join(" / ")}
                           </p>
                         ) : item.size && (
                           <p className="text-sm text-gray-600">Size: {item.size}</p>

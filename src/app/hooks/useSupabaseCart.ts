@@ -87,7 +87,8 @@ export function useSupabaseCart(userId: string | undefined) {
             quantity: item.quantity,
             size: item.size || undefined,
             notes: item.notes || undefined,
-            color: item.color || undefined
+            color: item.color || undefined,
+            measurements: item.measurements || undefined
           };
         }).filter(Boolean) as CartItem[];
         
@@ -110,7 +111,8 @@ export function useSupabaseCart(userId: string | undefined) {
     size?: string,
     sizes?: SizeSelection,
     notes?: string,
-    color?: string
+    color?: string,
+    measurements?: Record<string, string>
   ) => {
     const selection = sizes
       ? Object.keys(sizes)
@@ -118,7 +120,13 @@ export function useSupabaseCart(userId: string | undefined) {
           .map((k) => `${k}=${sizes[k]}`)
           .join('|')
       : '';
-    return `${productId}::${size ?? ''}::${selection}::${notes ?? ''}::${color ?? ''}`;
+    const measured = measurements
+      ? Object.keys(measurements)
+          .sort()
+          .map((k) => `${k}=${measurements[k]}`)
+          .join('|')
+      : '';
+    return `${productId}::${size ?? ''}::${selection}::${notes ?? ''}::${color ?? ''}::${measured}`;
   };
 
   const matches = (
@@ -127,27 +135,29 @@ export function useSupabaseCart(userId: string | undefined) {
     size?: string,
     sizes?: SizeSelection,
     notes?: string,
-    color?: string
+    color?: string,
+    measurements?: Record<string, string>
   ) =>
-    lineKey(item.product.id, item.size, item.sizes, item.notes, item.color) ===
-    lineKey(productId, size, sizes, notes, color);
+    lineKey(item.product.id, item.size, item.sizes, item.notes, item.color, item.measurements) ===
+    lineKey(productId, size, sizes, notes, color, measurements);
 
   const addToCart = async (
     product: Product,
     size?: string,
     sizes?: SizeSelection,
     notes?: string,
-    color?: string
+    color?: string,
+    measurements?: Record<string, string>
   ) => {
     const existingItem = cartItems.find((item) =>
-      matches(item, product.id, size, sizes, notes, color)
+      matches(item, product.id, size, sizes, notes, color, measurements)
     );
 
     if (existingItem) {
-      return updateQuantity(product.id, existingItem.quantity + 1, size, sizes, notes, color);
+      return updateQuantity(product.id, existingItem.quantity + 1, size, sizes, notes, color, measurements);
     }
 
-    const newItem: CartItem = { product, quantity: 1, size, sizes, notes, color };
+    const newItem: CartItem = { product, quantity: 1, size, sizes, notes, color, measurements };
     setCartItems((prev) => [...prev, newItem]);
 
     if (!userId) return true;
@@ -161,6 +171,7 @@ export function useSupabaseCart(userId: string | undefined) {
         sizes: sizes ?? null,
         notes: notes || null,
         color: color || null,
+        measurements: measurements ?? null,
       });
 
       if (error) throw error;
@@ -168,7 +179,7 @@ export function useSupabaseCart(userId: string | undefined) {
     } catch (error) {
       console.error('Error adding to cart:', error);
       setCartItems((prev) =>
-        prev.filter((item) => !matches(item, product.id, size, sizes, notes, color))
+        prev.filter((item) => !matches(item, product.id, size, sizes, notes, color, measurements))
       );
       return false;
     }
@@ -179,11 +190,12 @@ export function useSupabaseCart(userId: string | undefined) {
     size?: string,
     sizes?: SizeSelection,
     notes?: string,
-    color?: string
+    color?: string,
+    measurements?: Record<string, string>
   ) => {
     const previousItems = cartItems;
     setCartItems((prev) =>
-      prev.filter((item) => !matches(item, productId, size, sizes, notes, color))
+      prev.filter((item) => !matches(item, productId, size, sizes, notes, color, measurements))
     );
 
     if (!userId) return true;
@@ -215,16 +227,17 @@ export function useSupabaseCart(userId: string | undefined) {
     size?: string,
     sizes?: SizeSelection,
     notes?: string,
-    color?: string
+    color?: string,
+    measurements?: Record<string, string>
   ) => {
     if (quantity === 0) {
-      return removeFromCart(productId, size, sizes, notes, color);
+      return removeFromCart(productId, size, sizes, notes, color, measurements);
     }
 
     const previousItems = cartItems;
     setCartItems((prev) =>
       prev.map((item) =>
-        matches(item, productId, size, sizes, notes, color) ? { ...item, quantity } : item
+        matches(item, productId, size, sizes, notes, color, measurements) ? { ...item, quantity } : item
       )
     );
 

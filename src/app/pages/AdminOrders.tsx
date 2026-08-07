@@ -134,6 +134,15 @@ export function AdminOrders() {
       { header: 'Product', value: (r) => r.item?.name ?? '' },
       { header: 'Colour', value: (r) => r.item?.color ?? '' },
       {
+        header: 'Measurements',
+        value: (r) =>
+          r.item?.measurements
+            ? Object.entries(r.item.measurements)
+                .map(([k, v]) => `${k} ${v}`)
+                .join(' / ')
+            : '',
+      },
+      {
         header: 'Size',
         value: (r) =>
           r.item?.sizes

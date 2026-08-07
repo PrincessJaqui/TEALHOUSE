@@ -6,11 +6,16 @@
  * be changed in one place.
  */
 
-export type FulfillmentType = 'in_stock' | 'pre_order' | 'made_to_order';
+export type FulfillmentType =
+  | 'in_stock'
+  | 'pre_order'
+  | 'made_to_measure'
+  | 'made_to_order';
 
 export const FULFILLMENT_LABELS: Record<FulfillmentType, string> = {
   in_stock: 'In stock',
   pre_order: 'Pre-order',
+  made_to_measure: 'Made to measure',
   made_to_order: 'Made to order',
 };
 
@@ -94,7 +99,77 @@ export function isPreOrder(product: { fulfillment_type?: string }): boolean {
   return product.fulfillment_type === 'pre_order';
 }
 
+export function isMadeToMeasure(product: { fulfillment_type?: string }): boolean {
+  return product.fulfillment_type === 'made_to_measure';
+}
+
+/* ------------------------------------------------------------------ */
+/* Made to measure                                                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The measurements a product can ask for.
+ *
+ * These are not sizes and carry no stock. They are what the customer tells
+ * you about their own body, so the piece can be cut to them. The Ali
+ * swimsuit asks for Chest, Waist and Hips.
+ */
+export const MEASUREMENT_TYPES = [
+  'Bust',
+  'Chest',
+  'Waist',
+  'Hips',
+  'Inseam',
+  'Sleeve',
+] as const;
+
+const MEASURE_MIN_INCHES = 18;
+const MEASURE_MAX_INCHES = 100;
+
+/**
+ * Dropdown values, in half-inch steps with both units on every option.
+ *
+ * Half inches because a garment cut to a whole inch is not made to measure.
+ * Both units because a customer should never have to convert anything.
+ */
+export function measurementOptions(): string[] {
+  const options: string[] = [];
+  for (let i = MEASURE_MIN_INCHES * 2; i <= MEASURE_MAX_INCHES * 2; i += 1) {
+    const inches = i / 2;
+    const cm = Math.round(inches * 2.54);
+    const inchLabel = Number.isInteger(inches) ? `${inches}` : `${inches}`;
+    options.push(`${inchLabel}" / ${cm}cm`);
+  }
+  return options;
+}
+
+export const MADE_TO_MEASURE_COPY = {
+  intro:
+    'Cut to your measurements. Choose the closest value for each; our ' +
+    'atelier works to these figures, so measure carefully.',
+  leadTime: (weeks?: number | null) =>
+    weeks && weeks > 0
+      ? `Made to measure, so please allow about ${weeks} ` +
+        `${weeks === 1 ? 'week' : 'weeks'} before dispatch.`
+      : 'Made to measure, so this takes longer than a stocked piece.',
+  /** Cut to a person, so it cannot go back on the shelf. */
+  returns:
+    'Because each piece is cut to your own measurements, made to measure ' +
+    'orders cannot be returned or exchanged unless the piece is faulty.',
+} as const;
+
 /** Stock only governs products actually sold from stock. */
 export function tracksStock(product: { fulfillment_type?: string }): boolean {
   return (product.fulfillment_type ?? 'in_stock') === 'in_stock';
+}
+
+/** True when the customer must supply measurements before adding to bag. */
+export function needsMeasurements(product: {
+  fulfillment_type?: string;
+  measurement_fields?: string[];
+}): boolean {
+  return (
+    product.fulfillment_type === 'made_to_measure' &&
+    (product.measurement_fields ?? []).length > 0
+  );
 }

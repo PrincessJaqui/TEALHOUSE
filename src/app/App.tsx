@@ -12,7 +12,6 @@ import { Home } from './pages/Home';
 import { ItalianHandmade } from './pages/ItalianHandmade';
 import { PlantBasedMaterials } from './pages/PlantBasedMaterials';
 import { EthicsCompliance } from './pages/EthicsCompliance';
-import { Sustainability } from './pages/Sustainability';
 import { OurTechnologies } from './pages/OurTechnologies';
 import { TheVault } from './pages/TheVault';
 import { BespokeDesign } from './pages/BespokeDesign';
@@ -94,6 +93,10 @@ export interface Product {
   preorder_ships_on?: string | null;
   /** Colours this piece comes in. Each carries its own stock. */
   colors?: string[];
+  /** Which measurements a made to measure piece asks the customer for. */
+  measurement_fields?: string[];
+  /** Roughly how long a made to measure piece takes before dispatch. */
+  lead_time_weeks?: number | null;
 }
 
 export interface CartItem {
@@ -107,6 +110,8 @@ export interface CartItem {
   notes?: string;
   /** Chosen colour, which has its own stock. */
   color?: string;
+  /** Made to measure figures, for example { Chest: '34" / 86cm' }. */
+  measurements?: Record<string, string>;
 }
 
 function AppContent() {
@@ -161,9 +166,10 @@ function AppContent() {
     size?: string,
     sizes?: Record<string, string>,
     notes?: string,
-    color?: string
+    color?: string,
+    measurements?: Record<string, string>
   ) => {
-    await supabaseAddToCart(product, size, sizes, notes, color);
+    await supabaseAddToCart(product, size, sizes, notes, color, measurements);
   };
 
   const removeFromCart = async (
@@ -171,9 +177,10 @@ function AppContent() {
     size?: string,
     sizes?: Record<string, string>,
     notes?: string,
-    color?: string
+    color?: string,
+    measurements?: Record<string, string>
   ) => {
-    await supabaseRemoveFromCart(productId, size, sizes, notes, color);
+    await supabaseRemoveFromCart(productId, size, sizes, notes, color, measurements);
   };
 
   const updateQuantity = async (
@@ -182,9 +189,10 @@ function AppContent() {
     size?: string,
     sizes?: Record<string, string>,
     notes?: string,
-    color?: string
+    color?: string,
+    measurements?: Record<string, string>
   ) => {
-    await supabaseUpdateQuantity(productId, quantity, size, sizes, notes, color);
+    await supabaseUpdateQuantity(productId, quantity, size, sizes, notes, color, measurements);
   };
 
   const addToWishlist = async (product: Product) => {
@@ -224,7 +232,6 @@ function AppContent() {
           <Route path="/italian-handmade" element={<ItalianHandmade />} />
           <Route path="/plant-based-materials" element={<PlantBasedMaterials />} />
           <Route path="/ethics-compliance" element={<EthicsCompliance />} />
-          <Route path="/sustainability" element={<Sustainability />} />
           <Route path="/our-technologies" element={<OurTechnologies />} />
           <Route path="/the-vault" element={<TheVault />} />
           <Route path="/bespoke-design" element={<BespokeDesign />} />
