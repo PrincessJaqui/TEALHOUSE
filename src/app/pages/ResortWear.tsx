@@ -1,5 +1,4 @@
-import { ProductGrid } from '../components/ProductGrid';
-import { Seo } from '../components/Seo';
+import { CollectionPage } from '../components/CollectionPage';
 import { Product } from '../App';
 
 interface ResortWearProps {
@@ -8,41 +7,29 @@ interface ResortWearProps {
   isInWishlist: (productId: number) => boolean;
 }
 
-/**
- * Resort Wear. Copies the Footwear page pattern rather than inventing a new
- * one, so the two collections read as one shop.
- */
-export function ResortWear({
-  onProductClick,
-  onAddToWishlist,
-  isInWishlist,
-}: ResortWearProps) {
+export function ResortWear(props: ResortWearProps) {
   return (
-    <div className="min-h-screen bg-white pt-20">
-      <Seo
-        title="Resort Wear"
-        description="Plant-based resort wear from TEALHOUSE, made for warm weather and long days."
-        path="/resort-wear"
-      />
-
-      <div className="bg-[#008080] text-white py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl mb-6">Resort Wear</h1>
-          <p className="text-xl max-w-2xl mx-auto opacity-90">
-            Pieces made for warm weather and long days, in the same plant-based
-            materials as everything we make.
-          </p>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <ProductGrid
-          filter="resort-wear"
-          onProductClick={onProductClick}
-          onAddToWishlist={onAddToWishlist}
-          isInWishlist={isInWishlist}
-        />
-      </div>
-    </div>
+    <CollectionPage
+      title="Resort Wear"
+      intro="Pieces made for warm weather and long days, in the same plant-based materials as everything we make."
+      filter="resort-wear"
+      path="/resort-wear"
+      metaDescription="Plant-based resort wear and swimwear from TEALHOUSE, made for warm weather and long days."
+      highlights={[
+        {
+          title: 'Premium Textiles',
+          body: 'High-grade synthetics chosen for recovery, element resistance and shape retention.',
+        },
+        {
+          title: 'Made to Measure',
+          body: 'Selected pieces are cut to your own measurements rather than a standard size.',
+        },
+        {
+          title: 'Entirely Vegan',
+          body: 'No animal products anywhere, and no animal testing at any stage.',
+        },
+      ]}
+      {...props}
+    />
   );
 }

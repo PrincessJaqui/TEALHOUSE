@@ -1,5 +1,4 @@
-import { ProductGrid } from '../components/ProductGrid';
-import { Seo } from '../components/Seo';
+import { CollectionPage } from '../components/CollectionPage';
 import { Product } from '../App';
 
 interface AccessoriesProps {
@@ -8,45 +7,29 @@ interface AccessoriesProps {
   isInWishlist: (productId: number) => boolean;
 }
 
-/**
- * Accents.
- *
- * This was a "Coming Soon" placeholder. Now that the navigation link waits
- * until the category has products, the page would have contradicted itself:
- * the link would appear and still show Coming Soon. It is a real collection
- * page, matching Footwear.
- */
-export function Accessories({
-  onProductClick,
-  onAddToWishlist,
-  isInWishlist,
-}: AccessoriesProps) {
+export function Accessories(props: AccessoriesProps) {
   return (
-    <div className="min-h-screen bg-white pt-20">
-      <Seo
-        title="Accents"
-        description="Plant-based accents and accessories from TEALHOUSE."
-        path="/accessories"
-      />
-
-      <div className="bg-[#008080] text-white py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl mb-6">Accents</h1>
-          <p className="text-xl max-w-2xl mx-auto opacity-90">
-            Considered pieces to finish a look, made with the same
-            craftsmanship as our footwear.
-          </p>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <ProductGrid
-          filter="accessories"
-          onProductClick={onProductClick}
-          onAddToWishlist={onAddToWishlist}
-          isInWishlist={isInWishlist}
-        />
-      </div>
-    </div>
+    <CollectionPage
+      title="Accents"
+      intro="Considered pieces to finish a look, made with the same craftsmanship as our footwear."
+      filter="accessories"
+      path="/accessories"
+      metaDescription="Plant-based accents and accessories from TEALHOUSE."
+      highlights={[
+        {
+          title: 'Plant-Based Materials',
+          body: 'Crafted from cactus leather and natural rubbers, with zero animal products.',
+        },
+        {
+          title: 'Italian Craftsmanship',
+          body: 'Handmade in our Italian workshop by master artisans.',
+        },
+        {
+          title: 'Entirely Vegan',
+          body: 'No animal products anywhere, and no animal testing at any stage.',
+        },
+      ]}
+      {...props}
+    />
   );
 }

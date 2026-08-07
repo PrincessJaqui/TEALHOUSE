@@ -136,24 +136,24 @@ export function Header({ cartItemCount, wishlistItemCount, onCartClick, onWishli
 
             {/* Menu Items */}
             <nav className="px-6 pb-8">
-              <Link 
-                to="/" 
+              <Link
+                to="/shoes"
                 className="flex items-center justify-between py-3 hover:text-gray-600 transition-colors group text-sm"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <span>Footwear</span>
                 <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </Link>
-              {hasProducts('resort-wear') && (
-                <Link
-                  to="/resort-wear"
-                  className="flex items-center justify-between py-3 hover:text-gray-600 transition-colors group text-sm"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <span>Resort Wear</span>
-                  <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                </Link>
-              )}
+              {/* Resort Wear is always shown. Accents below still waits
+                  until it has something to sell. */}
+              <Link
+                to="/resort-wear"
+                className="flex items-center justify-between py-3 hover:text-gray-600 transition-colors group text-sm"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <span>Resort Wear</span>
+                <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </Link>
               {hasProducts('accessories') && (
                 <Link
                   to="/accessories"

@@ -8,10 +8,11 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, Trash2, Upload, Package, X, Video, Edit, Image as ImageIcon, Download } from 'lucide-react';
+import { Plus, Trash2, Upload, Package, X, Video, Edit, Image as ImageIcon, Download, ExternalLink } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { AdminLayout } from '../components/AdminLayout';
 import { exportCsv } from '../lib/csv';
+import { productPath } from '../config/taxonomy';
 import { useCatalogLists } from '../hooks/useCatalogLists';
 import {
   FULFILLMENT_LABELS,
@@ -912,6 +913,16 @@ export function AdminProducts() {
                         ))}
                       </div>
                       <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(productPath(product), '_blank')}
+                          className="flex-1"
+                          title="Open the storefront page in a new tab"
+                        >
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          View
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
