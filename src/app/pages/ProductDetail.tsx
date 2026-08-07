@@ -371,20 +371,35 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                 <label className="block font-medium mb-3">
                   Colour{selectedColor ? `: ${selectedColor}` : ''}
                 </label>
-                <div className="flex flex-wrap gap-2">
-                  {(product.colors ?? []).map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => setSelectedColor(color)}
-                      className={`px-4 py-2 border text-sm transition-all ${
-                        selectedColor === color
-                          ? 'border-[#008080] bg-[#008080] text-white'
-                          : 'border-gray-300 hover:border-[#008080]'
-                      }`}
-                    >
-                      {color}
-                    </button>
-                  ))}
+                {/* Circular swatches showing the actual colour. The name is
+                    already in the label above, so repeating it in a button
+                    was both redundant and the wrong shape. */}
+                <div className="flex flex-wrap gap-3">
+                  {(product.colors ?? []).map((color) => {
+                    const hex = catalog.colors.find(
+                      (row) => row.name.toLowerCase() === color.toLowerCase()
+                    )?.hex;
+                    const active = selectedColor === color;
+                    return (
+                      <button
+                        key={color}
+                        onClick={() => setSelectedColor(color)}
+                        title={color}
+                        aria-label={color}
+                        aria-pressed={active}
+                        className={`w-8 h-8 rounded-full border transition-all ${
+                          active
+                            ? 'border-black ring-2 ring-black ring-offset-2'
+                            : 'border-gray-300 hover:border-black'
+                        }`}
+                        style={hex ? { backgroundColor: hex } : undefined}
+                      >
+                        {!hex && (
+                          <span className="text-[10px] leading-none">{color[0]}</span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
