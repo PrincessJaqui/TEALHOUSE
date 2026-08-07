@@ -11,7 +11,7 @@ export function Shoes(props: ShoesProps) {
   return (
     <CollectionPage
       title="Footwear"
-      intro="Luxury shoes crafted from plants. Handmade in Italy with our signature teal soles."
+      intro="Designed in Kansas City. Made in Italy."
       filter="shoes"
       path="/shoes"
       metaDescription="Vegan luxury footwear in cactus leather, handmade in Italy."

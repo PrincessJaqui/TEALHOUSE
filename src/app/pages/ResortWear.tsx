@@ -11,7 +11,7 @@ export function ResortWear(props: ResortWearProps) {
   return (
     <CollectionPage
       title="Resort Wear"
-      intro="Pieces made for warm weather and long days, in the same plant-based materials as everything we make."
+      intro="Sculpted geometry, modern silhouettes, designed to empower."
       filter="resort-wear"
       path="/resort-wear"
       metaDescription="Plant-based resort wear and swimwear from TEALHOUSE, made for warm weather and long days."

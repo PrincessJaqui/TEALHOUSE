@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { Heart } from 'lucide-react';
 import { Product } from '../App';
-import { productMatchesFilter, isSoldOut, type FilterKey } from '../config/taxonomy';
+import {
+  productMatchesFilter,
+  isSoldOut,
+  allProductSizes,
+  type FilterKey,
+} from '../config/taxonomy';
 import { useCatalogLists } from '../hooks/useCatalogLists';
 import { getPrimaryProductImage } from '../lib/default-image';
 import { useSupabaseProducts } from '../hooks/useSupabaseProducts';
@@ -36,8 +41,23 @@ export function ProductGrid({
   hideWhenEmpty,
 }: ProductGridProps) {
   const { products, loading } = useSupabaseProducts();
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [styles, setStyles] = useState<string[]>([]);
+  const [colors, setColors] = useState<string[]>([]);
+  const [sizes, setSizes] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState('name');
+
+  const toggle = (
+    set: (next: string[]) => void,
+    current: string[],
+    value: string
+  ) => {
+    set(
+      current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value]
+    );
+  };
   
   // Swatch colours come from the colours table, so a hex set once is used
   // everywhere. Which swatches a card shows comes from that product.
@@ -59,10 +79,42 @@ export function ProductGrid({
       ? products
       : products.filter((p) => productMatchesFilter(p, filter as FilterKey));
 
-  const filteredProducts =
-    selectedCategory === 'all'
-      ? baseProducts
-      : baseProducts.filter((p) => productMatchesFilter(p, selectedCategory as FilterKey));
+  // Options are drawn from what is actually on this page, so a filter can
+  // never offer something that would return nothing.
+  const uniq = (values: string[]) =>
+    Array.from(new Set(values.filter(Boolean)));
+
+  const availableStyles = uniq(baseProducts.flatMap((p) => p.categories ?? [])).sort();
+  const availableColors = uniq(baseProducts.flatMap((p) => p.colors ?? []));
+  const availableSizes = uniq(baseProducts.flatMap((p) => allProductSizes(p)));
+
+  const activeFilterCount = styles.length + colors.length + sizes.length;
+
+  const matchesAll = (product: Product) => {
+    if (styles.length && !styles.some((s) => (product.categories ?? []).includes(s))) {
+      return false;
+    }
+    if (colors.length && !colors.some((c) => (product.colors ?? []).includes(c))) {
+      return false;
+    }
+    if (sizes.length) {
+      const productSizes = allProductSizes(product);
+      if (!sizes.some((s) => productSizes.includes(s))) return false;
+    }
+    return true;
+  };
+
+  const sorters: Record<string, (a: Product, b: Product) => number> = {
+    name: (a, b) => a.name.localeCompare(b.name),
+    'price-asc': (a, b) => Number(a.price) - Number(b.price),
+    'price-desc': (a, b) => Number(b.price) - Number(a.price),
+    newest: (a, b) =>
+      String(b.created_at ?? '').localeCompare(String(a.created_at ?? '')),
+  };
+
+  const filteredProducts = baseProducts
+    .filter(matchesAll)
+    .sort(sorters[sortBy] ?? sorters.name);
 
   // Nothing to show and the caller asked for silence. The landing page uses
   // this so an empty featured section disappears instead of leaving a filter
@@ -72,88 +124,145 @@ export function ProductGrid({
   }
 
   return (
-    <section className="max-w-[1200px] mx-auto px-5 py-8" id="shoes">
-      <div className="flex justify-between items-center mb-8">
-        <div></div>
-        <div>
-          <button 
-            onClick={() => setIsFilterOpen(!isFilterOpen)}
-            className="uppercase tracking-wider text-sm hover:text-gray-600 transition-colors flex items-center gap-2"
+    <section className="max-w-[1200px] mx-auto px-5 pt-2 pb-8" id="shoes">
+      {/* Filter and sort. Options come from the products actually on this
+          page, so a Resort Wear page never offers a shoe size and an empty
+          category never appears. */}
+      <div className="flex justify-end items-center gap-6 mb-6">
+        <label className="flex items-center gap-2 text-sm">
+          <span className="uppercase tracking-wider">Sort</span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-black"
           >
-            Filter
-            <svg 
-              className={`w-4 h-4 transition-transform ${isFilterOpen ? 'rotate-180' : ''}`}
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-        </div>
+            <option value="name">A to Z</option>
+            <option value="price-asc">Price, low to high</option>
+            <option value="price-desc">Price, high to low</option>
+            <option value="newest">Newest</option>
+          </select>
+        </label>
+
+        <button
+          onClick={() => setIsFilterOpen(!isFilterOpen)}
+          className="uppercase tracking-wider text-sm hover:text-gray-600 transition-colors flex items-center gap-2"
+        >
+          Filter
+          {activeFilterCount > 0 && (
+            <span className="text-[#008080]">({activeFilterCount})</span>
+          )}
+          <svg
+            className={`w-4 h-4 transition-transform ${isFilterOpen ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
       </div>
 
-      {/* Filter Panel */}
       {isFilterOpen && (
-        <div className="border border-gray-200 p-6 mb-8">
-          <h4 className="uppercase tracking-wider text-sm mb-4">Category</h4>
-          <div className="flex flex-wrap gap-3">
+        <div className="border border-gray-200 p-6 mb-8 space-y-6">
+          {availableStyles.length > 1 && (
+            <div>
+              <h4 className="uppercase tracking-wider text-sm mb-3">Style</h4>
+              <div className="flex flex-wrap gap-2">
+                {availableStyles.map((style) => (
+                  <button
+                    key={style}
+                    onClick={() => toggle(setStyles, styles, style)}
+                    className={`px-4 py-2 text-sm border capitalize transition-colors ${
+                      styles.includes(style)
+                        ? 'border-black bg-black text-white'
+                        : 'border-gray-300 hover:border-black'
+                    }`}
+                  >
+                    {style.replace(/-/g, ' ')}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {availableColors.length > 0 && (
+            <div>
+              <h4 className="uppercase tracking-wider text-sm mb-3">Colour</h4>
+              <div className="flex flex-wrap gap-3">
+                {availableColors.map((color) => {
+                  const hex = colorRows.find(
+                    (row) => row.name.toLowerCase() === color.toLowerCase()
+                  )?.hex;
+                  const active = colors.includes(color);
+                  return (
+                    <button
+                      key={color}
+                      onClick={() => toggle(setColors, colors, color)}
+                      title={color}
+                      aria-label={color}
+                      aria-pressed={active}
+                      className={`w-7 h-7 rounded-full border transition-all ${
+                        active
+                          ? 'border-black ring-2 ring-black ring-offset-2'
+                          : 'border-gray-300 hover:border-black'
+                      }`}
+                      style={hex ? { backgroundColor: hex } : undefined}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {availableSizes.length > 0 && (
+            <div>
+              <h4 className="uppercase tracking-wider text-sm mb-3">Size</h4>
+              <div className="flex flex-wrap gap-2">
+                {availableSizes.map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => toggle(setSizes, sizes, size)}
+                    className={`min-w-[3rem] px-3 py-2 text-sm border transition-colors ${
+                      sizes.includes(size)
+                        ? 'border-black bg-black text-white'
+                        : 'border-gray-300 hover:border-black'
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeFilterCount > 0 && (
             <button
-              onClick={() => setSelectedCategory('all')}
-              className={`px-4 py-2 text-sm border transition-colors ${
- selectedCategory === 'all' 
-                  ? 'border-black bg-black text-white' 
-                  : 'border-gray-300 hover:border-black'
-              }`}
+              onClick={() => {
+                setStyles([]);
+                setColors([]);
+                setSizes([]);
+              }}
+              className="text-sm underline hover:no-underline"
             >
-              All
+              Clear all
             </button>
-            <button
-              onClick={() => setSelectedCategory('shoes')}
-              className={`px-4 py-2 text-sm border transition-colors ${
- selectedCategory === 'shoes' 
-                  ? 'border-black bg-black text-white' 
-                  : 'border-gray-300 hover:border-black'
-              }`}
-            >
-              Women's Shoes
-            </button>
-            <button
-              onClick={() => setSelectedCategory('mens')}
-              className={`px-4 py-2 text-sm border transition-colors ${
- selectedCategory === 'mens' 
-                  ? 'border-black bg-black text-white' 
-                  : 'border-gray-300 hover:border-black'
-              }`}
-            >
-              Men's Collection
-            </button>
-            <button
-              onClick={() => setSelectedCategory('accessories')}
-              className={`px-4 py-2 text-sm border transition-colors ${
- selectedCategory === 'accessories' 
-                  ? 'border-black bg-black text-white' 
-                  : 'border-gray-300 hover:border-black'
-              }`}
-            >
-              Accessories
-            </button>
-          </div>
+          )}
         </div>
       )}
 
-      {loading && (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading products...</p>
-        </div>
-      )}
-
+      {/* Two different situations. Filters that exclude everything is the
+          customer's own doing; an empty collection is ours, and reads better
+          as an intention than as an absence. */}
       {!loading && filteredProducts.length === 0 && (
-        <div className="text-center py-12 border border-gray-200 bg-gray-50">
-          <p className="text-gray-600 mb-2">No products found</p>
-          <p className="text-sm text-gray-500">Please add products in the admin panel</p>
-        </div>
+        activeFilterCount > 0 ? (
+          <p className="text-sm text-gray-600 py-8">
+            Nothing matches those filters.
+          </p>
+        ) : (
+          <p className="py-16 text-center uppercase tracking-wider text-gray-500">
+            Debuting Soon
+          </p>
+        )
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">

@@ -47,12 +47,12 @@ export function CollectionPage({
 
       {/* No banner. The heading matches the rest of the site rather than
           sitting in a coloured block. */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-4 text-center">
-        <h1 className="uppercase tracking-wider mb-4">{title}</h1>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2 text-center">
+        <h1 className="uppercase tracking-wider mb-3">{title}</h1>
         <p className="text-sm text-gray-600 max-w-2xl mx-auto">{intro}</p>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 pt-0">
         <ProductGrid
           filter={filter}
           onProductClick={onProductClick}

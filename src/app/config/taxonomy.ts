@@ -512,3 +512,11 @@ export function separatePartPrices(
     .filter((group) => group.required === false && Number(group.price) > 0)
     .map((group) => ({ label: group.label, price: Number(group.price) }));
 }
+
+
+/** Every size label a product offers, across single sizes and all parts. */
+export function allProductSizes(product: Product): string[] {
+  const fromGroups = (product.size_groups ?? []).flatMap((g) => g.sizes ?? []);
+  const single = (product.sizes ?? []).map(String);
+  return Array.from(new Set([...single, ...fromGroups]));
+}
