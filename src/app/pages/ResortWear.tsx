@@ -2,46 +2,42 @@ import { ProductGrid } from '../components/ProductGrid';
 import { Seo } from '../components/Seo';
 import { Product } from '../App';
 
-interface AccessoriesProps {
+interface ResortWearProps {
   onProductClick: (product: Product) => void;
   onAddToWishlist: (product: Product) => void;
   isInWishlist: (productId: number) => boolean;
 }
 
 /**
- * Accents.
- *
- * This was a "Coming Soon" placeholder. Now that the navigation link waits
- * until the category has products, the page would have contradicted itself:
- * the link would appear and still show Coming Soon. It is a real collection
- * page, matching Footwear.
+ * Resort Wear. Copies the Footwear page pattern rather than inventing a new
+ * one, so the two collections read as one shop.
  */
-export function Accessories({
+export function ResortWear({
   onProductClick,
   onAddToWishlist,
   isInWishlist,
-}: AccessoriesProps) {
+}: ResortWearProps) {
   return (
     <div className="min-h-screen bg-white pt-20">
       <Seo
-        title="Accents"
-        description="Plant-based accents and accessories from TEALHOUSE."
-        path="/accessories"
+        title="Resort Wear"
+        description="Plant-based resort wear from TEALHOUSE, made for warm weather and long days."
+        path="/resort-wear"
       />
 
       <div className="bg-[#008080] text-white py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl mb-6">Accents</h1>
+          <h1 className="text-5xl mb-6">Resort Wear</h1>
           <p className="text-xl max-w-2xl mx-auto opacity-90">
-            Considered pieces to finish a look, made with the same
-            craftsmanship as our footwear.
+            Pieces made for warm weather and long days, in the same plant-based
+            materials as everything we make.
           </p>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <ProductGrid
-          filter="accessories"
+          filter="resort-wear"
           onProductClick={onProductClick}
           onAddToWishlist={onAddToWishlist}
           isInWishlist={isInWishlist}

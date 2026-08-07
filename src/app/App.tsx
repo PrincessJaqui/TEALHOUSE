@@ -28,6 +28,7 @@ import { OrderConfirmation } from './pages/OrderConfirmation';
 import { CompanyLogin } from './pages/CompanyLogin';
 import { Checkout } from './pages/Checkout';
 import { Accessories } from './pages/Accessories';
+import { ResortWear } from './pages/ResortWear';
 import { Shoes } from './pages/Shoes';
 import { MensShoes } from './pages/MensShoes';
 import { WomensShoes } from './pages/WomensShoes';
@@ -238,7 +239,8 @@ function AppContent() {
           <Route path="/company-login" element={<CompanyLogin />} />
           <Route path="/order/:id" element={<OrderConfirmation />} />
           <Route path="/checkout" element={<Checkout items={supabaseCartItems} onOrderPlaced={clearCart} />} />
-          <Route path="/accessories" element={<Accessories />} />
+          <Route path="/accessories" element={<Accessories onProductClick={openProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
+          <Route path="/resort-wear" element={<ResortWear onProductClick={openProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
           <Route path="/shoes" element={<Shoes onProductClick={openProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
           <Route path="/mens-shoes" element={<MensShoes onProductClick={openProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
           <Route path="/womens-shoes" element={<WomensShoes onProductClick={openProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />

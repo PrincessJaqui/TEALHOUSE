@@ -61,6 +61,7 @@ export type FilterKey =
   | 'all'
   | 'shoes'
   | 'accessories'
+  | 'resort-wear'
   | 'apparel'
   | 'jewelry'
   | 'mens'

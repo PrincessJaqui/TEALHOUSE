@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import imgLogo from "figma:asset/3f298acd9128513aa329c386495f656e449305d1.png";
 import { Instagram, Youtube, Facebook, Linkedin } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useCategoryCounts } from '../hooks/useCategoryCounts';
 
 interface HeaderProps {
   cartItemCount: number;
@@ -23,6 +24,10 @@ export function Header({ cartItemCount, wishlistItemCount, onCartClick, onWishli
    * An anonymous session exists purely to hold a guest's cart, so it does not
    * count as being signed in.
    */
+  // A link to an empty category page reads as an unfinished shop, so each
+  // one waits until its category actually has a published product.
+  const { hasProducts } = useCategoryCounts();
+
   const [isCustomer, setIsCustomer] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -139,14 +144,26 @@ export function Header({ cartItemCount, wishlistItemCount, onCartClick, onWishli
                 <span>Footwear</span>
                 <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </Link>
-              <Link 
-                to="/accessories" 
-                className="flex items-center justify-between py-3 hover:text-gray-600 transition-colors group text-sm"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <span>Accents</span>
-                <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-              </Link>
+              {hasProducts('resort-wear') && (
+                <Link
+                  to="/resort-wear"
+                  className="flex items-center justify-between py-3 hover:text-gray-600 transition-colors group text-sm"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <span>Resort Wear</span>
+                  <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+              )}
+              {hasProducts('accessories') && (
+                <Link
+                  to="/accessories"
+                  className="flex items-center justify-between py-3 hover:text-gray-600 transition-colors group text-sm"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <span>Accents</span>
+                  <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+              )}
               <Link 
                 to="/bespoke-design" 
                 className="flex items-center justify-between py-3 hover:text-gray-600 transition-colors group text-sm"
