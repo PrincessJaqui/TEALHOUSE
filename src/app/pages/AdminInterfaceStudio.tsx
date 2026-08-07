@@ -7,6 +7,7 @@ import { Product } from '../App';
 import { productPath } from '../config/taxonomy';
 import { useSupabaseProducts } from '../hooks/useSupabaseProducts';
 import { HERO_RATIOS_DESKTOP, HERO_RATIOS_MOBILE } from '../components/StudioSections';
+import { CropEditor } from '../components/CropEditor';
 import {
   useInterfaceStudio,
   uploadSiteMedia,
@@ -67,22 +68,9 @@ function MediaField({
   const [linkDraft, setLinkDraft] = useState('');
   const isVideo = accept.includes('video');
 
-  const [fx, fy] = (focal ?? '50% 50%')
-    .split(' ')
-    .map((part) => parseInt(part, 10) || 50);
 
-  const setFocal = (x: number, y: number) => onFocalChange?.(`${x}% ${y}%`);
 
-  const scale = zoom && zoom > 1 ? zoom : 1;
 
-  // Position decides what stays centred, zoom decides how tight the crop is.
-  // The origin follows the focal point so zooming does not drift away from
-  // whatever was framed.
-  const mediaStyle = {
-    objectPosition: focal ?? '50% 50%',
-    transform: scale > 1 ? `scale(${scale})` : undefined,
-    transformOrigin: focal ?? '50% 50%',
-  } as const;
 
   const handleFile = async (file: File) => {
     setBusy(true);
@@ -120,93 +108,21 @@ function MediaField({
 
       {value && (
         <div className="mb-3">
-          {/* Shown at roughly the shape the hero will be, with the focal
-              point applied, so what you see here is what a visitor sees. */}
-          <div
-            className="relative w-full overflow-hidden bg-neutral-100 border border-neutral-200"
-            style={{ aspectRatio: previewRatio ?? '16 / 9' }}
-          >
-            {isVideo ? (
-              <video
-                src={value}
-                className="absolute inset-0 w-full h-full object-cover"
-                style={mediaStyle}
-                muted
-                loop
-                autoPlay
-                playsInline
-              />
-            ) : (
-              <img
-                src={value}
-                alt=""
-                className="absolute inset-0 w-full h-full object-cover"
-                style={mediaStyle}
-              />
-            )}
-          </div>
+          {/* The frame is the real shape this media appears in, so what sits
+              inside these edges is exactly what a visitor sees. */}
+          <CropEditor
+            src={value}
+            isVideo={isVideo}
+            ratio={previewRatio ?? '16 / 9'}
+            value={{ focal: focal ?? '50% 50%', zoom: zoom ?? 1 }}
+            onChange={(next) => {
+              onFocalChange?.(next.focal);
+              onZoomChange?.(next.zoom);
+            }}
+          />
 
           {size !== null && (
-            <p className="text-xs text-neutral-500 mt-1">{formatBytes(size)}</p>
-          )}
-
-          {onFocalChange && (
-            <div className="mt-3 space-y-2">
-              <p className="text-xs uppercase tracking-wider text-neutral-500">
-                Framing
-              </p>
-              <label className="flex items-center gap-3 text-xs">
-                <span className="w-16 text-neutral-600">Across</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={fx}
-                  onChange={(e) => setFocal(Number(e.target.value), fy)}
-                  className="flex-1"
-                />
-                <span className="w-10 text-right text-neutral-500">{fx}%</span>
-              </label>
-              <label className="flex items-center gap-3 text-xs">
-                <span className="w-16 text-neutral-600">Down</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={fy}
-                  onChange={(e) => setFocal(fx, Number(e.target.value))}
-                  className="flex-1"
-                />
-                <span className="w-10 text-right text-neutral-500">{fy}%</span>
-              </label>
-              {onZoomChange && (
-                <label className="flex items-center gap-3 text-xs">
-                  <span className="w-16 text-neutral-600">Zoom</span>
-                  <input
-                    type="range"
-                    min={100}
-                    max={250}
-                    value={Math.round(scale * 100)}
-                    onChange={(e) => onZoomChange(Number(e.target.value) / 100)}
-                    className="flex-1"
-                  />
-                  <span className="w-10 text-right text-neutral-500">
-                    {Math.round(scale * 100)}%
-                  </span>
-                </label>
-              )}
-
-              <button
-                type="button"
-                onClick={() => {
-                  setFocal(50, 50);
-                  onZoomChange?.(1);
-                }}
-                className="text-xs text-neutral-500 hover:text-black underline"
-              >
-                Reset framing
-              </button>
-            </div>
+            <p className="text-xs text-neutral-500 mt-2">{formatBytes(size)}</p>
           )}
 
           <button

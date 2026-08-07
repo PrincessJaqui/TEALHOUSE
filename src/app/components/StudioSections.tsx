@@ -5,6 +5,7 @@ import { Product } from '../App';
 import { productPath } from '../config/taxonomy';
 import { formatPrice } from '../config/store';
 import { getPrimaryProductImage } from '../lib/default-image';
+import { cropStyle } from './CropEditor';
 
 /**
  * The landing page, built from Studio content.
@@ -25,18 +26,22 @@ import { getPrimaryProductImage } from '../lib/default-image';
  * separately, because a 16:9 frame on a phone is a letterbox.
  */
 export const HERO_RATIOS_DESKTOP: Array<{ label: string; value: string }> = [
-  { label: 'Widescreen 16:9', value: '16 / 9' },
+  { label: 'Letterbox 32:9, shortest', value: '32 / 9' },
+  { label: 'Ultrawide 24:9', value: '24 / 9' },
   { label: 'Cinematic 21:9', value: '21 / 9' },
+  { label: 'Widescreen 16:9', value: '16 / 9' },
   { label: 'Classic 3:2', value: '3 / 2' },
-  { label: 'Square-ish 4:3', value: '4 / 3' },
+  { label: 'Square-ish 4:3, tallest', value: '4 / 3' },
   { label: 'Full height', value: 'full' },
 ];
 
 export const HERO_RATIOS_MOBILE: Array<{ label: string; value: string }> = [
+  { label: 'Wide 16:9, shortest', value: '16 / 9' },
+  { label: 'Landscape 4:3', value: '4 / 3' },
+  { label: 'Square 4:4', value: '1 / 1' },
   { label: 'Portrait 4:5', value: '4 / 5' },
   { label: 'Tall 3:4', value: '3 / 4' },
-  { label: 'Square 1:1', value: '1 / 1' },
-  { label: 'Full portrait 9:16', value: '9 / 16' },
+  { label: 'Full portrait 9:16, tallest', value: '9 / 16' },
   { label: 'Full height', value: 'full' },
 ];
 
@@ -73,11 +78,9 @@ export function StudioHero({ content }: { content: Record<string, any> }) {
     (isMobile ? content.image_zoom_mobile : content.image_zoom_desktop) ?? 1
   );
 
-  const frame = (focal: string, zoom: number) => ({
-    objectPosition: focal,
-    transform: zoom > 1 ? `scale(${zoom})` : undefined,
-    transformOrigin: focal,
-  });
+  // Same helper the crop editor uses, so the frame you set in the Studio
+  // cannot disagree with what a visitor sees.
+  const frame = (focal: string, zoom: number) => cropStyle(focal, zoom);
 
   if (!video && !image) return null;
 
@@ -192,14 +195,7 @@ export function StudioSplit({ content }: { content: Record<string, any> }) {
               src={panel.image_desktop || panel.image_mobile}
               alt={panel.label || ''}
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-700"
-              style={{
-                objectPosition: panel.focal_desktop || '50% 50%',
-                transform:
-                  Number(panel.zoom_desktop ?? 1) > 1
-                    ? `scale(${panel.zoom_desktop})`
-                    : undefined,
-                transformOrigin: panel.focal_desktop || '50% 50%',
-              }}
+              style={cropStyle(panel.focal_desktop, panel.zoom_desktop)}
             />
           </picture>
 
