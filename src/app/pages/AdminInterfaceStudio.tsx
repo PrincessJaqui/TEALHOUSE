@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Product } from '../App';
 import { productPath } from '../config/taxonomy';
 import { useSupabaseProducts } from '../hooks/useSupabaseProducts';
+import { HERO_RATIOS_DESKTOP, HERO_RATIOS_MOBILE } from '../components/StudioSections';
 import {
   useInterfaceStudio,
   uploadSiteMedia,
@@ -280,6 +281,38 @@ function MediaField({
   );
 }
 
+function RatioField({
+  label,
+  help,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  help?: string;
+  value?: string;
+  options: Array<{ label: string; value: string }>;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div>
+      <label className="block text-sm mb-1">{label}</label>
+      {help && <p className="text-xs text-neutral-500 mb-2">{help}</p>}
+      <select
+        value={value ?? options[0].value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full px-3 py-2 border border-neutral-200 text-sm"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 function TextField({
   label,
   value,
@@ -455,11 +488,26 @@ export function AdminInterfaceStudio() {
     if (key === 'hero') {
       return (
         <div className="grid md:grid-cols-2 gap-6">
+          <RatioField
+            label="Desktop shape"
+            help="How tall the hero is on a laptop. Full height fills the screen."
+            value={draft.ratio_desktop}
+            options={HERO_RATIOS_DESKTOP}
+            onChange={(v) => setField(key, 'ratio_desktop', v)}
+          />
+          <RatioField
+            label="Mobile shape"
+            help="A widescreen frame on a phone becomes a letterbox, so this is set separately."
+            value={draft.ratio_mobile}
+            options={HERO_RATIOS_MOBILE}
+            onChange={(v) => setField(key, 'ratio_mobile', v)}
+          />
+
           <MediaField
             label="Desktop film"
             help="Plays muted and looping. Under 10MB keeps the page quick."
             accept="video/*"
-            previewRatio="16 / 9"
+            previewRatio={draft.ratio_desktop === 'full' ? '16 / 9' : draft.ratio_desktop || '16 / 9'}
             value={draft.video_desktop}
             focal={draft.focal_desktop}
             onFocalChange={(v) => setField(key, 'focal_desktop', v)}
@@ -471,7 +519,7 @@ export function AdminInterfaceStudio() {
             label="Mobile film"
             help="A phone should not download the desktop file."
             accept="video/*"
-            previewRatio="9 / 14"
+            previewRatio={draft.ratio_mobile === 'full' ? '9 / 14' : draft.ratio_mobile || '4 / 5'}
             value={draft.video_mobile}
             focal={draft.focal_mobile}
             onFocalChange={(v) => setField(key, 'focal_mobile', v)}
@@ -483,7 +531,7 @@ export function AdminInterfaceStudio() {
             label="Desktop still"
             help="Shown while the film loads, and instead of it where video will not play."
             accept="image/*"
-            previewRatio="16 / 9"
+            previewRatio={draft.ratio_desktop === 'full' ? '16 / 9' : draft.ratio_desktop || '16 / 9'}
             value={draft.image_desktop}
             focal={draft.image_focal_desktop ?? draft.focal_desktop}
             onFocalChange={(v) => setField(key, 'image_focal_desktop', v)}
@@ -494,7 +542,7 @@ export function AdminInterfaceStudio() {
           <MediaField
             label="Mobile still"
             accept="image/*"
-            previewRatio="9 / 14"
+            previewRatio={draft.ratio_mobile === 'full' ? '9 / 14' : draft.ratio_mobile || '4 / 5'}
             value={draft.image_mobile}
             focal={draft.image_focal_mobile ?? draft.focal_mobile}
             onFocalChange={(v) => setField(key, 'image_focal_mobile', v)}
@@ -505,8 +553,15 @@ export function AdminInterfaceStudio() {
           <TextField
             label="Headline"
             value={draft.headline}
-            placeholder="New Arrivals: Autumn 2026"
+            placeholder="The Collection in Motion."
             onChange={(v) => setField(key, 'headline', v)}
+          />
+          <TextField
+            label="Second line"
+            multiline
+            value={draft.subheadline}
+            placeholder="Sits under the headline, above the link."
+            onChange={(v) => setField(key, 'subheadline', v)}
           />
           <div className="grid grid-cols-2 gap-3">
             <TextField

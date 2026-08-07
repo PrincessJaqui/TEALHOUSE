@@ -17,6 +17,29 @@ import { getPrimaryProductImage } from '../lib/default-image';
 /* Hero                                                                */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Hero shapes.
+ *
+ * A viewport-height hero fills the screen on a laptop and swallows the page,
+ * so the shape is chosen in the Studio instead. Desktop and mobile pick
+ * separately, because a 16:9 frame on a phone is a letterbox.
+ */
+export const HERO_RATIOS_DESKTOP: Array<{ label: string; value: string }> = [
+  { label: 'Widescreen 16:9', value: '16 / 9' },
+  { label: 'Cinematic 21:9', value: '21 / 9' },
+  { label: 'Classic 3:2', value: '3 / 2' },
+  { label: 'Square-ish 4:3', value: '4 / 3' },
+  { label: 'Full height', value: 'full' },
+];
+
+export const HERO_RATIOS_MOBILE: Array<{ label: string; value: string }> = [
+  { label: 'Portrait 4:5', value: '4 / 5' },
+  { label: 'Tall 3:4', value: '3 / 4' },
+  { label: 'Square 1:1', value: '1 / 1' },
+  { label: 'Full portrait 9:16', value: '9 / 16' },
+  { label: 'Full height', value: 'full' },
+];
+
 export function StudioHero({ content }: { content: Record<string, any> }) {
   // A phone should never download a desktop-sized film. Two sources, chosen
   // by viewport, each with a still to hold the space while it loads.
@@ -58,9 +81,20 @@ export function StudioHero({ content }: { content: Record<string, any> }) {
 
   if (!video && !image) return null;
 
+  const ratio = isMobile
+    ? content.ratio_mobile || '4 / 5'
+    : content.ratio_desktop || '16 / 9';
+
+  const fullHeight = ratio === 'full';
+
   return (
     <section className="relative w-full overflow-hidden bg-gray-100">
-      <div className="relative w-full h-[70vh] md:h-[85vh]">
+      <div
+        className={`relative w-full ${
+          fullHeight ? 'h-[70vh] md:h-[85vh]' : ''
+        }`}
+        style={fullHeight ? undefined : { aspectRatio: ratio }}
+      >
         {video ? (
           <video
             key={video}
@@ -83,11 +117,16 @@ export function StudioHero({ content }: { content: Record<string, any> }) {
           />
         )}
 
-        {(content.headline || content.link_label) && (
+        {(content.headline || content.subheadline || content.link_label) && (
           <div className="absolute bottom-0 left-0 p-8 md:p-14 text-white">
             {content.headline && (
-              <p className="text-lg md:text-2xl mb-4 drop-shadow">
+              <p className="text-lg md:text-2xl mb-2 drop-shadow">
                 {content.headline}
+              </p>
+            )}
+            {content.subheadline && (
+              <p className="text-sm md:text-base mb-4 max-w-xl opacity-90 drop-shadow">
+                {content.subheadline}
               </p>
             )}
             {content.link_label && content.link_href && (
