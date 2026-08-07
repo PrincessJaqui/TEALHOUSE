@@ -3,6 +3,9 @@ import { AdminLayout } from '../components/AdminLayout';
 import { Button } from '../components/ui/button';
 import { Upload, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Product } from '../App';
+import { productPath } from '../config/taxonomy';
+import { useSupabaseProducts } from '../hooks/useSupabaseProducts';
 import {
   useInterfaceStudio,
   uploadSiteMedia,
@@ -147,8 +150,103 @@ function TextField({
   );
 }
 
+
+/**
+ * Every place a landing page link can go.
+ *
+ * Typed paths were easy to get wrong and impossible to check, so the choice
+ * is a list: collections first because that is what a hero usually points
+ * at, then every published product alphabetically.
+ */
+const COLLECTION_LINKS: Array<{ label: string; value: string }> = [
+  { label: 'Home', value: '/' },
+  { label: 'Footwear', value: '/shoes' },
+  { label: 'Resort Wear', value: '/resort-wear' },
+  { label: 'Accents', value: '/accessories' },
+  { label: 'New Arrivals', value: '/new-arrivals' },
+  { label: 'Best Sellers', value: '/best-sellers' },
+  { label: "Women's Collection", value: '/womens-shoes' },
+  { label: "Men's Collection", value: '/mens-shoes' },
+  { label: 'Cactus Leather', value: '/cactus-leather' },
+  { label: 'Signature Teal Sole', value: '/teal-sole' },
+];
+
+const PAGE_LINKS: Array<{ label: string; value: string }> = [
+  { label: 'Bespoke', value: '/bespoke-design' },
+  { label: 'Materials', value: '/plant-based-materials' },
+  { label: 'Ethics & Conscious Design', value: '/ethics-compliance' },
+  { label: 'Our Story', value: '/about-story' },
+  { label: 'Size Guide', value: '/size-guide' },
+  { label: 'Contact', value: '/contact' },
+];
+
+function LinkPicker({
+  label,
+  value,
+  products,
+  onChange,
+}: {
+  label: string;
+  value?: string;
+  products: Product[];
+  onChange: (value: string) => void;
+}) {
+  const productLinks = [...products]
+    .filter((product) => product.is_published !== false)
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((product) => ({ label: product.name, value: productPath(product) }));
+
+  const known = [...COLLECTION_LINKS, ...PAGE_LINKS, ...productLinks].some(
+    (option) => option.value === value
+  );
+
+  return (
+    <div>
+      <label className="block text-sm mb-2">{label}</label>
+      <select
+        value={value ?? ''}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full px-3 py-2 border border-neutral-200 text-sm"
+      >
+        <option value="">Nowhere, hide the link</option>
+
+        <optgroup label="Collections">
+          {COLLECTION_LINKS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </optgroup>
+
+        {productLinks.length > 0 && (
+          <optgroup label="Products">
+            {productLinks.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </optgroup>
+        )}
+
+        <optgroup label="Pages">
+          {PAGE_LINKS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </optgroup>
+
+        {/* A path saved before this list existed, kept rather than silently
+            dropped when the section is next saved. */}
+        {value && !known && <option value={value}>{value}</option>}
+      </select>
+    </div>
+  );
+}
+
 export function AdminInterfaceStudio() {
   const { sections, loading, save, reload } = useInterfaceStudio();
+  const { products } = useSupabaseProducts();
   const [drafts, setDrafts] = useState<Record<string, any>>({});
   const [actives, setActives] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState<string | null>(null);
@@ -230,10 +328,10 @@ export function AdminInterfaceStudio() {
               placeholder="Shop the collection"
               onChange={(v) => setField(key, 'link_label', v)}
             />
-            <TextField
+            <LinkPicker
               label="Link goes to"
               value={draft.link_href}
-              placeholder="/resort-wear"
+              products={products}
               onChange={(v) => setField(key, 'link_href', v)}
             />
           </div>
@@ -261,10 +359,10 @@ export function AdminInterfaceStudio() {
               value={draft.link_label}
               onChange={(v) => setField(key, 'link_label', v)}
             />
-            <TextField
+            <LinkPicker
               label="Link goes to"
               value={draft.link_href}
-              placeholder="/shoes"
+              products={products}
               onChange={(v) => setField(key, 'link_href', v)}
             />
           </div>
@@ -300,10 +398,10 @@ export function AdminInterfaceStudio() {
                 placeholder="Shop footwear"
                 onChange={(v) => setPanel(key, index, 'label', v)}
               />
-              <TextField
+              <LinkPicker
                 label="Link goes to"
                 value={panels[index]?.href}
-                placeholder="/shoes"
+                products={products}
                 onChange={(v) => setPanel(key, index, 'href', v)}
               />
             </div>
