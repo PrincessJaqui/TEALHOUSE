@@ -45,14 +45,14 @@ export function CollectionPage({
     <div className="min-h-screen bg-white pt-20">
       <Seo title={title} description={metaDescription} path={path} />
 
-      <div className="bg-[#008080] text-white py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl mb-6">{title}</h1>
-          <p className="text-xl max-w-2xl mx-auto opacity-90">{intro}</p>
-        </div>
+      {/* No banner. The heading matches the rest of the site rather than
+          sitting in a coloured block. */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-4 text-center">
+        <h1 className="uppercase tracking-wider mb-4">{title}</h1>
+        <p className="text-sm text-gray-600 max-w-2xl mx-auto">{intro}</p>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
         <ProductGrid
           filter={filter}
           onProductClick={onProductClick}

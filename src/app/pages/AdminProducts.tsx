@@ -98,6 +98,9 @@ export function AdminProducts() {
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [newMaterial, setNewMaterial] = useState('');
   const [newColor, setNewColor] = useState('');
+  const [newColorHex, setNewColorHex] = useState('#000000');
+  // The dropdown shows "Other" when a colour is being created.
+  const [addingColor, setAddingColor] = useState(false);
 
   // Materials, colours and size scales are rows now, so new ones can be
   // created here and become available to every product.
@@ -1291,58 +1294,138 @@ export function AdminProducts() {
 
 
               {/* Colour. Each one carries its own stock, so adding a colour
-                  multiplies the stock boxes below rather than replacing them. */}
+                  multiplies the stock boxes below rather than replacing them.
+                  The first colour chosen is the primary one. */}
               <div className="border border-neutral-200 p-4">
                 <p className="text-xs uppercase tracking-wider text-neutral-500 mb-4">
                   Colours
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {catalog.colors.map((color) => (
-                    <button
-                      key={color.id}
-                      type="button"
-                      onClick={() =>
-                        setSelectedColors((prev) =>
-                          prev.includes(color.name)
-                            ? prev.filter((c) => c !== color.name)
-                            : [...prev, color.name]
-                        )
-                      }
-                      className={`flex items-center gap-2 px-4 py-2 border text-sm transition-colors ${
-                        selectedColors.includes(color.name)
-                          ? 'bg-black text-white border-black'
-                          : 'bg-white text-black border-neutral-200 hover:border-neutral-400'
-                      }`}
-                    >
-                      {color.hex && (
+
+                {selectedColors.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {selectedColors.map((color, position) => {
+                      const hex = catalog.colors.find(
+                        (row) => row.name.toLowerCase() === color.toLowerCase()
+                      )?.hex;
+                      return (
                         <span
-                          className="w-3 h-3 rounded-full border border-neutral-300 inline-block"
-                          style={{ backgroundColor: color.hex }}
+                          key={color}
+                          className="inline-flex items-center gap-2 px-3 py-2 border border-neutral-200 text-sm"
+                        >
+                          {hex && (
+                            <span
+                              className="w-3 h-3 rounded-full border border-neutral-300 inline-block"
+                              style={{ backgroundColor: hex }}
+                            />
+                          )}
+                          {color}
+                          {position === 0 && (
+                            <span className="text-xs text-neutral-500">primary</span>
+                          )}
+                          <button
+                            type="button"
+                            aria-label={`Remove ${color}`}
+                            onClick={() =>
+                              setSelectedColors((prev) =>
+                                prev.filter((c) => c !== color)
+                              )
+                            }
+                            className="text-neutral-400 hover:text-black"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <select
+                  value=""
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '__other__') {
+                      setAddingColor(true);
+                      return;
+                    }
+                    if (value && !selectedColors.includes(value)) {
+                      setSelectedColors((prev) => [...prev, value]);
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-neutral-200 text-sm"
+                >
+                  <option value="">
+                    {selectedColors.length === 0
+                      ? 'Choose the primary colour'
+                      : 'Add another colour'}
+                  </option>
+                  {catalog.colors
+                    .filter((color) => !selectedColors.includes(color.name))
+                    .map((color) => (
+                      <option key={color.id} value={color.name}>
+                        {color.name}
+                      </option>
+                    ))}
+                  <option value="__other__">Other, add a new colour</option>
+                </select>
+
+                {addingColor && (
+                  <div className="border border-neutral-200 p-3 mt-3">
+                    <p className="text-xs uppercase tracking-wider text-neutral-500 mb-3">
+                      New colour
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <input
+                        type="text"
+                        value={newColor}
+                        onChange={(e) => setNewColor(e.target.value)}
+                        placeholder="Colour name"
+                        className="flex-1 min-w-[10rem] px-3 py-2 border border-neutral-200 text-sm"
+                      />
+                      <label className="flex items-center gap-2 text-sm">
+                        Swatch
+                        <input
+                          type="color"
+                          value={newColorHex}
+                          onChange={(e) => setNewColorHex(e.target.value)}
+                          className="w-12 h-9 border border-neutral-200 p-0.5 cursor-pointer"
                         />
-                      )}
-                      {color.name}
-                    </button>
-                  ))}
-                  <input
-                    type="text"
-                    value={newColor}
-                    onChange={(e) => setNewColor(e.target.value)}
-                    onKeyDown={async (e) => {
-                      if (e.key !== 'Enter') return;
-                      e.preventDefault();
-                      if (await catalog.addColor(newColor)) {
-                        setSelectedColors((prev) => [...prev, newColor.trim()]);
-                        setNewColor('');
-                      }
-                    }}
-                    placeholder="Add a colour, then Enter"
-                    className="px-4 py-2 border border-neutral-200 text-sm"
-                  />
-                </div>
+                      </label>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={async () => {
+                          if (!newColor.trim()) return;
+                          // Becomes available to every product, not just this one.
+                          if (await catalog.addColor(newColor, newColorHex)) {
+                            setSelectedColors((prev) => [...prev, newColor.trim()]);
+                            setNewColor('');
+                            setNewColorHex('#000000');
+                            setAddingColor(false);
+                          }
+                        }}
+                      >
+                        Add
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setAddingColor(false);
+                          setNewColor('');
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {selectedColors.length > 0 && (
                   <p className="text-xs text-neutral-500 mt-3">
                     Stock is held per colour, so each one below is counted
-                    separately. Leave this empty for a piece that comes one way.
+                    separately. The first is the primary colour.
                   </p>
                 )}
               </div>
@@ -2195,58 +2278,138 @@ export function AdminProducts() {
 
 
               {/* Colour. Each one carries its own stock, so adding a colour
-                  multiplies the stock boxes below rather than replacing them. */}
+                  multiplies the stock boxes below rather than replacing them.
+                  The first colour chosen is the primary one. */}
               <div className="border border-neutral-200 p-4">
                 <p className="text-xs uppercase tracking-wider text-neutral-500 mb-4">
                   Colours
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {catalog.colors.map((color) => (
-                    <button
-                      key={color.id}
-                      type="button"
-                      onClick={() =>
-                        setSelectedColors((prev) =>
-                          prev.includes(color.name)
-                            ? prev.filter((c) => c !== color.name)
-                            : [...prev, color.name]
-                        )
-                      }
-                      className={`flex items-center gap-2 px-4 py-2 border text-sm transition-colors ${
-                        selectedColors.includes(color.name)
-                          ? 'bg-black text-white border-black'
-                          : 'bg-white text-black border-neutral-200 hover:border-neutral-400'
-                      }`}
-                    >
-                      {color.hex && (
+
+                {selectedColors.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {selectedColors.map((color, position) => {
+                      const hex = catalog.colors.find(
+                        (row) => row.name.toLowerCase() === color.toLowerCase()
+                      )?.hex;
+                      return (
                         <span
-                          className="w-3 h-3 rounded-full border border-neutral-300 inline-block"
-                          style={{ backgroundColor: color.hex }}
+                          key={color}
+                          className="inline-flex items-center gap-2 px-3 py-2 border border-neutral-200 text-sm"
+                        >
+                          {hex && (
+                            <span
+                              className="w-3 h-3 rounded-full border border-neutral-300 inline-block"
+                              style={{ backgroundColor: hex }}
+                            />
+                          )}
+                          {color}
+                          {position === 0 && (
+                            <span className="text-xs text-neutral-500">primary</span>
+                          )}
+                          <button
+                            type="button"
+                            aria-label={`Remove ${color}`}
+                            onClick={() =>
+                              setSelectedColors((prev) =>
+                                prev.filter((c) => c !== color)
+                              )
+                            }
+                            className="text-neutral-400 hover:text-black"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <select
+                  value=""
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '__other__') {
+                      setAddingColor(true);
+                      return;
+                    }
+                    if (value && !selectedColors.includes(value)) {
+                      setSelectedColors((prev) => [...prev, value]);
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-neutral-200 text-sm"
+                >
+                  <option value="">
+                    {selectedColors.length === 0
+                      ? 'Choose the primary colour'
+                      : 'Add another colour'}
+                  </option>
+                  {catalog.colors
+                    .filter((color) => !selectedColors.includes(color.name))
+                    .map((color) => (
+                      <option key={color.id} value={color.name}>
+                        {color.name}
+                      </option>
+                    ))}
+                  <option value="__other__">Other, add a new colour</option>
+                </select>
+
+                {addingColor && (
+                  <div className="border border-neutral-200 p-3 mt-3">
+                    <p className="text-xs uppercase tracking-wider text-neutral-500 mb-3">
+                      New colour
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <input
+                        type="text"
+                        value={newColor}
+                        onChange={(e) => setNewColor(e.target.value)}
+                        placeholder="Colour name"
+                        className="flex-1 min-w-[10rem] px-3 py-2 border border-neutral-200 text-sm"
+                      />
+                      <label className="flex items-center gap-2 text-sm">
+                        Swatch
+                        <input
+                          type="color"
+                          value={newColorHex}
+                          onChange={(e) => setNewColorHex(e.target.value)}
+                          className="w-12 h-9 border border-neutral-200 p-0.5 cursor-pointer"
                         />
-                      )}
-                      {color.name}
-                    </button>
-                  ))}
-                  <input
-                    type="text"
-                    value={newColor}
-                    onChange={(e) => setNewColor(e.target.value)}
-                    onKeyDown={async (e) => {
-                      if (e.key !== 'Enter') return;
-                      e.preventDefault();
-                      if (await catalog.addColor(newColor)) {
-                        setSelectedColors((prev) => [...prev, newColor.trim()]);
-                        setNewColor('');
-                      }
-                    }}
-                    placeholder="Add a colour, then Enter"
-                    className="px-4 py-2 border border-neutral-200 text-sm"
-                  />
-                </div>
+                      </label>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={async () => {
+                          if (!newColor.trim()) return;
+                          // Becomes available to every product, not just this one.
+                          if (await catalog.addColor(newColor, newColorHex)) {
+                            setSelectedColors((prev) => [...prev, newColor.trim()]);
+                            setNewColor('');
+                            setNewColorHex('#000000');
+                            setAddingColor(false);
+                          }
+                        }}
+                      >
+                        Add
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setAddingColor(false);
+                          setNewColor('');
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {selectedColors.length > 0 && (
                   <p className="text-xs text-neutral-500 mt-3">
                     Stock is held per colour, so each one below is counted
-                    separately. Leave this empty for a piece that comes one way.
+                    separately. The first is the primary colour.
                   </p>
                 )}
               </div>

@@ -144,6 +144,10 @@ export function totalStock(product: Product): number {
 }
 
 export function isSoldOut(product: Product): boolean {
+  // Only a stocked piece can sell out. Made to measure, made to order and
+  // pre-order are all built after the sale, so they have no stock to run
+  // down and must never carry the badge.
+  if ((product.fulfillment_type ?? 'in_stock') !== 'in_stock') return false;
   return totalStock(product) <= 0;
 }
 
@@ -329,6 +333,7 @@ export function availableGroupSizes(product: Product, group: SizeGroup): string[
  * because you cannot ship a bikini with no bottoms whatever the tops say.
  */
 export function isGroupedSoldOut(product: Product): boolean {
+  if ((product.fulfillment_type ?? 'in_stock') !== 'in_stock') return false;
   const groups = product.size_groups ?? [];
   if (groups.length === 0) return false;
   return groups.some((group) => availableGroupSizes(product, group).length === 0);
