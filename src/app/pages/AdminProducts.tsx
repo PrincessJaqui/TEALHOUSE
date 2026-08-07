@@ -159,6 +159,10 @@ export function AdminProducts() {
       const { data, error } = await supabase
         .from('products')
         .select('*')
+        // Alphabetical by name. created_at is the tie-breaker so two
+        // products sharing a name keep a stable order rather than shuffling
+        // between loads.
+        .order('name', { ascending: true })
         .order('created_at', { ascending: false });
 
       console.log('Supabase response:', { data, error });
