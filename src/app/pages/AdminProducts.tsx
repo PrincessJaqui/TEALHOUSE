@@ -287,7 +287,12 @@ export function AdminProducts() {
           audience: selectedAudience,
           description,
           materials: selectedMaterials,
-          sizes: selectedCategories.includes('accessories') ? null : selectedSizes,
+          // Parts carry their own sizes, so the single list is cleared rather
+          // than left behind to contradict them.
+          sizes:
+            sizeGroups.length > 0 || selectedCategories.includes('accessories')
+              ? null
+              : selectedSizes,
           stock: buildStockPayload(),
           is_bestseller: isBestseller,
           is_published: isPublished,
@@ -605,7 +610,12 @@ export function AdminProducts() {
         audience: selectedAudience,
         description,
         materials: selectedMaterials,
-        sizes: selectedCategories.includes('accessories') ? null : selectedSizes,
+        // Parts carry their own sizes, so the single list is cleared rather
+          // than left behind to contradict them.
+          sizes:
+            sizeGroups.length > 0 || selectedCategories.includes('accessories')
+              ? null
+              : selectedSizes,
         stock: buildStockPayload(),
         is_bestseller: isBestseller,
         is_published: isPublished,
@@ -1443,14 +1453,13 @@ export function AdminProducts() {
                       <select
                         value={group.scale ?? 'alpha'}
                         onChange={(e) => {
-                          const scale = catalog.scales.find(
-                            (row) => row.key === e.target.value
-                          );
+                          // Changing the scale offers its sizes, it does not
+                          // take all of them. Tick the ones you stock.
                           const next = [...sizeGroups];
                           next[groupIndex] = {
                             ...group,
                             scale: e.target.value,
-                            sizes: scale?.sizes ?? [],
+                            sizes: [],
                           };
                           setSizeGroups(next);
                         }}
@@ -1477,6 +1486,57 @@ export function AdminProducts() {
                       </Button>
                     </div>
 
+
+                    {/* Which sizes this part is offered in. Ticking one adds
+                        a stock box for it below, per colour. */}
+                    <div className="mb-4">
+                      <p className="text-xs uppercase tracking-wider text-neutral-500 mb-2">
+                        Sizes offered
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {(
+                          catalog.scales.find((row) => row.key === (group.scale ?? 'alpha'))
+                            ?.sizes ?? []
+                        ).map((size) => (
+                          <button
+                            key={size}
+                            type="button"
+                            onClick={() => {
+                              const scaleSizes =
+                                catalog.scales.find(
+                                  (row) => row.key === (group.scale ?? 'alpha')
+                                )?.sizes ?? [];
+                              const next = [...sizeGroups];
+                              next[groupIndex] = {
+                                ...group,
+                                // Keep the scale's own order rather than the
+                                // order they happened to be clicked in.
+                                sizes: group.sizes.includes(size)
+                                  ? group.sizes.filter((s) => s !== size)
+                                  : scaleSizes.filter(
+                                      (candidate) =>
+                                        group.sizes.includes(candidate) ||
+                                        candidate === size
+                                    ),
+                              };
+                              setSizeGroups(next);
+                            }}
+                            className={`min-w-[3.5rem] px-3 py-2 border text-sm transition-colors ${
+                              group.sizes.includes(size)
+                                ? 'bg-black text-white border-black'
+                                : 'bg-white text-black border-neutral-200 hover:border-neutral-400'
+                            }`}
+                          >
+                            {size}
+                          </button>
+                        ))}
+                      </div>
+                      {group.sizes.length === 0 && (
+                        <p className="text-xs text-neutral-500 mt-2">
+                          Tick at least one size, or this part cannot be ordered.
+                        </p>
+                      )}
+                    </div>
                     {/* An optional part can be bought on its own, so it needs
                         a price of its own. Selecting every part charges the
                         product price instead, which is the set price. */}
@@ -1555,7 +1615,7 @@ export function AdminProducts() {
 
                     <input
                       type="text"
-                      placeholder="Add sizes, comma separated"
+                      placeholder="Add a size this scale does not have, then Enter"
                       onKeyDown={(e) => {
                         if (e.key !== 'Enter') return;
                         e.preventDefault();
@@ -2312,14 +2372,13 @@ export function AdminProducts() {
                       <select
                         value={group.scale ?? 'alpha'}
                         onChange={(e) => {
-                          const scale = catalog.scales.find(
-                            (row) => row.key === e.target.value
-                          );
+                          // Changing the scale offers its sizes, it does not
+                          // take all of them. Tick the ones you stock.
                           const next = [...sizeGroups];
                           next[groupIndex] = {
                             ...group,
                             scale: e.target.value,
-                            sizes: scale?.sizes ?? [],
+                            sizes: [],
                           };
                           setSizeGroups(next);
                         }}
@@ -2346,6 +2405,57 @@ export function AdminProducts() {
                       </Button>
                     </div>
 
+
+                    {/* Which sizes this part is offered in. Ticking one adds
+                        a stock box for it below, per colour. */}
+                    <div className="mb-4">
+                      <p className="text-xs uppercase tracking-wider text-neutral-500 mb-2">
+                        Sizes offered
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {(
+                          catalog.scales.find((row) => row.key === (group.scale ?? 'alpha'))
+                            ?.sizes ?? []
+                        ).map((size) => (
+                          <button
+                            key={size}
+                            type="button"
+                            onClick={() => {
+                              const scaleSizes =
+                                catalog.scales.find(
+                                  (row) => row.key === (group.scale ?? 'alpha')
+                                )?.sizes ?? [];
+                              const next = [...sizeGroups];
+                              next[groupIndex] = {
+                                ...group,
+                                // Keep the scale's own order rather than the
+                                // order they happened to be clicked in.
+                                sizes: group.sizes.includes(size)
+                                  ? group.sizes.filter((s) => s !== size)
+                                  : scaleSizes.filter(
+                                      (candidate) =>
+                                        group.sizes.includes(candidate) ||
+                                        candidate === size
+                                    ),
+                              };
+                              setSizeGroups(next);
+                            }}
+                            className={`min-w-[3.5rem] px-3 py-2 border text-sm transition-colors ${
+                              group.sizes.includes(size)
+                                ? 'bg-black text-white border-black'
+                                : 'bg-white text-black border-neutral-200 hover:border-neutral-400'
+                            }`}
+                          >
+                            {size}
+                          </button>
+                        ))}
+                      </div>
+                      {group.sizes.length === 0 && (
+                        <p className="text-xs text-neutral-500 mt-2">
+                          Tick at least one size, or this part cannot be ordered.
+                        </p>
+                      )}
+                    </div>
                     {/* An optional part can be bought on its own, so it needs
                         a price of its own. Selecting every part charges the
                         product price instead, which is the set price. */}
@@ -2424,7 +2534,7 @@ export function AdminProducts() {
 
                     <input
                       type="text"
-                      placeholder="Add sizes, comma separated"
+                      placeholder="Add a size this scale does not have, then Enter"
                       onKeyDown={(e) => {
                         if (e.key !== 'Enter') return;
                         e.preventDefault();
