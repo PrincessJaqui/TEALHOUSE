@@ -33,6 +33,11 @@ export function StudioHero({ content }: { content: Record<string, any> }) {
   const video = isMobile ? content.video_mobile : content.video_desktop;
   const image = isMobile ? content.image_mobile : content.image_desktop;
 
+  // Which part of the frame stays visible once the film is cropped to the
+  // hero. Chosen in the Studio, separately for each breakpoint.
+  const focal =
+    (isMobile ? content.focal_mobile : content.focal_desktop) || '50% 50%';
+
   if (!video && !image) return null;
 
   return (
@@ -42,8 +47,10 @@ export function StudioHero({ content }: { content: Record<string, any> }) {
           <video
             key={video}
             className="absolute inset-0 w-full h-full object-cover"
+            style={{ objectPosition: focal }}
             src={video}
             poster={image || undefined}
+            preload="metadata"
             autoPlay
             muted
             loop
@@ -54,6 +61,7 @@ export function StudioHero({ content }: { content: Record<string, any> }) {
             src={image}
             alt={content.headline || ''}
             className="absolute inset-0 w-full h-full object-cover"
+            style={{ objectPosition: focal }}
           />
         )}
 

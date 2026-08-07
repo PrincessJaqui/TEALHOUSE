@@ -31,26 +31,47 @@ const ORDER: SectionKey[] = [
   'spotlight',
 ];
 
+function formatBytes(bytes: number): string {
+  if (bytes > 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
+  return `${Math.round(bytes / 1024)}KB`;
+}
+
 function MediaField({
   label,
   help,
   value,
   accept,
   onChange,
+  focal,
+  onFocalChange,
+  previewRatio,
 }: {
   label: string;
   help?: string;
   value?: string;
   accept: string;
   onChange: (url: string) => void;
+  /** "50% 50%" style focal point, when the caller wants crop control. */
+  focal?: string;
+  onFocalChange?: (focal: string) => void;
+  previewRatio?: string;
 }) {
   const [busy, setBusy] = useState(false);
+  const [size, setSize] = useState<number | null>(null);
+  const [linkMode, setLinkMode] = useState(false);
+  const [linkDraft, setLinkDraft] = useState('');
   const isVideo = accept.includes('video');
+
+  const [fx, fy] = (focal ?? '50% 50%')
+    .split(' ')
+    .map((part) => parseInt(part, 10) || 50);
+
+  const setFocal = (x: number, y: number) =>
+    onFocalChange?.(`${x}% ${y}%`);
 
   const handleFile = async (file: File) => {
     setBusy(true);
-    // 100MB is the bucket limit. A hero film much larger than this will make
-    // the page slow to start whatever the limit says.
+
     if (file.size > 100 * 1024 * 1024) {
       toast.error('That file is over 100MB. Please compress it first.');
       setBusy(false);
@@ -62,7 +83,16 @@ function MediaField({
 
     if (url) {
       onChange(url);
-      toast.success('Uploaded');
+      setSize(file.size);
+      // A large hero film delays the page for everyone on a slow line, and
+      // the bucket limit is a ceiling rather than a target.
+      if (isVideo && file.size > 10 * 1024 * 1024) {
+        toast.warning(
+          `That film is ${formatBytes(file.size)}. Under 10MB loads noticeably faster.`
+        );
+      } else {
+        toast.success('Uploaded');
+      }
     } else {
       toast.error('Upload failed');
     }
@@ -74,41 +104,144 @@ function MediaField({
       {help && <p className="text-xs text-neutral-500 mb-2">{help}</p>}
 
       {value && (
-        <div className="mb-2 border border-neutral-200 p-2">
-          {isVideo ? (
-            <video src={value} className="w-full max-h-40 object-cover" muted />
-          ) : (
-            <img src={value} alt="" className="w-full max-h-40 object-cover" />
+        <div className="mb-3">
+          {/* Shown at roughly the shape the hero will be, with the focal
+              point applied, so what you see here is what a visitor sees. */}
+          <div
+            className="relative w-full overflow-hidden bg-neutral-100 border border-neutral-200"
+            style={{ aspectRatio: previewRatio ?? '16 / 9' }}
+          >
+            {isVideo ? (
+              <video
+                src={value}
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{ objectPosition: focal ?? '50% 50%' }}
+                muted
+                loop
+                autoPlay
+                playsInline
+              />
+            ) : (
+              <img
+                src={value}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{ objectPosition: focal ?? '50% 50%' }}
+              />
+            )}
+          </div>
+
+          {size !== null && (
+            <p className="text-xs text-neutral-500 mt-1">{formatBytes(size)}</p>
           )}
+
+          {onFocalChange && (
+            <div className="mt-3 space-y-2">
+              <p className="text-xs uppercase tracking-wider text-neutral-500">
+                Framing
+              </p>
+              <label className="flex items-center gap-3 text-xs">
+                <span className="w-16 text-neutral-600">Across</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={fx}
+                  onChange={(e) => setFocal(Number(e.target.value), fy)}
+                  className="flex-1"
+                />
+                <span className="w-10 text-right text-neutral-500">{fx}%</span>
+              </label>
+              <label className="flex items-center gap-3 text-xs">
+                <span className="w-16 text-neutral-600">Down</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={fy}
+                  onChange={(e) => setFocal(fx, Number(e.target.value))}
+                  className="flex-1"
+                />
+                <span className="w-10 text-right text-neutral-500">{fy}%</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => setFocal(50, 50)}
+                className="text-xs text-neutral-500 hover:text-black underline"
+              >
+                Centre
+              </button>
+            </div>
+          )}
+
           <button
             type="button"
-            onClick={() => onChange('')}
-            className="text-xs text-red-600 hover:text-red-700 mt-2"
+            onClick={() => {
+              onChange('');
+              setSize(null);
+            }}
+            className="text-xs text-red-600 hover:text-red-700 mt-3"
           >
             Remove
           </button>
         </div>
       )}
 
-      <label className="inline-flex items-center gap-2 px-4 py-2 border border-neutral-200 text-sm cursor-pointer hover:border-black transition-colors">
-        {busy ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : (
-          <Upload className="w-4 h-4" />
-        )}
-        {value ? 'Replace' : 'Upload'}
-        <input
-          type="file"
-          accept={accept}
-          className="hidden"
-          disabled={busy}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) handleFile(file);
-            e.target.value = '';
-          }}
-        />
-      </label>
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="inline-flex items-center gap-2 px-4 py-2 border border-neutral-200 text-sm cursor-pointer hover:border-black transition-colors">
+          {busy ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Upload className="w-4 h-4" />
+          )}
+          {value ? 'Replace' : 'Upload'}
+          <input
+            type="file"
+            accept={accept}
+            className="hidden"
+            disabled={busy}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleFile(file);
+              e.target.value = '';
+            }}
+          />
+        </label>
+
+        {/* Somewhere else already hosting the file, which for video is
+            usually faster than serving it from here. */}
+        <button
+          type="button"
+          onClick={() => setLinkMode((prev) => !prev)}
+          className="text-sm text-neutral-500 hover:text-black underline"
+        >
+          {linkMode ? 'Cancel' : 'Use a link instead'}
+        </button>
+      </div>
+
+      {linkMode && (
+        <div className="flex gap-2 mt-3">
+          <input
+            type="url"
+            value={linkDraft}
+            onChange={(e) => setLinkDraft(e.target.value)}
+            placeholder="https://"
+            className="flex-1 px-3 py-2 border border-neutral-200 text-sm"
+          />
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => {
+              if (!linkDraft.trim()) return;
+              onChange(linkDraft.trim());
+              setLinkDraft('');
+              setLinkMode(false);
+            }}
+          >
+            Use
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -290,29 +423,39 @@ export function AdminInterfaceStudio() {
         <div className="grid md:grid-cols-2 gap-6">
           <MediaField
             label="Desktop film"
-            help="Plays muted and looping. Keep it short and compressed."
+            help="Plays muted and looping. Under 10MB keeps the page quick."
             accept="video/*"
+            previewRatio="16 / 9"
             value={draft.video_desktop}
+            focal={draft.focal_desktop}
+            onFocalChange={(v) => setField(key, 'focal_desktop', v)}
             onChange={(v) => setField(key, 'video_desktop', v)}
           />
           <MediaField
             label="Mobile film"
             help="A phone should not download the desktop file."
             accept="video/*"
+            previewRatio="9 / 14"
             value={draft.video_mobile}
+            focal={draft.focal_mobile}
+            onFocalChange={(v) => setField(key, 'focal_mobile', v)}
             onChange={(v) => setField(key, 'video_mobile', v)}
           />
           <MediaField
             label="Desktop still"
-            help="Shown while the film loads, and instead of it where video will not play."
+            help="Shown while the film loads, and instead of it where video will not play. Shares the desktop framing."
             accept="image/*"
+            previewRatio="16 / 9"
             value={draft.image_desktop}
+            focal={draft.focal_desktop}
             onChange={(v) => setField(key, 'image_desktop', v)}
           />
           <MediaField
             label="Mobile still"
             accept="image/*"
+            previewRatio="9 / 14"
             value={draft.image_mobile}
+            focal={draft.focal_mobile}
             onChange={(v) => setField(key, 'image_mobile', v)}
           />
           <TextField
