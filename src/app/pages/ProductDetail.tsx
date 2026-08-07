@@ -410,6 +410,21 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                 alpha sizes. Nothing here touches stock. */}
             {isMadeToMeasure(product) && (
               <div className="mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <label className="block font-medium">
+                    Select Sizing Selections
+                  </label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate('/size-guide')}
+                    className="text-[#008080] hover:text-[#006666]"
+                  >
+                    <Info className="h-4 w-4 mr-1" />
+                    Size Guide
+                  </Button>
+                </div>
+
                 {(product.size_groups ?? []).length === 0 ? (
                   <p className="text-sm text-gray-600">
                     {MADE_TO_MEASURE_COPY.noParts}
@@ -538,7 +553,7 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
             {/* Multi-part sizing. A bikini gets a Top picker and a Bottom
                 picker, each with its own stock, because the pieces are
                 stocked separately rather than as fixed pairs. */}
-            {!isBespoke(product) && hasSizeGroups(product) && (
+            {!isBespoke(product) && !isMadeToMeasure(product) && hasSizeGroups(product) && (
               <div className="mb-6 space-y-6">
                 {(product.size_groups ?? []).map((group) => {
                   const chosen = selectedSizes[group.label];
@@ -651,7 +666,11 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
               </div>
             )}
 
-            {!isBespoke(product) && !hasSizeGroups(product) && product.sizes && product.sizes.length > 0 && (
+            {!isBespoke(product) &&
+              !isMadeToMeasure(product) &&
+              !hasSizeGroups(product) &&
+              product.sizes &&
+              product.sizes.length > 0 && (
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-3">
                   <label className="block font-medium">Size</label>
