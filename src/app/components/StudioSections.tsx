@@ -135,7 +135,11 @@ export function StudioHero({ content }: { content: Record<string, any> }) {
 
         {(content.headline || content.subheadline || content.link_label) && (
           <div
-            className={`absolute bottom-0 p-8 md:p-14 text-white w-1/2 md:w-1/3 ${
+            // A third of a full-width screen, then HELD at that size rather than
+            // shrinking with the window. A percentage width made the copy narrow
+            // continuously as the browser narrowed, so it read as getting smaller.
+            // max-w keeps it inside the padding on a small laptop.
+            className={`absolute bottom-0 p-8 md:p-14 text-white w-1/2 md:w-[30rem] md:max-w-[calc(100%-7rem)] ${
               textPosition === 'right'
                 ? 'right-0 md:text-right'
                 : textPosition === 'center'
