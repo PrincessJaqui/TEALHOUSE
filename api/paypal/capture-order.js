@@ -1,5 +1,6 @@
 import { paypalFetch, paypalConfigError, money } from '../_lib/paypal.js';
 import { priceCart, adminClient } from '../_lib/cart.js';
+import { sendOrderEmails } from '../_lib/email.js';
 
 /**
  * Captures a PayPal order and records it.
@@ -128,6 +129,21 @@ export default async function handler(req, res) {
       error: 'An item sold out while your payment was processing. You have been refunded in full.',
     });
   }
+
+  // The money is already captured and the order is recorded, so email is
+  // the last thing and must not be able to undo any of it. Awaited so the
+  // function is not torn down mid-send, but every failure is swallowed.
+  await sendOrderEmails({
+    id: order.id,
+    customer_email: customerEmail,
+    items: priced.lines,
+    subtotal: priced.subtotal,
+    shipping_cost: priced.shippingCost,
+    tax: priced.tax,
+    total: priced.total,
+  }).catch((emailError) => {
+    console.error('Order emails failed, order is unaffected:', emailError);
+  });
 
   return res.status(200).json({ orderId: order.id, paypalOrderId: orderId });
 }
