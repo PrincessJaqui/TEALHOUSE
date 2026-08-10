@@ -23,6 +23,7 @@ import { OurTechnologies } from './pages/OurTechnologies';
 import { TheVault } from './pages/TheVault';
 import { BespokeDesign } from './pages/BespokeDesign';
 import { ClientServices } from './pages/ClientServices';
+import { BookAppointment } from './pages/BookAppointment';
 import { ContactUs } from './pages/ContactUs';
 import { DeliveryReturns } from './pages/DeliveryReturns';
 import { SizeGuide } from './pages/SizeGuide';
@@ -255,6 +256,7 @@ function AppContent() {
           <Route path="/our-technologies" element={<OurTechnologies />} />
           <Route path="/the-vault" element={<TheVault />} />
           <Route path="/bespoke-design" element={<BespokeDesign />} />
+          <Route path="/book-appointment" element={<BookAppointment />} />
           <Route path="/client-services" element={<ClientServices />} />
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/delivery-returns" element={<DeliveryReturns />} />

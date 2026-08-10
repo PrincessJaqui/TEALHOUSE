@@ -732,6 +732,20 @@ export function AdminInterfaceStudio() {
     // carousel and spotlight both draw their products from what is featured
     return (
       <div className="space-y-4">
+        {key === 'spotlight' && (
+          <MediaField
+            label="Image beside the spotlight"
+            help="Sits to the left on a laptop, above on a phone. Leave empty for the spotlight alone, full width."
+            accept="image/*"
+            previewRatio="4 / 5"
+            value={draft.image_desktop}
+            focal={draft.image_focal_desktop}
+            onFocalChange={(v) => setField(key, 'image_focal_desktop', v)}
+            zoom={draft.image_zoom_desktop}
+            onZoomChange={(v) => setField(key, 'image_zoom_desktop', v)}
+            onChange={(v) => setField(key, 'image_desktop', v)}
+          />
+        )}
         <TextField
           label="Heading"
           value={draft.heading}

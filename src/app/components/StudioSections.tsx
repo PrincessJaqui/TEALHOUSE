@@ -350,68 +350,95 @@ export function StudioSpotlight({
   const step = (delta: number) =>
     setIndex((current) => (current + delta + products.length) % products.length);
 
+  const sideImage = content.image_desktop;
+
   return (
     <section
-      className="bg-gray-50 py-16"
+      className="bg-gray-50"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="max-w-[900px] mx-auto px-5 text-center">
-        {content.heading && <h2 className="mb-3">{content.heading}</h2>}
-        {content.body && (
-          <p className="text-sm text-gray-600 mb-10">{content.body}</p>
-        )}
-
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => step(-1)}
-            aria-label="Previous"
-            className="absolute left-0 top-1/2 -translate-y-1/2 p-2 hover:opacity-60 transition-opacity"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-
-          <Link to={productPath(product)} className="block">
-            <div className="aspect-square max-w-[420px] mx-auto mb-6">
-              <img
-                key={product.id}
-                src={getPrimaryProductImage(product)}
-                alt={product.image_alt || product.name}
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <p className="mb-1">{product.name}</p>
-            <p className="text-sm text-gray-600">
-              {formatPrice(Number(product.price))}
-            </p>
-          </Link>
-
-          <button
-            type="button"
-            onClick={() => step(1)}
-            aria-label="Next"
-            className="absolute right-0 top-1/2 -translate-y-1/2 p-2 hover:opacity-60 transition-opacity"
-          >
-            <ChevronRight className="w-6 h-6" />
-          </button>
-        </div>
-
-        {products.length > 1 && (
-          <div className="flex justify-center gap-2 mt-8">
-            {products.map((item, i) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setIndex(i)}
-                aria-label={`Show ${item.name}`}
-                className={`h-0.5 w-8 transition-colors ${
-                  i === index % products.length ? 'bg-black' : 'bg-gray-300'
-                }`}
-              />
-            ))}
+      {/* An image beside the spotlight on a laptop, stacked on a phone where
+          side by side would leave both too small to read. */}
+      <div
+        className={
+          sideImage ? 'grid md:grid-cols-2 items-stretch' : ''
+        }
+      >
+        {sideImage && (
+          <div className="relative w-full aspect-[4/5] md:aspect-auto md:min-h-[36rem] overflow-hidden">
+            <CroppedMedia
+              src={sideImage}
+              isVideo={false}
+              ratio="4 / 5"
+              value={{
+                focal: content.image_focal_desktop || '50% 50%',
+                zoom: Number(content.image_zoom_desktop ?? 1),
+              }}
+              alt={content.heading || ''}
+            />
           </div>
         )}
+
+        <div className="flex items-center justify-center py-16">
+          <div className="max-w-[520px] w-full px-5 text-center">
+            {content.heading && <h2 className="mb-3">{content.heading}</h2>}
+            {content.body && (
+              <p className="text-sm text-gray-600 mb-10">{content.body}</p>
+            )}
+
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => step(-1)}
+                aria-label="Previous"
+                className="absolute left-0 top-1/2 -translate-y-1/2 p-2 hover:opacity-60 transition-opacity"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+
+              <Link to={productPath(product)} className="block px-10">
+                <div className="aspect-square mx-auto mb-6">
+                  <img
+                    key={product.id}
+                    src={getPrimaryProductImage(product)}
+                    alt={product.image_alt || product.name}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <p className="mb-1">{product.name}</p>
+                <p className="text-sm text-gray-600">
+                  {formatPrice(Number(product.price))}
+                </p>
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => step(1)}
+                aria-label="Next"
+                className="absolute right-0 top-1/2 -translate-y-1/2 p-2 hover:opacity-60 transition-opacity"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </div>
+
+            {products.length > 1 && (
+              <div className="flex justify-center gap-2 mt-8">
+                {products.map((item, i) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setIndex(i)}
+                    aria-label={`Show ${item.name}`}
+                    className={`h-0.5 w-8 transition-colors ${
+                      i === index % products.length ? 'bg-black' : 'bg-gray-300'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </section>
   );

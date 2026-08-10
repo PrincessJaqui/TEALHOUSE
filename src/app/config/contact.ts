@@ -40,6 +40,13 @@ export const CONTACT = {
   dpo: PRIMARY_EMAIL,
   unsubscribe: PRIMARY_EMAIL,
 
+  /**
+   * A scheduling page such as Calendly or Cal.com. Set this and the Zoom
+   * option on the landing page links straight to it. Left empty, that option
+   * goes to the request form, which emails the house.
+   */
+  appointmentUrl: '' as string,
+
   /** Set to a real number to make phone lines appear across the site. */
   phone: null as string | null,
 
