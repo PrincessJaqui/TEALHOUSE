@@ -1,6 +1,7 @@
 import { ShoppingCart, X, Minus, Plus } from 'lucide-react';
 import { CartItem } from '../App';
 import { describeSelection, describeMeasurements } from '../config/taxonomy';
+import { track } from '../lib/analytics';
 import { isBespoke, unitChargeFor } from '../config/fulfillment';
 import { formatPrice } from '../config/store';
 import { Button } from './ui/button';
@@ -153,8 +154,11 @@ export function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem }:
             <p className="text-sm text-[#666666]">Shipping and taxes calculated at checkout</p>
             <button 
               onClick={() => {
-                onClose();
-                navigate('/checkout');
+                  track('begin_checkout', {
+                    metadata: { items: items.length, subtotal },
+                  });
+                  onClose();
+                  navigate('/checkout');
               }}
               className="w-full bg-[#2c2c2c] text-white py-4 uppercase tracking-wider hover:bg-black transition-colors"
             >

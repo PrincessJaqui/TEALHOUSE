@@ -1,10 +1,17 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useNavigate,
+  useLocation,
+} from 'react-router-dom';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { Cart } from './components/Cart';
 import { ProductModal } from './components/ProductModal';
 import { productPath } from './config/taxonomy';
+import { track } from './lib/analytics';
 import { Search } from './components/Search';
 import { Wishlist } from './components/Wishlist';
 import { Toaster } from './components/ui/sonner';
@@ -44,6 +51,7 @@ import { useSupabaseCart } from './hooks/useSupabaseCart';
 import { useSupabaseWishlist } from './hooks/useSupabaseWishlist';
 import { AdminProducts } from './pages/AdminProducts';
 import { AdminInterfaceStudio } from './pages/AdminInterfaceStudio';
+import { AdminAnalytics } from './pages/AdminAnalytics';
 import { AdminCustomers } from './pages/AdminCustomers';
 import { AdminMessages } from './pages/AdminMessages';
 import { ProtectedAdminRoute } from './components/ProtectedAdminRoute';
@@ -142,6 +150,14 @@ function AppContent() {
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // One page view per route change. The admin is excluded: her own visits
+  // are not traffic and would skew every number.
+  useEffect(() => {
+    if (location.pathname.startsWith('/admin')) return;
+    track('page_view');
+  }, [location.pathname]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   /**
@@ -264,6 +280,7 @@ function AppContent() {
           <Route path="/teal-sole" element={<TealSole onProductClick={openProduct} onAddToWishlist={addToWishlist} isInWishlist={isInWishlist} />} />
           <Route path="/about-story" element={<AboutStory />} />
           <Route path="/not-found" element={<NotFound />} />
+          <Route path="/admin/analytics" element={<ProtectedAdminRoute><AdminAnalytics /></ProtectedAdminRoute>} />
           <Route path="/admin/interface-studio" element={<ProtectedAdminRoute><AdminInterfaceStudio /></ProtectedAdminRoute>} />
           <Route path="/admin/products" element={<ProtectedAdminRoute><AdminProducts /></ProtectedAdminRoute>} />
           <Route path="/admin/customers" element={<ProtectedAdminRoute><AdminCustomers /></ProtectedAdminRoute>} />

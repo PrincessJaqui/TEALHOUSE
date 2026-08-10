@@ -68,6 +68,22 @@ import { getPrimaryProductImage } from '../lib/default-image';
 function describeDbError(error: any): string {
   if (!error) return 'Unknown error';
 
+  // "Failed to fetch" is a browser network error, not a database one: the
+  // request never arrived, so nothing was refused. Saying "a migration has
+  // not been run" here sends you looking in entirely the wrong place.
+  const message = String(error.message ?? '');
+  if (
+    message.includes('Failed to fetch') ||
+    message.includes('NetworkError') ||
+    message.includes('Load failed')
+  ) {
+    return (
+      'Could not reach the database. This is a connection problem, not a ' +
+      'data one. Check the Supabase project is not paused, then try a ' +
+      'private window in case a browser extension is blocking the request.'
+    );
+  }
+
   const parts = [
     error.message,
     error.details,
@@ -989,8 +1005,9 @@ export function AdminProducts() {
               <br />
               <br />
               <br />
-              The message above names the column or constraint that refused.
-              A missing column usually means a migration has not been run yet.{' '}
+              A named column or constraint means the database refused something,
+              usually a migration that has not been run. A connection message
+              means the request never arrived at all.{' '}
               <a
                 href="https://supabase.com/dashboard/project/ymnqgfpnfzrlinbdbkel/editor"
                 target="_blank"

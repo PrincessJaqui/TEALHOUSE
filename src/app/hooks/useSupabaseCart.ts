@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Product, CartItem } from '../App';
 import type { SizeSelection } from '../config/taxonomy';
+import { track } from '../lib/analytics';
 import { products } from '../data/products';
 
 const CART_STORAGE_KEY = 'tealhouse_cart';
@@ -158,6 +159,13 @@ export function useSupabaseCart(userId: string | undefined) {
     }
 
     const newItem: CartItem = { product, quantity: 1, size, sizes, notes, color, measurements };
+
+    // Recorded here rather than on each button, so every route into the bag
+    // is counted and none is counted twice.
+    track('add_to_cart', {
+      productId: product.id,
+      metadata: { name: product.name, price: product.price, color },
+    });
     setCartItems((prev) => [...prev, newItem]);
 
     if (!userId) return true;

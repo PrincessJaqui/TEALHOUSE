@@ -31,6 +31,7 @@ import {
 } from '../config/fulfillment';
 import { Seo, productJsonLd } from '../components/Seo';
 import { useCatalogLists } from '../hooks/useCatalogLists';
+import { track } from '../lib/analytics';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Heart, ShoppingCart, Info } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -115,6 +116,12 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
       setSelectedSize(String(found.sizes[0]));
       setSelectedSizes({});
     }
+
+    // Counted once per product per visit to this page.
+    track('product_view', {
+      productId: found.id,
+      metadata: { name: found.name },
+    });
 
     // One product, one URL. Anything reaching this page by id, or by the
     // wrong category segment, is moved to the canonical path so search

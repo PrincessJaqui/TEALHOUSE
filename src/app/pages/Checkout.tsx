@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
 import { shippingCostFor, formatPrice, taxFor, SHIPPING } from '../config/store';
 import { describeSelection, describeMeasurements } from '../config/taxonomy';
+import { track } from '../lib/analytics';
 import { isBespoke, unitChargeFor, BESPOKE_COPY } from '../config/fulfillment';
 import { PayPalCheckout } from '../components/PayPalCheckout';
 
@@ -638,6 +639,9 @@ export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
                       email={user?.email || email}
                       userId={user?.id ?? null}
                       onSuccess={(newOrderId) => {
+                        track('purchase', {
+                          metadata: { order_id: newOrderId, total: subtotal },
+                        });
                         onOrderPlaced?.();
                         toast.success('Payment received. Thank you.');
                         // A real confirmation page, rather than dropping a

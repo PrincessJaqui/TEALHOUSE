@@ -49,7 +49,9 @@ export function ProductGrid({
   const [styles, setStyles] = useState<string[]>([]);
   const [colors, setColors] = useState<string[]>([]);
   const [sizes, setSizes] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState('name');
+  // 'featured' means the order she arranged in the admin. It is the
+  // default because a merchandised order beats an alphabetical one.
+  const [sortBy, setSortBy] = useState('featured');
 
   const toggle = (
     set: (next: string[]) => void,
@@ -109,6 +111,11 @@ export function ProductGrid({
   };
 
   const sorters: Record<string, (a: Product, b: Product) => number> = {
+    // The order set by dragging in the admin. Products arrive from the
+    // database already in it, with name as the tie-breaker for anything
+    // never placed.
+    featured: (a, b) =>
+      (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.name.localeCompare(b.name),
     name: (a, b) => a.name.localeCompare(b.name),
     'price-asc': (a, b) => Number(a.price) - Number(b.price),
     'price-desc': (a, b) => Number(b.price) - Number(a.price),
@@ -118,7 +125,7 @@ export function ProductGrid({
 
   const filteredProducts = baseProducts
     .filter(matchesAll)
-    .sort(sorters[sortBy] ?? sorters.name);
+    .sort(sorters[sortBy] ?? sorters.featured);
 
   // Nothing to show and the caller asked for silence. The landing page uses
   // this so an empty featured section disappears instead of leaving a filter
@@ -146,6 +153,7 @@ export function ProductGrid({
               onChange={(e) => setSortBy(e.target.value)}
               className="appearance-none bg-transparent border-0 pr-6 py-1 text-sm cursor-pointer focus:outline-none"
             >
+              <option value="featured">Featured</option>
               <option value="name">A to Z</option>
               <option value="price-asc">Price, low to high</option>
               <option value="price-desc">Price, high to low</option>
