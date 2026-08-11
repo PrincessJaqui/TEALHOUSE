@@ -10,6 +10,9 @@ import {
   HERO_RATIOS_DESKTOP,
   HERO_RATIOS_MOBILE,
   HERO_TEXT_POSITIONS,
+  HERO_TEXT_WIDTHS,
+  SPOTLIGHT_IMAGE_SPANS,
+  SPOTLIGHT_IMAGE_RATIOS,
 } from '../components/StudioSections';
 import { CropEditor } from '../components/CropEditor';
 import { GripVertical } from 'lucide-react';
@@ -610,6 +613,13 @@ export function AdminInterfaceStudio() {
 
           <div className="grid md:grid-cols-2 gap-6 border-t border-neutral-200 pt-6">
           <RatioField
+            label="Wording width"
+            help="How wide the block is on a laptop. It holds this size rather than shrinking with the window."
+            value={draft.text_width}
+            options={HERO_TEXT_WIDTHS}
+            onChange={(v) => setField(key, 'text_width', v)}
+          />
+          <RatioField
             label="Wording sits"
             help="The block is a third of the width on a laptop, half on a phone."
             value={draft.text_position}
@@ -733,11 +743,30 @@ export function AdminInterfaceStudio() {
     return (
       <div className="space-y-4">
         {key === 'spotlight' && (
+          <div className="grid md:grid-cols-2 gap-4">
+            <RatioField
+              label="Image shape"
+              help="The image holds this shape instead of stretching to the product column."
+              value={draft.image_ratio}
+              options={SPOTLIGHT_IMAGE_RATIOS}
+              onChange={(v) => setField(key, 'image_ratio', v)}
+            />
+            <RatioField
+              label="Image width"
+              help="How much of the row the image takes. The product area fills the rest."
+              value={draft.image_span}
+              options={SPOTLIGHT_IMAGE_SPANS}
+              onChange={(v) => setField(key, 'image_span', v)}
+            />
+          </div>
+        )}
+
+        {key === 'spotlight' && (
           <MediaField
             label="Image beside the spotlight"
             help="Sits to the left on a laptop, above on a phone. Leave empty for the spotlight alone, full width."
             accept="image/*"
-            previewRatio="4 / 5"
+            previewRatio={draft.image_ratio || '4 / 5'}
             value={draft.image_desktop}
             focal={draft.image_focal_desktop}
             onFocalChange={(v) => setField(key, 'image_focal_desktop', v)}

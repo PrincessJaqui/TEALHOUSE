@@ -38,6 +38,27 @@ export const HERO_RATIOS_DESKTOP: Array<{ label: string; value: string }> = [
 ];
 
 /**
+ * How wide the wording block is on a laptop.
+ *
+ * A fixed width was one guess too many, so this is hers to set. Each is a
+ * fixed size rather than a percentage, so the block does not narrow as the
+ * window does.
+ */
+export const HERO_TEXT_WIDTHS: Array<{ label: string; value: string }> = [
+  { label: 'Narrow', value: 'narrow' },
+  { label: 'Medium', value: 'medium' },
+  { label: 'Wide', value: 'wide' },
+  { label: 'Half the frame', value: 'half' },
+];
+
+const WIDTH_CLASS: Record<string, string> = {
+  narrow: 'md:w-[30rem]',
+  medium: 'md:w-[40rem]',
+  wide: 'md:w-[52rem]',
+  half: 'md:w-1/2',
+};
+
+/**
  * Where the hero copy sits.
  *
  * The subject of a photograph moves, so the text has to move with it. On a
@@ -139,7 +160,11 @@ export function StudioHero({ content }: { content: Record<string, any> }) {
             // shrinking with the window. A percentage width made the copy narrow
             // continuously as the browser narrowed, so it read as getting smaller.
             // max-w keeps it inside the padding on a small laptop.
-            className={`absolute bottom-0 p-8 md:p-14 text-white w-1/2 md:w-[30rem] md:max-w-[calc(100%-7rem)] ${
+            // pb is larger than the rest so a third line of copy can never
+            // sit against the bottom edge of the frame.
+            className={`absolute bottom-0 px-8 pt-8 pb-12 md:px-14 md:pt-14 md:pb-16 text-white w-1/2 ${
+              WIDTH_CLASS[content.text_width] ?? WIDTH_CLASS.medium
+            } md:max-w-[calc(100%-7rem)] ${
               textPosition === 'right'
                 ? 'right-0 md:text-right'
                 : textPosition === 'center'
@@ -323,6 +348,35 @@ export function StudioCarousel({
 /* Featured spotlight                                                  */
 /* ------------------------------------------------------------------ */
 
+/**
+ * How much of the spotlight row the image takes, and what shape it holds.
+ *
+ * The image used to stretch to whatever height the product column happened
+ * to be, which cropped it unpredictably. It now keeps a shape of its own and
+ * the product column takes whatever is left.
+ */
+export const SPOTLIGHT_IMAGE_SPANS: Array<{ label: string; value: string }> = [
+  { label: 'A third', value: 'third' },
+  { label: 'Two fifths', value: 'two-fifths' },
+  { label: 'Half', value: 'half' },
+  { label: 'Three fifths', value: 'three-fifths' },
+];
+
+const SPAN_CLASS: Record<string, string> = {
+  third: 'md:w-1/3',
+  'two-fifths': 'md:w-2/5',
+  half: 'md:w-1/2',
+  'three-fifths': 'md:w-3/5',
+};
+
+export const SPOTLIGHT_IMAGE_RATIOS: Array<{ label: string; value: string }> = [
+  { label: 'Portrait 4:5', value: '4 / 5' },
+  { label: 'Tall 3:4', value: '3 / 4' },
+  { label: 'Very tall 2:3', value: '2 / 3' },
+  { label: 'Square 1:1', value: '1 / 1' },
+  { label: 'Landscape 4:3', value: '4 / 3' },
+];
+
 const SPOTLIGHT_MS = 4000;
 
 export function StudioSpotlight({
@@ -351,6 +405,8 @@ export function StudioSpotlight({
     setIndex((current) => (current + delta + products.length) % products.length);
 
   const sideImage = content.image_desktop;
+  const imageRatio = content.image_ratio || '4 / 5';
+  const spanClass = SPAN_CLASS[content.image_span] ?? SPAN_CLASS.half;
 
   return (
     <section
@@ -358,19 +414,19 @@ export function StudioSpotlight({
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* An image beside the spotlight on a laptop, stacked on a phone where
-          side by side would leave both too small to read. */}
-      <div
-        className={
-          sideImage ? 'grid md:grid-cols-2 items-stretch' : ''
-        }
-      >
+      {/* Held to the content width like every other section, rather than
+          running to the edges of the screen. */}
+      <div className="max-w-[1200px] mx-auto px-5">
+        <div className={sideImage ? 'md:flex md:items-center md:gap-10' : ''}>
         {sideImage && (
-          <div className="relative w-full aspect-[4/5] md:aspect-auto md:min-h-[36rem] overflow-hidden">
+          <div
+            className={`relative w-full ${spanClass} shrink-0 overflow-hidden`}
+            style={{ aspectRatio: imageRatio }}
+          >
             <CroppedMedia
               src={sideImage}
               isVideo={false}
-              ratio="4 / 5"
+              ratio={imageRatio}
               value={{
                 focal: content.image_focal_desktop || '50% 50%',
                 zoom: Number(content.image_zoom_desktop ?? 1),
@@ -380,8 +436,9 @@ export function StudioSpotlight({
           </div>
         )}
 
-        <div className="flex items-center justify-center py-16">
-          <div className="max-w-[520px] w-full px-5 text-center">
+        {/* Takes whatever width is left, so it widens as the image narrows. */}
+        <div className="flex-1 flex items-center justify-center py-16">
+          <div className="w-full text-center">
             {content.heading && <h2 className="mb-3">{content.heading}</h2>}
             {content.body && (
               <p className="text-sm text-gray-600 mb-10">{content.body}</p>
@@ -438,6 +495,7 @@ export function StudioSpotlight({
               </div>
             )}
           </div>
+        </div>
         </div>
       </div>
     </section>

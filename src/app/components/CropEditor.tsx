@@ -99,8 +99,16 @@ export function CropEditor({ src, isVideo, ratio, value, onChange }: CropEditorP
         ? 'Zoom in to move up and down'
         : 'Zoom in to reframe';
 
+  const previewRatio = ratio === 'full' ? 16 / 9 : frameRatio;
+  // Height first, width derived, so the frame stays the true shape while
+  // never taking over the form.
+  const maxPreviewHeight = 20;
+
   return (
     <div>
+      <div
+        style={{ maxWidth: `${maxPreviewHeight * previewRatio}rem` }}
+      >
       <div
         ref={frame}
         onPointerDown={beginDrag}
@@ -139,7 +147,12 @@ export function CropEditor({ src, isVideo, ratio, value, onChange }: CropEditorP
         )}
       </div>
 
-      <div className="flex items-center gap-3 mt-3">
+      </div>
+
+      <div
+        className="flex items-center gap-3 mt-3"
+        style={{ maxWidth: `${maxPreviewHeight * previewRatio}rem` }}
+      >
         <button
           type="button"
           onClick={() => setZoom(zoom - 0.1)}
