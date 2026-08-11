@@ -43,7 +43,13 @@ export function CropEditor({ src, isVideo, ratio, value, onChange }: CropEditorP
   const zoom = value.zoom && value.zoom > 1 ? value.zoom : 1;
   const [fx, fy] = parseFocal(value.focal);
 
-  const frameRatio = parseRatio(ratio);
+  // 'original' means the photograph's own proportions, so the frame follows
+  // the image rather than imposing a shape on it. Nothing to crop, so the
+  // controls stand down.
+  const keepsOwnShape = ratio === 'original';
+  const frameRatio = keepsOwnShape
+    ? (natural ?? 4 / 5)
+    : parseRatio(ratio);
   const range = panRange(natural ?? frameRatio, frameRatio, zoom);
   const canMoveX = range.x > 0;
   const canMoveY = range.y > 0;
@@ -91,7 +97,9 @@ export function CropEditor({ src, isVideo, ratio, value, onChange }: CropEditorP
     setDragging(false);
   };
 
-  const hint = canMoveX && canMoveY
+  const hint = keepsOwnShape
+    ? 'Shown whole, nothing cropped'
+    : canMoveX && canMoveY
     ? 'Drag to frame'
     : canMoveY
       ? 'Zoom in to move sideways'
@@ -118,12 +126,24 @@ export function CropEditor({ src, isVideo, ratio, value, onChange }: CropEditorP
         className={`relative w-full overflow-hidden bg-neutral-100 border border-neutral-200 touch-none ${
           dragging ? 'cursor-grabbing' : 'cursor-grab'
         }`}
-        style={{ aspectRatio: ratio === 'full' ? '16 / 9' : ratio }}
+        style={{
+          aspectRatio: keepsOwnShape
+            ? String(frameRatio)
+            : ratio === 'full'
+              ? '16 / 9'
+              : ratio,
+        }}
       >
         <CroppedMedia
           src={src}
           isVideo={isVideo}
-          ratio={ratio === 'full' ? '16 / 9' : ratio}
+          ratio={
+            keepsOwnShape
+              ? String(frameRatio)
+              : ratio === 'full'
+                ? '16 / 9'
+                : ratio
+          }
           value={{ focal: value.focal, zoom }}
           className="pointer-events-none select-none"
           onNatural={setNatural}
@@ -149,6 +169,7 @@ export function CropEditor({ src, isVideo, ratio, value, onChange }: CropEditorP
 
       </div>
 
+      {!keepsOwnShape && (
       <div
         className="flex items-center gap-3 mt-3"
         style={{ maxWidth: `${maxPreviewHeight * previewRatio}rem` }}
@@ -196,6 +217,7 @@ export function CropEditor({ src, isVideo, ratio, value, onChange }: CropEditorP
           <RotateCcw className="w-4 h-4" />
         </button>
       </div>
+      )}
     </div>
   );
 }

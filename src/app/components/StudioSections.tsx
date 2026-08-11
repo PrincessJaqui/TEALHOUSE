@@ -370,6 +370,10 @@ const SPAN_CLASS: Record<string, string> = {
 };
 
 export const SPOTLIGHT_IMAGE_RATIOS: Array<{ label: string; value: string }> = [
+  // The photograph's own proportions, uncropped. Default, because a real
+  // photograph is rarely exactly 4:5 or 2:3 and forcing it into one cuts
+  // something out of the frame.
+  { label: 'The image\u2019s own shape', value: 'original' },
   { label: 'Portrait 4:5', value: '4 / 5' },
   { label: 'Tall 3:4', value: '3 / 4' },
   { label: 'Very tall 2:3', value: '2 / 3' },
@@ -405,7 +409,9 @@ export function StudioSpotlight({
     setIndex((current) => (current + delta + products.length) % products.length);
 
   const sideImage = content.image_desktop;
-  const imageRatio = content.image_ratio || '4 / 5';
+  // 'original' means no crop at all: the photograph sets its own height.
+  const imageRatio = content.image_ratio || 'original';
+  const keepsOwnShape = imageRatio === 'original';
   const spanClass = SPAN_CLASS[content.image_span] ?? SPAN_CLASS.half;
 
   return (
@@ -414,31 +420,39 @@ export function StudioSpotlight({
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* Held to the content width like every other section, rather than
-          running to the edges of the screen. */}
-      <div className="max-w-[1200px] mx-auto px-5">
-        <div className={sideImage ? 'md:flex md:items-center md:gap-10' : ''}>
-        {sideImage && (
-          <div
-            className={`relative w-full ${spanClass} shrink-0 overflow-hidden`}
-            style={{ aspectRatio: imageRatio }}
-          >
-            <CroppedMedia
+      {/* The image runs to the edge of the screen; the product side keeps the
+          content padding. */}
+      <div className={sideImage ? 'md:flex md:items-center' : ''}>
+        {sideImage &&
+          (keepsOwnShape ? (
+            // Nothing is cropped: the photograph's own proportions decide the
+            // height, which is why this needs no frame around it.
+            <img
               src={sideImage}
-              isVideo={false}
-              ratio={imageRatio}
-              value={{
-                focal: content.image_focal_desktop || '50% 50%',
-                zoom: Number(content.image_zoom_desktop ?? 1),
-              }}
               alt={content.heading || ''}
+              className={`w-full ${spanClass} shrink-0 h-auto block`}
             />
-          </div>
-        )}
+          ) : (
+            <div
+              className={`relative w-full ${spanClass} shrink-0 overflow-hidden`}
+              style={{ aspectRatio: imageRatio }}
+            >
+              <CroppedMedia
+                src={sideImage}
+                isVideo={false}
+                ratio={imageRatio}
+                value={{
+                  focal: content.image_focal_desktop || '50% 50%',
+                  zoom: Number(content.image_zoom_desktop ?? 1),
+                }}
+                alt={content.heading || ''}
+              />
+            </div>
+          ))}
 
         {/* Takes whatever width is left, so it widens as the image narrows. */}
-        <div className="flex-1 flex items-center justify-center py-16">
-          <div className="w-full text-center">
+        <div className="flex-1 flex items-center justify-center py-16 px-5">
+          <div className="w-full max-w-[560px] text-center">
             {content.heading && <h2 className="mb-3">{content.heading}</h2>}
             {content.body && (
               <p className="text-sm text-gray-600 mb-10">{content.body}</p>
@@ -495,7 +509,6 @@ export function StudioSpotlight({
               </div>
             )}
           </div>
-        </div>
         </div>
       </div>
     </section>

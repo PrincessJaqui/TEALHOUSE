@@ -746,7 +746,7 @@ export function AdminInterfaceStudio() {
           <div className="grid md:grid-cols-2 gap-4">
             <RatioField
               label="Image shape"
-              help="The image holds this shape instead of stretching to the product column."
+              help="Its own shape crops nothing. A preset shape crops the photograph to fit."
               value={draft.image_ratio}
               options={SPOTLIGHT_IMAGE_RATIOS}
               onChange={(v) => setField(key, 'image_ratio', v)}
@@ -766,7 +766,7 @@ export function AdminInterfaceStudio() {
             label="Image beside the spotlight"
             help="Sits to the left on a laptop, above on a phone. Leave empty for the spotlight alone, full width."
             accept="image/*"
-            previewRatio={draft.image_ratio || '4 / 5'}
+            previewRatio={draft.image_ratio || 'original'}
             value={draft.image_desktop}
             focal={draft.image_focal_desktop}
             onFocalChange={(v) => setField(key, 'image_focal_desktop', v)}
