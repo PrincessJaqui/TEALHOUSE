@@ -5,7 +5,7 @@ import { Product } from '../App';
 import { productPath } from '../config/taxonomy';
 import { formatPrice } from '../config/store';
 import { getPrimaryProductImage } from '../lib/default-image';
-import { CroppedMedia } from './CroppedMedia';
+import { CroppedMedia, parseRatio } from './CroppedMedia';
 
 /**
  * The landing page, built from Studio content.
@@ -466,10 +466,33 @@ export function StudioSpotlight({
   // 'original' means no crop at all: the photograph sets its own height.
   const imageRatio = content.image_ratio || 'original';
   const keepsOwnShape = imageRatio === 'original';
+
+  // The photograph's own proportions, measured once it loads, so the height
+  // cap below can be worked out from its real shape rather than a guess.
+  const [naturalRatio, setNaturalRatio] = useState<number | null>(null);
   // The height is what stays constant. A portrait photograph is therefore
   // narrow and a square one is wide, which is how it should be: the shape of
   // the picture decides its width, not an arbitrary fraction of the page.
   const imageHeight = content.image_height || '36rem';
+
+  /**
+   * Height, capped so the image can never be wider than half the row.
+   *
+   * At full width the chosen height applies unchanged. Once the window is
+   * narrow enough that the image would crowd the product beside it, the cap
+   * takes over and the two shrink together rather than one squeezing the
+   * other.
+   *
+   * width = height x ratio, and we want width <= half the row, so
+   * height <= row / (2 x ratio).
+   */
+  const effectiveRatio = keepsOwnShape
+    ? (naturalRatio ?? 0.75)
+    : parseRatio(imageRatio);
+
+  const cappedHeight = `min(${imageHeight}, calc(100vw / ${(
+    2 * effectiveRatio
+  ).toFixed(4)}))`;
 
   return (
     <section
@@ -489,7 +512,13 @@ export function StudioSpotlight({
               src={sideImage}
               alt={content.heading || ''}
               className="w-full md:w-auto md:shrink-0 block"
-              style={narrow ? undefined : { height: imageHeight, width: 'auto' }}
+              style={narrow ? undefined : { height: cappedHeight, width: 'auto' }}
+              onLoad={(e) => {
+                const el = e.currentTarget;
+                if (el.naturalWidth && el.naturalHeight) {
+                  setNaturalRatio(el.naturalWidth / el.naturalHeight);
+                }
+              }}
             />
           ) : (
             <div
@@ -497,7 +526,7 @@ export function StudioSpotlight({
               style={
                 narrow
                   ? { aspectRatio: imageRatio }
-                  : { height: imageHeight, aspectRatio: imageRatio }
+                  : { height: cappedHeight, aspectRatio: imageRatio }
               }
             >
               <CroppedMedia
@@ -516,7 +545,7 @@ export function StudioSpotlight({
         {/* Takes whatever width is left, so it widens as the image narrows. */}
         <div
           className="flex-1 flex items-center justify-center py-12 px-5 min-w-0"
-          style={narrow ? undefined : { height: imageHeight }}
+          style={narrow ? undefined : { height: cappedHeight }}
         >
           <div className="w-full max-w-[560px] text-center">
             {content.heading && <h2 className="mb-3">{content.heading}</h2>}
