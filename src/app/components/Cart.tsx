@@ -126,7 +126,7 @@ export function Cart({
                             onClick={() => setEditing(item)}
                             className="text-xs text-[#666666] underline hover:text-black mt-1"
                           >
-                            Change size
+                            Edit
                           </button>
                         )}
                       </div>
