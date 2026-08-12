@@ -11,7 +11,7 @@ import {
   HERO_RATIOS_MOBILE,
   HERO_TEXT_POSITIONS,
   HERO_TEXT_WIDTHS,
-  SPOTLIGHT_IMAGE_SPANS,
+  SPOTLIGHT_IMAGE_HEIGHTS,
   SPOTLIGHT_IMAGE_RATIOS,
 } from '../components/StudioSections';
 import { CropEditor } from '../components/CropEditor';
@@ -752,11 +752,11 @@ export function AdminInterfaceStudio() {
               onChange={(v) => setField(key, 'image_ratio', v)}
             />
             <RatioField
-              label="Image width"
-              help="How much of the row the image takes. The product area fills the rest."
-              value={draft.image_span}
-              options={SPOTLIGHT_IMAGE_SPANS}
-              onChange={(v) => setField(key, 'image_span', v)}
+              label="Image height"
+              help="The height stays fixed and the width follows the photograph, so only the product area changes size."
+              value={draft.image_height}
+              options={SPOTLIGHT_IMAGE_HEIGHTS}
+              onChange={(v) => setField(key, 'image_height', v)}
             />
           </div>
         )}

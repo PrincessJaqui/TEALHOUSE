@@ -33,7 +33,16 @@ export function parseFocal(focal: string | undefined): [number, number] {
 }
 
 export function parseRatio(ratio: string | undefined): number {
-  const [w, h] = (ratio ?? '16 / 9').split('/').map((part) => parseFloat(part));
+  const text = (ratio ?? '16 / 9').trim();
+
+  // A bare number is already a ratio. Without this it has no slash, falls
+  // through to the default, and a portrait gets shown in a widescreen frame.
+  if (!text.includes('/')) {
+    const value = parseFloat(text);
+    return Number.isFinite(value) && value > 0 ? value : 16 / 9;
+  }
+
+  const [w, h] = text.split('/').map((part) => parseFloat(part));
   return w && h ? w / h : 16 / 9;
 }
 

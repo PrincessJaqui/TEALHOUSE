@@ -355,19 +355,12 @@ export function StudioCarousel({
  * to be, which cropped it unpredictably. It now keeps a shape of its own and
  * the product column takes whatever is left.
  */
-export const SPOTLIGHT_IMAGE_SPANS: Array<{ label: string; value: string }> = [
-  { label: 'A third', value: 'third' },
-  { label: 'Two fifths', value: 'two-fifths' },
-  { label: 'Half', value: 'half' },
-  { label: 'Three fifths', value: 'three-fifths' },
+export const SPOTLIGHT_IMAGE_HEIGHTS: Array<{ label: string; value: string }> = [
+  { label: 'Short, 24rem', value: '24rem' },
+  { label: 'Medium, 30rem', value: '30rem' },
+  { label: 'Tall, 36rem', value: '36rem' },
+  { label: 'Very tall, 42rem', value: '42rem' },
 ];
-
-const SPAN_CLASS: Record<string, string> = {
-  third: 'md:w-1/3',
-  'two-fifths': 'md:w-2/5',
-  half: 'md:w-1/2',
-  'three-fifths': 'md:w-3/5',
-};
 
 export const SPOTLIGHT_IMAGE_RATIOS: Array<{ label: string; value: string }> = [
   // The photograph's own proportions, uncropped. Default, because a real
@@ -412,7 +405,22 @@ export function StudioSpotlight({
   // 'original' means no crop at all: the photograph sets its own height.
   const imageRatio = content.image_ratio || 'original';
   const keepsOwnShape = imageRatio === 'original';
-  const spanClass = SPAN_CLASS[content.image_span] ?? SPAN_CLASS.half;
+  // The height is what stays constant. A portrait photograph is therefore
+  // narrow and a square one is wide, which is how it should be: the shape of
+  // the picture decides its width, not an arbitrary fraction of the page.
+  const imageHeight = content.image_height || '36rem';
+
+  // Below this the image stacks above the product and spans the width, so a
+  // fixed height would crop it for no reason.
+  const [narrow, setNarrow] = useState(
+    typeof window !== 'undefined' ? window.innerWidth < 768 : false
+  );
+
+  useEffect(() => {
+    const onResize = () => setNarrow(window.innerWidth < 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   return (
     <section
@@ -425,17 +433,23 @@ export function StudioSpotlight({
       <div className={sideImage ? 'md:flex md:items-center' : ''}>
         {sideImage &&
           (keepsOwnShape ? (
-            // Nothing is cropped: the photograph's own proportions decide the
-            // height, which is why this needs no frame around it.
+            // Nothing cropped. A fixed height with an automatic width means
+            // the photograph's own proportions decide how much room it takes:
+            // a portrait is narrow, a square is wide.
             <img
               src={sideImage}
               alt={content.heading || ''}
-              className={`w-full ${spanClass} shrink-0 h-auto block`}
+              className="w-full md:w-auto md:shrink-0 block"
+              style={narrow ? undefined : { height: imageHeight, width: 'auto' }}
             />
           ) : (
             <div
-              className={`relative w-full ${spanClass} shrink-0 overflow-hidden`}
-              style={{ aspectRatio: imageRatio }}
+              className="relative w-full md:w-auto md:shrink-0 overflow-hidden"
+              style={
+                narrow
+                  ? { aspectRatio: imageRatio }
+                  : { height: imageHeight, aspectRatio: imageRatio }
+              }
             >
               <CroppedMedia
                 src={sideImage}
@@ -451,7 +465,10 @@ export function StudioSpotlight({
           ))}
 
         {/* Takes whatever width is left, so it widens as the image narrows. */}
-        <div className="flex-1 flex items-center justify-center py-16 px-5">
+        <div
+          className="flex-1 flex items-center justify-center py-12 px-5 min-w-0"
+          style={narrow ? undefined : { height: imageHeight }}
+        >
           <div className="w-full max-w-[560px] text-center">
             {content.heading && <h2 className="mb-3">{content.heading}</h2>}
             {content.body && (
@@ -469,7 +486,17 @@ export function StudioSpotlight({
               </button>
 
               <Link to={productPath(product)} className="block px-10">
-                <div className="aspect-square mx-auto mb-6">
+                {/* Bounded by the section height as well as the column width,
+                    so a narrow window shrinks the shot instead of pushing it
+                    out of the section. */}
+                <div
+                  className="aspect-square mx-auto mb-6 w-full"
+                  style={
+                    narrow
+                      ? undefined
+                      : { maxHeight: `calc(${imageHeight} - 14rem)`, maxWidth: `calc(${imageHeight} - 14rem)` }
+                  }
+                >
                   <img
                     key={product.id}
                     src={getPrimaryProductImage(product)}
