@@ -1,4 +1,5 @@
 import { Seo } from '../components/Seo';
+import { CARE } from '../config/store';
 
 interface Material {
   name: string;
@@ -93,7 +94,12 @@ export function PlantBasedMaterials() {
             <h2 className="mb-8">Our Materials</h2>
             <div className="space-y-10">
               <MaterialList heading="Footwear Architecture" items={FOOTWEAR} />
-              <MaterialList heading="Swimwear Engineering" items={SWIMWEAR} />
+              <div>
+                <MaterialList heading="Swimwear Engineering" items={SWIMWEAR} />
+                <p className="text-gray-700 leading-relaxed text-sm mt-5 pt-5 border-t border-gray-200">
+                  <strong>Care.</strong> {CARE.swimwear}
+                </p>
+              </div>
             </div>
           </section>
         </div>

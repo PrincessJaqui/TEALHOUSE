@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react';
-import { SHIPPING, RETURNS, formatPrice } from '../config/store';
+import {
+  SHIPPING,
+  RETURNS,
+  formatPrice,
+  CARE,
+  needsSwimwearCare,
+} from '../config/store';
 import {
   stockForSize,
   isSoldOut,
@@ -783,6 +789,15 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                   <p className="text-gray-600 text-sm">Consciously made</p>
                 </div>
               </div>
+              {needsSwimwearCare(product) && (
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 bg-[#008080] rounded-full mt-2"></div>
+                  <div>
+                    <h4 className="font-medium mb-1">Care</h4>
+                    <p className="text-gray-600 text-sm">{CARE.swimwear}</p>
+                  </div>
+                </div>
+              )}
               <div className="flex items-start gap-3">
                 <div className="w-2 h-2 bg-[#008080] rounded-full mt-2"></div>
                 <div>

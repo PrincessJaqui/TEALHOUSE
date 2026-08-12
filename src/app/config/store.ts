@@ -116,3 +116,26 @@ export function formatPrice(value: number): string {
     currency: 'USD',
   }).format(Number.isFinite(value) ? value : 0);
 }
+
+
+/* ------------------------------------------------------------------ */
+/* Care                                                                */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Care wording, kept here so the same line appears on the product page, the
+ * materials page and client services without three copies drifting apart.
+ */
+export const CARE = {
+  swimwear:
+    'To preserve color, fit, and finish, hand or machine wash cold and line dry.',
+} as const;
+
+/** True for anything that should carry the swimwear care line. */
+export function needsSwimwearCare(product: {
+  categories?: string[];
+}): boolean {
+  return (product.categories ?? []).some((category) =>
+    ['resort-wear', 'swimwear'].includes(String(category).toLowerCase())
+  );
+}

@@ -1,4 +1,5 @@
 import { CONTACT } from '../config/contact';
+import { CARE } from '../config/store';
 
 export function ClientServices() {
   return (
@@ -63,9 +64,12 @@ export function ClientServices() {
               <li>Heel and strap repairs</li>
               <li>Professional restoration services</li>
             </ul>
-            <p className="text-gray-700 leading-relaxed mt-4">
+            <p className="text-gray-700 leading-relaxed mt-4 mb-6">
               <strong>Repair inquiries:</strong> {CONTACT.care}
             </p>
+
+            <h3 className="mb-3">Swimwear Care</h3>
+            <p className="text-gray-700 leading-relaxed">{CARE.swimwear}</p>
           </section>
 
           <section>
