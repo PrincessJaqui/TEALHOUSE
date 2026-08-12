@@ -111,6 +111,8 @@ export interface Product {
   measurement_fields?: string[];
   /** Roughly how long a made to measure piece takes before dispatch. */
   lead_time_weeks?: number | null;
+  /** Business days to prepare this piece, before shipping time. */
+  ships_in_days?: number | null;
 }
 
 export interface CartItem {

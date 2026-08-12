@@ -1,5 +1,5 @@
 import { paypalFetch, paypalConfigError, money } from '../_lib/paypal.js';
-import { priceCart, adminClient } from '../_lib/cart.js';
+import { priceCart, adminClient, recordDiscountUse } from '../_lib/cart.js';
 import { sendOrderEmails } from '../_lib/email.js';
 
 /**
@@ -33,7 +33,13 @@ export default async function handler(req, res) {
 
   let priced;
   try {
-    priced = await priceCart({ items, shippingMethod, region, state: shipping?.state });
+    priced = await priceCart({
+      items,
+      shippingMethod,
+      region,
+      state: shipping?.state,
+      code: discountCode,
+    });
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }
@@ -97,6 +103,8 @@ export default async function handler(req, res) {
       items_count: priced.lines.reduce((n, l) => n + l.quantity, 0),
       items: priced.lines,
       has_bespoke: priced.hasBespoke,
+      discount_code: priced.discountCode,
+      discount_amount: priced.discountAmount,
     })
     .select('id')
     .single();
@@ -133,6 +141,9 @@ export default async function handler(req, res) {
   // The money is already captured and the order is recorded, so email is
   // the last thing and must not be able to undo any of it. Awaited so the
   // function is not torn down mid-send, but every failure is swallowed.
+  // Counted only now, so an abandoned checkout does not consume a use.
+  await recordDiscountUse(priced.discountCode).catch(() => {});
+
   await sendOrderEmails({
     id: order.id,
     customer_email: customerEmail,

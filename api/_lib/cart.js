@@ -43,7 +43,75 @@ function taxFor(subtotal, state) {
  * ids, sizes and quantities only. Every price, every total, and the stock
  * check come from the database.
  */
-export async function priceCart({ items, shippingMethod = 'standard', region = 'domestic', state = null }) {
+/**
+ * Looks up a discount code and works out what it takes off.
+ *
+ * Every check happens here: active, unexpired, and within its use limit. A
+ * code that fails any of them simply takes off nothing rather than throwing,
+ * so a mistyped code never blocks a sale.
+ */
+async function resolveDiscount(code, undiscounted) {
+  const none = { code: null, amount: 0 };
+  const trimmed = String(code ?? '').trim().toUpperCase();
+  if (!trimmed) return none;
+
+  const supabase = adminClient();
+
+  const { data, error } = await supabase
+    .from('discount_codes')
+    .select('*')
+    .eq('code', trimmed)
+    .maybeSingle();
+
+  if (error || !data) return none;
+  if (!data.is_active) return none;
+  if (data.expires_at && new Date(data.expires_at) < new Date()) return none;
+  if (data.max_uses !== null && data.times_used >= data.max_uses) return none;
+
+  const value = Number(data.value ?? 0);
+  let amount = 0;
+
+  if (data.kind === 'percent') {
+    amount = undiscounted * (value / 100);
+  } else if (data.kind === 'amount') {
+    amount = value;
+  } else if (data.kind === 'fixed_total') {
+    // Whatever it takes to land on this total.
+    amount = undiscounted - value;
+  }
+
+  amount = Math.max(0, Math.min(amount, undiscounted - 0.01));
+  if (amount <= 0) return none;
+
+  return { code: trimmed, amount: Number(amount.toFixed(2)) };
+}
+
+/** Counts a use once the payment has actually been captured. */
+export async function recordDiscountUse(code) {
+  if (!code) return;
+  const supabase = adminClient();
+
+  const { data } = await supabase
+    .from('discount_codes')
+    .select('times_used')
+    .eq('code', code)
+    .maybeSingle();
+
+  if (!data) return;
+
+  await supabase
+    .from('discount_codes')
+    .update({ times_used: Number(data.times_used ?? 0) + 1 })
+    .eq('code', code);
+}
+
+export async function priceCart({
+  items,
+  shippingMethod = 'standard',
+  region = 'domestic',
+  state = null,
+  code = null,
+}) {
   if (!Array.isArray(items) || items.length === 0) {
     throw new Error('Your bag is empty');
   }
@@ -187,7 +255,13 @@ export async function priceCart({ items, shippingMethod = 'standard', region = '
   const shippingCost =
     subtotal >= SHIPPING.freeThreshold ? 0 : SHIPPING[region][method];
   const tax = taxFor(subtotal, state);
-  const total = subtotal + shippingCost + tax;
+  const undiscounted = subtotal + shippingCost + tax;
+
+  // The discount is resolved here, server side, from the code string alone.
+  // The browser never states an amount, so a tampered request cannot change
+  // what is charged.
+  const discount = await resolveDiscount(code, undiscounted);
+  const total = Math.max(0.01, undiscounted - discount.amount);
 
   const hasBespoke = lines.some((line) => line.is_retainer);
 
@@ -195,6 +269,8 @@ export async function priceCart({ items, shippingMethod = 'standard', region = '
     lines,
     subtotal,
     shippingCost,
+    discountCode: discount.code,
+    discountAmount: discount.amount,
     tax,
     total,
     shippingMethod: method,

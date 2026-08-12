@@ -10,6 +10,7 @@ import { shippingCostFor, formatPrice, taxFor, SHIPPING } from '../config/store'
 import { describeSelection, describeMeasurements } from '../config/taxonomy';
 import { track } from '../lib/analytics';
 import { isBespoke, unitChargeFor, BESPOKE_COPY } from '../config/fulfillment';
+import { estimateDelivery, formatDeliveryDate } from '../config/store';
 import { PayPalCheckout } from '../components/PayPalCheckout';
 
 interface CheckoutProps {
@@ -39,6 +40,7 @@ export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [title, setTitle] = useState('Mr');
   const [acceptMarketing, setAcceptMarketing] = useState(false);
+  const [discountCode, setDiscountCode] = useState('');
   const [shippingMethod, setShippingMethod] = useState<'express' | 'standard'>('standard');
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
@@ -524,7 +526,9 @@ export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
                             </div>
                             <div>
                               <h4 className="mb-1">Express delivery</h4>
-                              <p className="text-sm text-gray-600">Estimated delivery date: December 12</p>
+                              <p className="text-sm text-gray-600">
+                                Estimated delivery: {formatDeliveryDate(estimateDelivery(items, 'express'))}
+                              </p>
                             </div>
                           </div>
                           <span className="">{formatPrice(SHIPPING.domestic.express)}</span>
@@ -543,7 +547,9 @@ export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
                             </div>
                             <div>
                               <h4 className="mb-1">Free standard shipping</h4>
-                              <p className="text-sm text-gray-600">Estimated delivery date: December 17</p>
+                              <p className="text-sm text-gray-600">
+                                Estimated delivery: {formatDeliveryDate(estimateDelivery(items, 'standard'))}
+                              </p>
                             </div>
                           </div>
                           <span className="">Free</span>
@@ -635,6 +641,7 @@ export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
                     <PayPalCheckout
                       items={items}
                       shippingMethod={shippingMethod}
+                      discountCode={discountCode}
                       shipping={shippingInfo}
                       email={user?.email || email}
                       userId={user?.id ?? null}
@@ -720,6 +727,36 @@ export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
                       </svg>
                     </button>
                   </div>
+                  {/* The key is verified on the server when payment is
+                      taken, so what is typed here cannot change the price by
+                      itself. */}
+                  <div className="mb-5 pb-5 border-b border-gray-200">
+                    <label
+                      htmlFor="invitation-key"
+                      className="block text-sm text-gray-600 mb-2"
+                    >
+                      Apply your private invitation key:
+                    </label>
+                    <input
+                      id="invitation-key"
+                      type="text"
+                      value={discountCode}
+                      onChange={(e) =>
+                        setDiscountCode(e.target.value.toUpperCase())
+                      }
+                      placeholder="Enter your key"
+                      autoComplete="off"
+                      spellCheck={false}
+                      className="w-full border border-gray-300 px-4 py-3 text-sm tracking-wider focus:outline-none focus:border-black transition-colors"
+                    />
+                    {discountCode.trim() && (
+                      <p className="text-xs text-gray-500 mt-2">
+                        Applied at payment. Your total updates when the key is
+                        accepted.
+                      </p>
+                    )}
+                  </div>
+
                   <div className="space-y-2">
                     <div className="flex items-baseline justify-between">
                       <span className="text-sm text-gray-600">Subtotal</span>

@@ -6,6 +6,8 @@ import { usePayPal, paypalEnv } from '../hooks/usePayPal';
 interface PayPalCheckoutProps {
   items: CartItem[];
   shippingMethod: 'standard' | 'express';
+  /** Just the string. The server decides what it is worth. */
+  discountCode?: string;
   shipping: {
     firstName: string;
     lastName: string;
@@ -31,6 +33,7 @@ interface PayPalCheckoutProps {
 export function PayPalCheckout({
   items,
   shippingMethod,
+  discountCode,
   shipping,
   email,
   userId,

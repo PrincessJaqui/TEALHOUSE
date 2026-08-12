@@ -139,3 +139,75 @@ export function needsSwimwearCare(product: {
     ['resort-wear', 'swimwear'].includes(String(category).toLowerCase())
   );
 }
+
+
+/* ------------------------------------------------------------------ */
+/* Delivery estimates                                                  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * How long a piece takes before it ships, in business days.
+ *
+ * Used when a product carries no estimate of its own. These were hardcoded
+ * dates in the checkout, which meant every customer saw the same December
+ * date whatever they bought and whenever they ordered.
+ */
+export const DISPATCH = {
+  standardDays: 5,
+  expressDays: 2,
+  /** Added on top for a piece cut to the customer. */
+  madeToMeasureWeeks: 12,
+} as const;
+
+/** Business days only, so a Friday order does not promise a Sunday. */
+export function addBusinessDays(from: Date, days: number): Date {
+  const date = new Date(from);
+  let remaining = days;
+
+  while (remaining > 0) {
+    date.setDate(date.getDate() + 1);
+    const day = date.getDay();
+    if (day !== 0 && day !== 6) remaining -= 1;
+  }
+  return date;
+}
+
+/**
+ * The delivery estimate for a bag.
+ *
+ * The slowest piece sets the date, because the order arrives together.
+ */
+export function estimateDelivery(
+  items: Array<{
+    product: {
+      ships_in_days?: number | null;
+      lead_time_weeks?: number | null;
+      fulfillment_type?: string;
+    };
+  }>,
+  method: 'standard' | 'express'
+): Date {
+  const base = method === 'express' ? DISPATCH.expressDays : DISPATCH.standardDays;
+
+  const slowest = items.reduce((worst, item) => {
+    const product = item.product;
+    let days = product.ships_in_days ?? 0;
+
+    // A piece cut to the customer takes its lead time first, then ships.
+    if (product.fulfillment_type === 'made_to_measure') {
+      const weeks = product.lead_time_weeks ?? DISPATCH.madeToMeasureWeeks;
+      days = Math.max(days, weeks * 5);
+    }
+
+    return Math.max(worst, days);
+  }, 0);
+
+  return addBusinessDays(new Date(), base + slowest);
+}
+
+export function formatDeliveryDate(date: Date): string {
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+  });
+}

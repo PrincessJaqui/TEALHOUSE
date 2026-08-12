@@ -213,6 +213,7 @@ export function AdminProducts() {
   const [preorderShipsOn, setPreorderShipsOn] = useState('');
   const [measurementFields, setMeasurementFields] = useState<string[]>([]);
   const [leadTimeWeeks, setLeadTimeWeeks] = useState('');
+  const [shipsInDays, setShipsInDays] = useState('');
   const [isBestseller, setIsBestseller] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
   const [slug, setSlug] = useState('');
@@ -439,6 +440,7 @@ export function AdminProducts() {
               : null,
           preorder_ships_on:
             fulfillmentType === 'pre_order' && preorderShipsOn ? preorderShipsOn : null,
+          ships_in_days: shipsInDays ? parseInt(shipsInDays, 10) : null,
           measurement_fields:
             fulfillmentType === 'made_to_measure' ? measurementFields : [],
           lead_time_weeks:
@@ -602,6 +604,7 @@ export function AdminProducts() {
     setPreorderShipsOn('');
     setMeasurementFields([]);
     setLeadTimeWeeks('');
+    setShipsInDays('');
     setIsBestseller(false);
     setIsFeatured(false);
     setSlug('');
@@ -641,6 +644,7 @@ export function AdminProducts() {
     setPreorderShipsOn(product.preorder_ships_on ?? '');
     setMeasurementFields(product.measurement_fields ?? []);
     setLeadTimeWeeks(product.lead_time_weeks ? String(product.lead_time_weeks) : '');
+    setShipsInDays(product.ships_in_days ? String(product.ships_in_days) : '');
     setIsBestseller(product.is_bestseller ?? false);
     setIsFeatured(product.is_featured ?? false);
     setSlug(product.slug ?? '');
@@ -815,6 +819,7 @@ export function AdminProducts() {
             : null,
         preorder_ships_on:
           fulfillmentType === 'pre_order' && preorderShipsOn ? preorderShipsOn : null,
+        ships_in_days: shipsInDays ? parseInt(shipsInDays, 10) : null,
         measurement_fields:
           fulfillmentType === 'made_to_measure' ? measurementFields : [],
         lead_time_weeks:
@@ -1583,6 +1588,30 @@ export function AdminProducts() {
                       {FULFILLMENT_LABELS[type]}
                     </button>
                   ))}
+                </div>
+
+                {/* How long this piece takes to leave the atelier. Shipping
+                    time is added on top, so this is preparation only. */}
+                <div className="mb-4">
+                  <label className="block text-sm mb-2">
+                    Turnaround before dispatch
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      value={shipsInDays}
+                      onChange={(e) => setShipsInDays(e.target.value)}
+                      placeholder="0"
+                      className="w-24 px-3 py-2 border border-neutral-200 text-sm"
+                    />
+                    <span className="text-sm text-neutral-600">business days</span>
+                  </div>
+                  <p className="text-xs text-neutral-500 mt-2">
+                    Added before delivery time when a customer sees an estimate.
+                    Leave empty for a piece that ships straight away. In a bag of
+                    several pieces the slowest one sets the date.
+                  </p>
                 </div>
 
                 {fulfillmentType === 'pre_order' && (
@@ -2602,6 +2631,30 @@ export function AdminProducts() {
                       {FULFILLMENT_LABELS[type]}
                     </button>
                   ))}
+                </div>
+
+                {/* How long this piece takes to leave the atelier. Shipping
+                    time is added on top, so this is preparation only. */}
+                <div className="mb-4">
+                  <label className="block text-sm mb-2">
+                    Turnaround before dispatch
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      value={shipsInDays}
+                      onChange={(e) => setShipsInDays(e.target.value)}
+                      placeholder="0"
+                      className="w-24 px-3 py-2 border border-neutral-200 text-sm"
+                    />
+                    <span className="text-sm text-neutral-600">business days</span>
+                  </div>
+                  <p className="text-xs text-neutral-500 mt-2">
+                    Added before delivery time when a customer sees an estimate.
+                    Leave empty for a piece that ships straight away. In a bag of
+                    several pieces the slowest one sets the date.
+                  </p>
                 </div>
 
                 {fulfillmentType === 'pre_order' && (
