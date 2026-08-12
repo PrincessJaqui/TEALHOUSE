@@ -275,6 +275,12 @@ export function StudioCarousel({
 }) {
   const strip = useRef<HTMLDivElement>(null);
 
+  // Height decides the size of a card; its width follows from the shape. On
+  // a phone the card stays a percentage of the screen, since a fixed height
+  // there would push cards wider than the viewport.
+  const cardHeight = content.card_height || '25rem';
+  const cardShape = content.card_shape || '4 / 5';
+
   if (products.length === 0) return null;
 
   const scroll = (direction: number) => {
@@ -314,9 +320,17 @@ export function StudioCarousel({
             <Link
               key={product.id}
               to={productPath(product)}
-              className="snap-start shrink-0 w-[70%] sm:w-[45%] lg:w-[24%]"
+              className="snap-start shrink-0 w-[70%] sm:w-[45%] md:w-auto"
             >
-              <div className="aspect-square bg-gray-100 overflow-hidden mb-3">
+              <div
+                className="bg-gray-100 overflow-hidden mb-3 md:h-[var(--card-h)] md:w-auto"
+                style={
+                  {
+                    aspectRatio: cardShape,
+                    ['--card-h' as any]: cardHeight,
+                  } as React.CSSProperties
+                }
+              >
                 <img
                   src={getPrimaryProductImage(product)}
                   alt={product.image_alt || product.name}
@@ -355,11 +369,41 @@ export function StudioCarousel({
  * to be, which cropped it unpredictably. It now keeps a shape of its own and
  * the product column takes whatever is left.
  */
+/**
+ * Card height for the featured carousel.
+ *
+ * Height rather than width, so a card's proportions come from the chosen
+ * shape and taller cards simply show the pieces larger.
+ */
+export const CAROUSEL_CARD_HEIGHTS: Array<{ label: string; value: string }> = [
+  { label: 'Short, 320px', value: '20rem' },
+  { label: 'Medium, 400px', value: '25rem' },
+  { label: 'Tall, 480px', value: '30rem' },
+  { label: 'Very tall, 560px', value: '35rem' },
+  { label: 'Grand, 640px', value: '40rem' },
+];
+
 export const SPOTLIGHT_IMAGE_HEIGHTS: Array<{ label: string; value: string }> = [
-  { label: 'Short, 24rem', value: '24rem' },
-  { label: 'Medium, 30rem', value: '30rem' },
-  { label: 'Tall, 36rem', value: '36rem' },
-  { label: 'Very tall, 42rem', value: '42rem' },
+  { label: 'Short, 384px', value: '24rem' },
+  { label: 'Medium, 480px', value: '30rem' },
+  { label: 'Tall, 576px', value: '36rem' },
+  { label: 'Very tall, 672px', value: '42rem' },
+  { label: 'Full, 768px', value: '48rem' },
+  { label: 'Grand, 896px', value: '56rem' },
+  { label: 'Monumental, 1024px', value: '64rem' },
+];
+
+/**
+ * How large each card in the featured strip is.
+ *
+ * A square card is short, which leaves a lot of white above and below a
+ * portrait product shot. Taller shapes give the pieces more presence.
+ */
+export const CAROUSEL_CARD_SHAPES: Array<{ label: string; value: string }> = [
+  { label: 'Square', value: '1 / 1' },
+  { label: 'Slightly tall, 4:5', value: '4 / 5' },
+  { label: 'Tall, 3:4', value: '3 / 4' },
+  { label: 'Very tall, 2:3', value: '2 / 3' },
 ];
 
 export const SPOTLIGHT_IMAGE_RATIOS: Array<{ label: string; value: string }> = [

@@ -12,6 +12,7 @@ import {
   HERO_TEXT_POSITIONS,
   HERO_TEXT_WIDTHS,
   SPOTLIGHT_IMAGE_HEIGHTS,
+  CAROUSEL_CARD_HEIGHTS,
   SPOTLIGHT_IMAGE_RATIOS,
 } from '../components/StudioSections';
 import { CropEditor } from '../components/CropEditor';
@@ -279,6 +280,77 @@ function RatioField({
           />
           <span className="text-xs text-neutral-500">
             {w && h ? `${(w / h).toFixed(2)} to 1` : ''}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * A single measurement, with a custom value in rem.
+ *
+ * Separate from RatioField because that one's custom mode asks for a width
+ * and a height and writes "16 / 9", which is meaningless as a height.
+ */
+function HeightField({
+  label,
+  help,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  help?: string;
+  value?: string;
+  options: Array<{ label: string; value: string }>;
+  onChange: (value: string) => void;
+}) {
+  const current = value ?? options[Math.floor(options.length / 2)].value;
+  const isPreset = options.some((option) => option.value === current);
+  const [custom, setCustom] = useState(!isPreset);
+
+  const rem = parseFloat(current) || 36;
+
+  return (
+    <div>
+      <label className="block text-sm mb-1">{label}</label>
+      {help && <p className="text-xs text-neutral-500 mb-2">{help}</p>}
+
+      <select
+        value={custom ? '__custom__' : current}
+        onChange={(e) => {
+          if (e.target.value === '__custom__') {
+            setCustom(true);
+            return;
+          }
+          setCustom(false);
+          onChange(e.target.value);
+        }}
+        className="w-full px-3 py-2 border border-neutral-200 text-sm"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+        <option value="__custom__">Custom, set your own</option>
+      </select>
+
+      {custom && (
+        <div className="flex items-center gap-2 mt-3">
+          <input
+            type="number"
+            min={12}
+            max={100}
+            step={1}
+            value={Math.round(rem)}
+            onChange={(e) => onChange(`${e.target.value || 36}rem`)}
+            className="w-24 px-3 py-2 border border-neutral-200 text-sm"
+            aria-label="Height"
+          />
+          <span className="text-xs text-neutral-500">
+            about {Math.round(rem * 16)}px tall
           </span>
         </div>
       )}
@@ -742,6 +814,26 @@ export function AdminInterfaceStudio() {
     // carousel and spotlight both draw their products from what is featured
     return (
       <div className="space-y-4">
+        {key === 'carousel' && (
+          <div className="grid md:grid-cols-2 gap-4">
+            <HeightField
+              label="Card height"
+              help="How tall each piece appears in the row. The card's width follows from the shape."
+              value={draft.card_height}
+              options={CAROUSEL_CARD_HEIGHTS}
+              onChange={(v) => setField(key, 'card_height', v)}
+            />
+            <RatioField
+              label="Card shape"
+              value={draft.card_shape}
+              options={SPOTLIGHT_IMAGE_RATIOS.filter(
+                (option) => option.value !== 'original'
+              )}
+              onChange={(v) => setField(key, 'card_shape', v)}
+            />
+          </div>
+        )}
+
         {key === 'spotlight' && (
           <div className="grid md:grid-cols-2 gap-4">
             <RatioField
@@ -751,7 +843,7 @@ export function AdminInterfaceStudio() {
               options={SPOTLIGHT_IMAGE_RATIOS}
               onChange={(v) => setField(key, 'image_ratio', v)}
             />
-            <RatioField
+            <HeightField
               label="Image height"
               help="The height stays fixed and the width follows the photograph, so only the product area changes size."
               value={draft.image_height}
