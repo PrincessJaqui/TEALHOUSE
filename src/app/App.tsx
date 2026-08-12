@@ -10,6 +10,7 @@ import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { Cart } from './components/Cart';
 import { ProductModal } from './components/ProductModal';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { productPath } from './config/taxonomy';
 import { track } from './lib/analytics';
 import { Search } from './components/Search';
@@ -338,8 +339,11 @@ function AppContent() {
  */
 export default function App() {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    // Outside the Router, so a crash in routing itself is still caught.
+    <ErrorBoundary>
+      <Router>
+        <AppContent />
+      </Router>
+    </ErrorBoundary>
   );
 }

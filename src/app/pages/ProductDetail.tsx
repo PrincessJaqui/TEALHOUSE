@@ -1,11 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-  SHIPPING,
-  RETURNS,
-  formatPrice,
-  CARE,
-  needsSwimwearCare,
-} from '../config/store';
+import { formatPrice, CARE, needsSwimwearCare } from '../config/store';
 import {
   stockForSize,
   isSoldOut,
@@ -798,13 +792,6 @@ export function ProductDetail({ onAddToCart, onAddToWishlist, isInWishlist }: Pr
                   </div>
                 </div>
               )}
-              <div className="flex items-start gap-3">
-                <div className="w-2 h-2 bg-[#008080] rounded-full mt-2"></div>
-                <div>
-                  <h4 className="font-medium mb-1">Free Shipping & Returns</h4>
-                  <p className="text-gray-600 text-sm">On orders over {formatPrice(SHIPPING.freeThreshold)} with {RETURNS.windowDays}-day return policy</p>
-                </div>
-              </div>
             </div>
           </div>
         </div>

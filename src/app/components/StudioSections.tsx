@@ -386,6 +386,23 @@ export function StudioSpotlight({
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 
+  // Below this the image stacks above the product and spans the width, so a
+  // fixed height would crop it for no reason.
+  //
+  // Declared here with the other hooks and above every early return: React
+  // requires the same hooks in the same order on every render, and a hook
+  // after a conditional return crashes the page the moment that condition
+  // changes.
+  const [narrow, setNarrow] = useState(
+    typeof window !== 'undefined' ? window.innerWidth < 768 : false
+  );
+
+  useEffect(() => {
+    const onResize = () => setNarrow(window.innerWidth < 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   useEffect(() => {
     if (paused || products.length < 2) return;
     const timer = window.setInterval(
@@ -409,18 +426,6 @@ export function StudioSpotlight({
   // narrow and a square one is wide, which is how it should be: the shape of
   // the picture decides its width, not an arbitrary fraction of the page.
   const imageHeight = content.image_height || '36rem';
-
-  // Below this the image stacks above the product and spans the width, so a
-  // fixed height would crop it for no reason.
-  const [narrow, setNarrow] = useState(
-    typeof window !== 'undefined' ? window.innerWidth < 768 : false
-  );
-
-  useEffect(() => {
-    const onResize = () => setNarrow(window.innerWidth < 768);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
 
   return (
     <section
