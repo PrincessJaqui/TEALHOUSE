@@ -427,8 +427,16 @@ export function StudioSpotlight({
   content: Record<string, any>;
   products: Product[];
 }) {
+  // EVERY hook in this component must be declared here, above the early
+  // return below. A useState placed after it runs a different number of
+  // times depending on whether anything is featured, which is React error
+  // #310 and takes the whole page down.
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+
+  // The photograph's own proportions, measured once it loads, so the height
+  // cap can be worked out from its real shape rather than a guess.
+  const [naturalRatio, setNaturalRatio] = useState<number | null>(null);
 
   // Below this the image stacks above the product and spans the width, so a
   // fixed height would crop it for no reason.
@@ -469,7 +477,6 @@ export function StudioSpotlight({
 
   // The photograph's own proportions, measured once it loads, so the height
   // cap below can be worked out from its real shape rather than a guess.
-  const [naturalRatio, setNaturalRatio] = useState<number | null>(null);
   // The height is what stays constant. A portrait photograph is therefore
   // narrow and a square one is wide, which is how it should be: the shape of
   // the picture decides its width, not an arbitrary fraction of the page.

@@ -318,6 +318,7 @@ function AppContent() {
           items={supabaseCartItems}
           onUpdateQuantity={updateQuantity}
           onRemoveItem={removeFromCart}
+          onAddToCart={addToCart}
         />
         
         <ProductModal

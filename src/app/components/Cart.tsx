@@ -1,5 +1,7 @@
 import { ShoppingCart, X, Minus, Plus } from 'lucide-react';
-import { CartItem } from '../App';
+import { useState } from 'react';
+import { CartItem, Product } from '../App';
+import { EditCartItem } from './EditCartItem';
 import { describeSelection, describeMeasurements } from '../config/taxonomy';
 import { track } from '../lib/analytics';
 import { isBespoke, unitChargeFor } from '../config/fulfillment';
@@ -21,6 +23,15 @@ interface CartProps {
     color?: string,
     measurements?: Record<string, string>
   ) => void;
+  /** Needed to re-add a line after its selections change. */
+  onAddToCart: (
+    product: Product,
+    size?: string,
+    sizes?: Record<string, string>,
+    notes?: string,
+    color?: string,
+    measurements?: Record<string, string>
+  ) => void;
   onRemoveItem: (
     productId: number,
     size?: string,
@@ -31,7 +42,15 @@ interface CartProps {
   ) => void;
 }
 
-export function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem }: CartProps) {
+export function Cart({
+  isOpen,
+  onClose,
+  items,
+  onUpdateQuantity,
+  onRemoveItem,
+  onAddToCart,
+}: CartProps) {
+  const [editing, setEditing] = useState<CartItem | null>(null);
   const navigate = useNavigate();
   
   if (!isOpen) return null;
@@ -97,6 +116,18 @@ export function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem }:
                           </p>
                         ) : item.size && (
                           <p className="text-sm text-[#666666]">Size: {item.size}</p>
+                        )}
+
+                        {/* Correcting a size should not mean losing the line
+                            and starting over. */}
+                        {(item.size || item.sizes) && (
+                          <button
+                            type="button"
+                            onClick={() => setEditing(item)}
+                            className="text-xs text-[#666666] underline hover:text-black mt-1"
+                          >
+                            Change size
+                          </button>
                         )}
                       </div>
                       <button
@@ -167,6 +198,44 @@ export function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem }:
           </div>
         )}
       </div>
+
+      {editing && (
+        <EditCartItem
+          item={editing}
+          onClose={() => setEditing(null)}
+          onReplace={(product, size, sizes, quantity) => {
+            // A line's identity is its selections, so the old one goes and a
+            // new one takes its place, keeping the quantity.
+            onRemoveItem(
+              editing.product.id,
+              editing.size,
+              editing.sizes,
+              editing.notes,
+              editing.color,
+              editing.measurements
+            );
+            onAddToCart(
+              product,
+              size,
+              sizes,
+              editing.notes,
+              editing.color,
+              editing.measurements
+            );
+            if (quantity > 1) {
+              onUpdateQuantity(
+                product.id,
+                quantity,
+                size,
+                sizes,
+                editing.notes,
+                editing.color,
+                editing.measurements
+              );
+            }
+          }}
+        />
+      )}
     </>
   );
 }

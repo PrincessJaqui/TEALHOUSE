@@ -41,6 +41,7 @@ export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
   const [title, setTitle] = useState('Mr');
   const [acceptMarketing, setAcceptMarketing] = useState(false);
   const [discountCode, setDiscountCode] = useState('');
+  const [keyOpen, setKeyOpen] = useState(false);
   const [shippingMethod, setShippingMethod] = useState<'express' | 'standard'>('standard');
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
@@ -727,16 +728,38 @@ export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
                       </svg>
                     </button>
                   </div>
-                  {/* The key is verified on the server when payment is
-                      taken, so what is typed here cannot change the price by
-                      itself. */}
+                  {/* Folded away by default. Most customers have no key, and
+                      an open field invites them to hunt for one they were
+                      never offered. The key is verified on the server when
+                      payment is taken, so what is typed here cannot change
+                      the price by itself. */}
                   <div className="mb-5 pb-5 border-b border-gray-200">
-                    <label
-                      htmlFor="invitation-key"
-                      className="block text-sm text-gray-600 mb-2"
+                    <button
+                      type="button"
+                      onClick={() => setKeyOpen((open) => !open)}
+                      aria-expanded={keyOpen}
+                      className="flex items-center justify-between w-full text-sm text-gray-600 hover:text-black transition-colors"
                     >
-                      Apply your private invitation key:
-                    </label>
+                      <span>Apply your private invitation key</span>
+                      <svg
+                        className={`w-4 h-4 shrink-0 transition-transform ${
+                          keyOpen ? 'rotate-180' : ''
+                        }`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+
+                    {keyOpen && (
+                    <div className="mt-3">
                     <input
                       id="invitation-key"
                       type="text"
@@ -754,6 +777,8 @@ export function Checkout({ items, onOrderPlaced }: CheckoutProps) {
                         Applied at payment. Your total updates when the key is
                         accepted.
                       </p>
+                    )}
+                    </div>
                     )}
                   </div>
 
